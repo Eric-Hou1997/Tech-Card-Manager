@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-const appVersion = "4.0.0"
+const appVersion = "4.0.1"
 
 //go:embed web/index.html engine/windows-engine.ps1 engine/technical-specs-card.js assets/TCM_logo_letter_only.png assets/TCM_logo_tiny.png
 var assets embed.FS

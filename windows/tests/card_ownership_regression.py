@@ -14,14 +14,14 @@ render_function = card[card.index("async function render(requestId)"):card.index
 
 checks = {
     "unreleased source version advances after the defective package": all(value in source for source, value in [
-        (main, 'const appVersion = "4.0.0"'),
-        (engine, "$ManagerVersion = '4.0.0'"),
-        (web, "v4.0.0"),
+        (main, 'const appVersion = "4.0.1"'),
+        (engine, "$ManagerVersion = '4.0.1'"),
+        (web, "v4.0.1"),
     ]),
     "web card cache key advances everywhere": all(value in source for source, value in [
-        (card, 'const WEB_CARD_VERSION = "4.0.0"'),
-        (engine, "$ExpectedWebCardVersion = '4.0.0'"),
-        (platform, 'const expectedWebCardVersion = "4.0.0"'),
+        (card, 'const WEB_CARD_VERSION = "4.0.1"'),
+        (engine, "$ExpectedWebCardVersion = '4.0.1'"),
+        (platform, 'const expectedWebCardVersion = "4.0.1"'),
     ]),
     "public card index carries path-free eligible type hints": all(value in engine for value in [
         "$itemTypes = [ordered]@{}", "$itemTypes[$imdb] = [string]$obj.type",

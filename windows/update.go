@@ -19,11 +19,17 @@ const (
 var cardVersionPattern = regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)$`)
 
 type cardGitHubRelease struct {
-	TagName     string `json:"tag_name"`
-	HTMLURL     string `json:"html_url"`
-	Draft       bool   `json:"draft"`
-	Prerelease  bool   `json:"prerelease"`
-	PublishedAt string `json:"published_at"`
+	TagName     string                   `json:"tag_name"`
+	HTMLURL     string                   `json:"html_url"`
+	Draft       bool                     `json:"draft"`
+	Prerelease  bool                     `json:"prerelease"`
+	PublishedAt string                   `json:"published_at"`
+	Assets      []cardGitHubReleaseAsset `json:"assets"`
+}
+
+type cardGitHubReleaseAsset struct {
+	Name               string `json:"name"`
+	BrowserDownloadURL string `json:"browser_download_url"`
 }
 
 func compareCardVersion(left, right string) (int, error) {
@@ -44,6 +50,27 @@ func compareCardVersion(left, right string) (int, error) {
 		return 1, nil
 	}
 	return 0, nil
+}
+
+func cardUpdateArchiveName(tag string) (string, error) {
+	match := cardVersionPattern.FindStringSubmatch(strings.TrimSpace(tag))
+	if match == nil {
+		return "", errors.New("版本号必须为 vX.Y.Z")
+	}
+	return fmt.Sprintf("TCM-v%s.%s.%s-Windows-x64-EXE.zip", match[1], match[2], match[3]), nil
+}
+
+func selectCardUpdateAsset(release cardGitHubRelease) (cardGitHubReleaseAsset, error) {
+	expectedArchive, err := cardUpdateArchiveName(release.TagName)
+	if err != nil {
+		return cardGitHubReleaseAsset{}, err
+	}
+	for _, asset := range release.Assets {
+		if asset.Name == expectedArchive {
+			return asset, nil
+		}
+	}
+	return cardGitHubReleaseAsset{}, fmt.Errorf("该正式发布缺少指定更新包 %s", expectedArchive)
 }
 
 func handleCardUpdate(w http.ResponseWriter, r *http.Request) {
@@ -82,14 +109,24 @@ func handleCardUpdate(w http.ResponseWriter, r *http.Request) {
 		writeJSONStatus(w, http.StatusBadGateway, map[string]string{"error": "GitHub 最新发布不是可用的正式 vX.Y.Z 版本"})
 		return
 	}
+	archive, err := selectCardUpdateAsset(release)
+	if err != nil {
+		writeJSONStatus(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+		return
+	}
 	cmp, err := compareCardVersion(appVersion, release.TagName)
 	if err != nil {
 		writeJSONStatus(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
 		return
 	}
+	releaseURL := strings.TrimSpace(release.HTMLURL)
+	if releaseURL == "" {
+		releaseURL = cardReleasePage
+	}
 	writeJSON(w, map[string]interface{}{
 		"current_version": "v" + appVersion, "latest_version": release.TagName, "available": cmp < 0,
-		"release_url": cardReleasePage, "published_at": release.PublishedAt,
+		"release_url": releaseURL, "published_at": release.PublishedAt,
+		"package_name": archive.Name, "package_url": archive.BrowserDownloadURL,
 		"portable_directory": portableRootDir(),
 	})
 }

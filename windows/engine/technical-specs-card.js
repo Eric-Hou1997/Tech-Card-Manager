@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const WEB_CARD_VERSION = "4.0.0";
+    const WEB_CARD_VERSION = "4.0.1";
 
     // Single-run guard: if another copy of this card script (older or equal)
     // is already active on the page, only the newest version may run. Old

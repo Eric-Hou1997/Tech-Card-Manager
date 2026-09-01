@@ -16,4 +16,4 @@ node --check "$ROOT/windows/engine/technical-specs-card.js"
   GOCACHE="$TMP/go-cache" GOMODCACHE="$TMP/go-mod-cache" GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -H windowsgui" -o "$TMP/Tech-Card-Manager.exe" .
 )
 
-echo "OK Tech Card Manager v4.0.0 source, Python contracts, JavaScript syntax, Go tests, vet, and Windows x64 cross-build"
+echo "OK Tech Card Manager v4.0.1 source, Python contracts, JavaScript syntax, Go tests, vet, and Windows x64 cross-build"

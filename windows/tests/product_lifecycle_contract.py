@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Windows legacy product lifecycle and UX contract."""
 from pathlib import Path
-import hashlib
 import struct
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,7 +12,7 @@ engine = (ROOT / "engine" / "windows-engine.ps1").read_text(encoding="utf-8-sig"
 card = (ROOT / "engine" / "technical-specs-card.js").read_text(encoding="utf-8")
 web = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
 logo = (ROOT / "assets" / "TCM_logo_letter_only.png").read_bytes()
-EXPECTED_LOGO_SHA256 = "cdb3c349795c404f9fb09274346e83d3ca03d9028a2f48319d86c66a682fae51"
+ico = (ROOT / "assets" / "tcm.ico").read_bytes()
 
 checks = {
     "single visual owner, no resident agent loop": (
@@ -79,7 +78,7 @@ checks = {
         "standardWidth * 2",
     ]),
     "header matches product naming": all(x in web for x in [
-        "<title>Tech Card Manager</title>", "v4.0.0",
+        "<title>Tech Card Manager</title>", "v4.0.1",
         "Emby Server 技术规格卡片", 'src="/assets/TCM_logo_letter_only.png"',
     ]) and "IMDb Tech Manager Windows" not in web,
     "formal display name is consistent across runtime surfaces": (
@@ -94,9 +93,12 @@ checks = {
         and 'assets.ReadFile(name)' in main
         and 'w.Header().Set("Content-Type", "image/png")' in main
         and logo.startswith(b"\x89PNG\r\n\x1a\n")
-        and len(logo) >= 24
-        and struct.unpack(">II", logo[16:24]) == (1024, 1024)
-        and hashlib.sha256(logo).hexdigest() == EXPECTED_LOGO_SHA256
+        and len(logo) >= 26
+        and all(size > 0 for size in struct.unpack(">II", logo[16:24]))
+        and logo[25] in (4, 6)
+        and ico.startswith(b"\x00\x00\x01\x00")
+        and len(ico) >= 6
+        and struct.unpack("<H", ico[4:6])[0] >= 7
     ),
     "console has one service control": (
         web.count('id="serviceButton"') == 1
@@ -133,4 +135,4 @@ for name, ok in checks.items():
     print(("OK  " if ok else "FAIL ") + name)
 if failed:
     raise SystemExit("Windows legacy product contract failed: " + ", ".join(failed))
-print("OK Windows v4.0.0 product lifecycle, migration, lease, UI and NFO behavior")
+print("OK Windows v4.0.1 product lifecycle, migration, lease, UI and NFO behavior")

@@ -23,6 +23,7 @@ const (
 	wmDestroy      = 0x0002
 	wmClose        = 0x0010
 	wmNull         = 0x0000
+	wmSetIcon      = 0x0080
 	wmLButtonUp    = 0x0202
 	wmLButtonDblCl = 0x0203
 	wmRButtonUp    = 0x0205
@@ -42,6 +43,8 @@ const (
 	ERROR_ALREADY_EXISTS syscall.Errno = 183
 
 	imageIcon      = 1
+	iconSmall      = 0
+	iconBig        = 1
 	lrLoadFromFile = 0x00000010
 	lrDefaultSize  = 0x00000040
 
@@ -125,6 +128,7 @@ var (
 	procIsIconic       = user32.NewProc("IsIconic")
 	procShowWindow     = user32.NewProc("ShowWindow")
 	procSetForeground  = user32.NewProc("SetForegroundWindow")
+	procSendMessage    = user32.NewProc("SendMessageW")
 	procPostMessage    = user32.NewProc("PostMessageW")
 	procGetCursorPos   = user32.NewProc("GetCursorPos")
 	procCreateMenu     = user32.NewProc("CreatePopupMenu")
@@ -201,6 +205,7 @@ var enumManagerWndProc = syscall.NewCallback(func(hwnd, _ uintptr) uintptr {
 	title := syscall.UTF16ToString(buf)
 	if strings.Contains(title, "Tech Card Manager") && !strings.Contains(title, "Tray Host") {
 		platformRecordAppWindow(hwnd, int(windowPID))
+		applyManagerWindowIcon(hwnd)
 		enumeratedManagerWindow.Store(hwnd)
 		return 0
 	}
@@ -209,6 +214,20 @@ var enumManagerWndProc = syscall.NewCallback(func(hwnd, _ uintptr) uintptr {
 
 func trayNotificationCode(lParam uintptr) uint16 {
 	return uint16(lParam & 0xffff)
+}
+
+func applyManagerWindowIcon(hwnd uintptr) {
+	if hwnd == 0 {
+		return
+	}
+	trayState.Lock()
+	hIcon := trayState.icon
+	trayState.Unlock()
+	if hIcon == 0 {
+		return
+	}
+	_, _, _ = procSendMessage.Call(hwnd, wmSetIcon, iconSmall, hIcon)
+	_, _, _ = procSendMessage.Call(hwnd, wmSetIcon, iconBig, hIcon)
 }
 
 func trayIconID(lParam uintptr) uint16 {
@@ -399,6 +418,7 @@ func addTrayIcon(hwnd uintptr) error {
 	trayState.iconPath = iconPath
 	trayState.trayIconReady = true
 	trayState.Unlock()
+	applyManagerWindowIcon(platformOwnedAppWindowHWND())
 	return nil
 }
 

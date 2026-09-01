@@ -71,3 +71,13 @@ These instructions are part of the public repository. Apply them to every change
 - The current formal Windows deliverable is a GUI x64 `.exe` contained in a ZIP. Never place a bare `.exe` in `releases/`. Do not infer packaging rules for a future platform port; define and verify them when that port is explicitly undertaken.
 - Audit the exact release range and all primary flows before packaging. Create a new version rather than overwrite an artifact.
 - Do not build a release package, create a tag, push, or publish a release unless the maintainer explicitly requests that release after review. A successful build alone is not release approval.
+
+## Release naming, tags, and update-package compatibility
+
+- Use the short, canonical artifact base for every official Tech Card Manager release: `TCM-vX.Y.Z-Windows-x64-EXE` for a Windows x64 portable EXE ZIP and `TCM-vX.Y.Z-MacOS-AArch64-APP` for a future macOS arm64 app ZIP. The ZIP filename is the base plus `.zip`.
+- Companion assets must use the same base: `-SHA256SUMS.txt` for checksums, `-README.txt` for release instructions, and `-CHANGELOG.txt` for release notes. A future macOS OTA package additionally uses `.zip.sig`. Never restore the older long product-name-first artifact convention.
+- Keep the installed portable executable name stable as `Tech-Card-Manager.exe`; the version belongs in the archive name, not in the executable a user replaces.
+- The build recipe, checksum manifest, GitHub Release assets, update selector, update UI, and tests must agree on the exact canonical filename for the tag being released. The update check must reject an absent, incorrectly named, wrong-platform, draft, or prerelease package rather than report a usable update.
+- Before publishing, verify the actual GitHub Release API response: the newest stable `vX.Y.Z` release must expose the exact expected Windows package before the UI can direct a user to download it.
+- Do not tag unreleased work. After the maintainer approves the complete source range for a formal release, place exactly its matching `vX.Y.Z` tag on the final release commit immediately before pushing. Never create or push a preliminary tag, move or reuse a published tag, or overwrite a published release.
+- If an already-published asset needs only a filename correction, rename it in place through the GitHub Release asset API after comparing its digest before and after. Do not re-upload, rebuild, alter its bytes, or silently change release contents.
