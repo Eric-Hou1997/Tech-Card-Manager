@@ -2,6 +2,8 @@
 
 # Tech Card Manager
 
+**简体中文** | [English](./README.en.md)
+
 <p align="center">
 
 [![Release](https://img.shields.io/github/v/release/Eric-Hou1997/Tech-Card-Manager?label=release)](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases)
@@ -199,19 +201,11 @@ Manager 主界面用于查看：
 * 当前任务状态
 * 错误信息
 
-> 📷 **界面截图预留位置**
->
-> 建议文件：
->
-> `./docs/images/manager-ui.png`
-
-<!--
 <div align="center">
 
-<img src="./docs/images/manager-ui.png" alt="Tech Card Manager Manager UI" width="700">
+<img src="./docs/images/card-manager.PNG" alt="Tech Card Manager Manager UI" width="700">
 
 </div>
--->
 
 ---
 
@@ -229,19 +223,11 @@ Manager 主界面用于查看：
 * 更新检查
 * 其他应用设置
 
-> 📷 **界面截图预留位置**
->
-> 建议文件：
->
-> `./docs/images/settings-ui.png`
-
-<!--
 <div align="center">
 
-<img src="./docs/images/settings-ui.png" alt="Tech Card Manager Settings" width="700">
+<img src="./docs/images/media-etting.PNG" alt="Tech Card Manager Settings" width="700">
 
 </div>
--->
 
 ---
 
@@ -264,19 +250,11 @@ Technical Specifications 可以作为独立卡片出现在 Emby 电影详情页�
 * Master / Presentation Format
 * 其他 Technical Specifications
 
-> 📷 **成果截图预留位置**
->
-> 建议文件：
->
-> `./docs/images/emby-movie-card.png`
-
-<!--
 <div align="center">
 
-<img src="./docs/images/emby-movie-card.png" alt="Tech Card Manager Emby Movie Card" width="700">
+<img src="./docs/images/media-library-card.png" alt="Tech Card Manager Emby Media Library Card" width="700">
 
 </div>
--->
 
 ---
 
