@@ -27,7 +27,7 @@ import (
 
 const appVersion = "4.0.0"
 
-//go:embed web/index.html engine/windows-engine.ps1 engine/technical-specs-card.js assets/imdb-app-icon.png
+//go:embed web/index.html engine/windows-engine.ps1 engine/technical-specs-card.js assets/TCM_logo_letter_only.png assets/TCM_logo_tiny.png
 var assets embed.FS
 
 type Settings struct {
@@ -290,12 +290,14 @@ func runUI(loginStartup bool) {
 	uiToken = newSessionToken()
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", serveIndex)
-	mux.HandleFunc("/assets/imdb-app-icon.png", serveAppIcon)
+	mux.HandleFunc("/assets/TCM_logo_letter_only.png", serveAppIcon("assets/TCM_logo_letter_only.png"))
+	mux.HandleFunc("/assets/TCM_logo_tiny.png", serveAppIcon("assets/TCM_logo_tiny.png"))
 	mux.HandleFunc("/api/status", requireToken(handleStatus))
 	mux.HandleFunc("/api/catalog", requireToken(handleCatalog))
 	mux.HandleFunc("/api/action", requireToken(handleAction))
 	mux.HandleFunc("/api/settings", requireToken(handleSettings))
 	mux.HandleFunc("/api/job", requireToken(handleJob))
+	mux.HandleFunc("/api/update", requireToken(handleCardUpdate))
 	mux.HandleFunc("/api/heartbeat", requireToken(func(w http.ResponseWriter, r *http.Request) {
 		lastHeartbeatUnix.Store(time.Now().Unix())
 		writeJSON(w, map[string]bool{"ok": true})
@@ -465,15 +467,17 @@ func serveIndex(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(b)
 }
 
-func serveAppIcon(w http.ResponseWriter, r *http.Request) {
-	b, err := assets.ReadFile("assets/imdb-app-icon.png")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+func serveAppIcon(name string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		b, err := assets.ReadFile(name)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Cache-Control", "no-store")
+		_, _ = w.Write(b)
 	}
-	w.Header().Set("Content-Type", "image/png")
-	w.Header().Set("Cache-Control", "public, max-age=86400")
-	_, _ = w.Write(b)
 }
 
 func handleStatus(w http.ResponseWriter, r *http.Request) {

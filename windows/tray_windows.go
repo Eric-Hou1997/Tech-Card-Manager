@@ -16,7 +16,7 @@ import (
 	"unsafe"
 )
 
-//go:embed assets/imdb.ico
+//go:embed assets/tcm.ico
 var trayIconBytes []byte
 
 const (
@@ -369,7 +369,7 @@ func addTrayIcon(hwnd uintptr) error {
 	if err := os.MkdirAll(assetDir, 0755); err != nil {
 		return err
 	}
-	iconPath := filepath.Join(assetDir, "imdb.ico")
+	iconPath := filepath.Join(assetDir, "tcm.ico")
 	if err := os.WriteFile(iconPath, trayIconBytes, 0644); err != nil {
 		return err
 	}

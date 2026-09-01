@@ -53,7 +53,7 @@ checks = {
         "tag.ownership==='generated'" in tag_function
         and "tag.engine" not in tag_function
         and "managerGenerated" in tag_function
-        and "IMDb Tech Manager 生成（来自 NFO ownership 清单）" in tag_function
+        and "本程序生成（来自 NFO ownership 清单）" in tag_function
     ),
     "generated tag highlight is visibly pale yellow": all(value in web for value in [
         ".tagList .managerGenerated", "rgba(245,197,24,.14)", "rgba(245,197,24,.42)",

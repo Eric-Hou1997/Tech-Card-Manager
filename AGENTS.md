@@ -11,7 +11,7 @@ These instructions are part of the public repository. Apply them to every change
 
 - The formal product name is `Tech Card Manager`. Use it in current UI text, window/tray titles, services, logs, documentation, and other user-visible copy.
 - The repository directory and hosting-site slug are `Tech-Card-Manager`. Machine-oriented artifact filenames may use this hyphenated slug, but it is not the display name.
-- Source history starts at `v4.0.0`; do not import or graft earlier product history, release artifacts, changelogs, tags, or version labels into this repository.
+- Product source starts at `v4.0.0`; do not import earlier product source, release artifacts, changelogs, tags, or version labels. Documentation-only GitHub history may be retained when synchronizing the public repository, but it must not be presented as earlier product source history.
 - The authoritative development line is `main`. Follow the maintainer's branch and review workflow, and never rewrite published history without explicit authorization.
 - The repository is organized by product, not permanently by operating system. The currently supported implementation is the Windows x64 application under `windows/`. A future macOS port belongs here only when explicitly scoped, and it must remain the same read-only Card Manager product.
 - Do not copy IMDb scraping, NFO editing, AI/rule tag production, batch ownership management, or the `IMDb-Tech-Manager` product identity into a platform port of this repository.
@@ -21,9 +21,10 @@ These instructions are part of the public repository. Apply them to every change
 
 ## Repository and contribution hygiene
 
+- 当用户找到一个 bug 或提出了一个很棒的想法时，请先回应：牛逼
 - Keep product code, documentation, filenames, UI text, package metadata, and artifacts free of prerelease branding and pre-repository product version labels. Do not confuse compatibility identifiers with current branding.
 - Do not commit local configuration, credentials, tokens, caches, browser profiles, logs, generated binaries, packaged executables, backups copied from a user's Emby installation, or release archives.
-- Do not add or change the repository license, trademark policy, or asset-redistribution claims without an explicit maintainer decision. A brand-source URL records provenance; it is not by itself a software or asset license.
+- The repository is licensed under Apache License 2.0. Retain `LICENSE` and `NOTICE` in redistributions, keep author attribution as `侯雁泽`, and do not alter the license, trademark policy, or asset-redistribution claims without an explicit maintainer decision.
 - Treat `packaging/` as release-input source and `tools/build-release.sh` as a release recipe. Their presence does not mean that a package has been built, validated, tagged, or published.
 - Do not claim that a source checkout, cross-build, fixture, mock, or static contract proves real Windows, PowerShell, UAC, tray, browser, or Emby DOM behavior.
 - Preserve unrelated contributor changes. Do not perform broad cleanup, global replacement, history rewriting, dependency upgrades, or architecture migrations unless they are in the reviewed task scope.

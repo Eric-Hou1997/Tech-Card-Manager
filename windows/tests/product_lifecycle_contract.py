@@ -12,8 +12,8 @@ tray = (ROOT / "tray_windows.go").read_text(encoding="utf-8")
 engine = (ROOT / "engine" / "windows-engine.ps1").read_text(encoding="utf-8-sig")
 card = (ROOT / "engine" / "technical-specs-card.js").read_text(encoding="utf-8")
 web = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
-logo = (ROOT / "assets" / "imdb-app-icon.png").read_bytes()
-EXPECTED_LOGO_SHA256 = "4abaf9c521b1422fb1a5de3f0175b28dc023896e4cd70f436b1f407a1444118f"
+logo = (ROOT / "assets" / "TCM_logo_letter_only.png").read_bytes()
+EXPECTED_LOGO_SHA256 = "cdb3c349795c404f9fb09274346e83d3ca03d9028a2f48319d86c66a682fae51"
 
 checks = {
     "single visual owner, no resident agent loop": (
@@ -80,19 +80,18 @@ checks = {
     ]),
     "header matches product naming": all(x in web for x in [
         "<title>Tech Card Manager</title>", "v4.0.0",
-        "Emby Server 技术规格卡片", 'src="../assets/imdb-app-icon.png"',
+        "Emby Server 技术规格卡片", 'src="/assets/TCM_logo_letter_only.png"',
     ]) and "IMDb Tech Manager Windows" not in web,
     "formal display name is consistent across runtime surfaces": (
-        "Tech-Card-Manager" not in main + platform + tray + engine + web
-        and all(x in main + platform + tray + engine + web for x in [
+        all(x in main + platform + tray + engine + web for x in [
             "Tech Card Manager", 'const winRunValueName = "Tech Card Manager"',
         ])
     ),
     "logo works in file preview and the packaged HTTP app": (
-        'href="../assets/imdb-app-icon.png"' in web
-        and '//go:embed web/index.html engine/windows-engine.ps1 engine/technical-specs-card.js assets/imdb-app-icon.png' in main
-        and 'mux.HandleFunc("/assets/imdb-app-icon.png", serveAppIcon)' in main
-        and 'assets.ReadFile("assets/imdb-app-icon.png")' in main
+        'href="/assets/TCM_logo_letter_only.png"' in web
+        and '//go:embed web/index.html engine/windows-engine.ps1 engine/technical-specs-card.js assets/TCM_logo_letter_only.png assets/TCM_logo_tiny.png' in main
+        and 'mux.HandleFunc("/assets/TCM_logo_letter_only.png", serveAppIcon("assets/TCM_logo_letter_only.png"))' in main
+        and 'assets.ReadFile(name)' in main
         and 'w.Header().Set("Content-Type", "image/png")' in main
         and logo.startswith(b"\x89PNG\r\n\x1a\n")
         and len(logo) >= 24

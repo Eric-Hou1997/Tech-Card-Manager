@@ -2,6 +2,8 @@
 
 面向 Emby Server 的只读 NFO 索引与网页技术规格卡片管理器。
 
+这是完整开源的正式源码仓库，采用 [Apache License 2.0](LICENSE)。作者：侯雁泽。
+
 当前源码平台：
 
 - `windows/`：Windows x64 Portable GUI 源码。
@@ -17,5 +19,13 @@
 - 对旧组件的检测、迁移和网页补丁恢复必须由用户明确确认，并保留可验证备份。
 - 发布前必须运行 `tools/test-source.sh`，并在真实 Windows、PowerShell、UAC、托盘和 Emby DOM 环境完成验收。
 - 发布产物只能是包含 GUI `.exe` 的 ZIP；源码验证与交叉编译不能替代真实平台验收。
+- 设置页可检查 GitHub 正式发布。Portable 版本不会自动替换 EXE：用户确认后才会打开 GitHub Release 页面；应先从托盘完全退出软件，再只替换 EXE，保留数据目录。
+
+## 文档与声明
+
+- [隐私政策](PRIVACY.md)
+- [使用条款](TERMS.md)
+- [安全与更新说明](SECURITY.md)
+- [开源通知](NOTICE)
 
 本仓库从 v4.0.0 起独立维护，正式产品名为 Tech Card Manager；仓库目录与机器友好的发布文件名使用 `Tech-Card-Manager`。默认开发主线为 `main`。

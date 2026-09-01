@@ -97,7 +97,7 @@ checks = {
         "$ParserCacheVersion = 'tech-card-cache-1'", "./generatedtags", "./manualtags",
         "Get-CanonicalTagValue", "ownership = 'external'", "ownership = 'generated'",
         "tag.ownership==='generated'", "managerGenerated",
-        "IMDb Tech Manager 生成（来自 NFO ownership 清单）",
+        "本程序生成（来自 NFO ownership 清单）",
     ]) and "Never guess ownership from a tag's wording" in engine,
     "failed UI cleanup keeps Manager alive for retry": all(x in main + platform for x in [
         "platformShowShutdownError", "restoreManagerWindow()",
@@ -115,7 +115,7 @@ checks = {
         "time.NewTimer(timeout)",
     ]),
     "legacy dialog distinguishes components and states the exact action": all(x in web for x in [
-        "检测到旧版 IMDb Tech Manager 组件", "旧程序、后台组件或网页卡片",
+        "检测到旧版 Card 软件组件", "旧程序、后台组件或网页卡片",
         "迁移所列组件并继续",
     ]) and 'CommandLine string `json:"-"`' in service,
 }
