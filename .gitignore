@@ -1,0 +1,16 @@
+.DS_Store
+.SynologyWorkingDirectory/
+Icon?
+__pycache__/
+*.py[cod]
+*.tmp
+*.log
+.env
+*.local.json
+runtime/
+data/
+backup/
+updates/
+build/
+dist/
+releases/

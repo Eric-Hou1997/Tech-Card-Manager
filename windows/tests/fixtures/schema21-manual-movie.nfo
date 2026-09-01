@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<movie>
+  <title>Schema 21 测试电影</title>
+  <uniqueid type="imdb">tt2557478</uniqueid>
+  <technicalspecs source="IMDb" imdbid="tt2557478" mediatype="movie" fetched="2026-08-19T00:00:00+00:00" formatVersion="21" specHash="effective" sourceSpecHash="source" factOrigin="imdb" modified="manual" modifiedAt="2026-08-19T10:00:00+00:00" status="ok">
+    <section name="Camera"><item>用户认可的摄影机</item></section>
+    <section name="Sound mix"><item>Dolby Atmos</item></section>
+    <url>https://www.imdb.com/title/tt2557478/technical/</url>
+    <sourcesnapshot factOrigin="imdb" fetched="2026-08-19T00:00:00+00:00" specHash="source">
+      <section name="Camera"><item>IMDb 原始摄影机</item></section>
+      <section name="Sound mix"><item>IMDb 原始声音</item></section>
+    </sourcesnapshot>
+    <generatedtags schema="2" owner="IMDb Tech Manager" engine="ai" specHash="effective" state="current">
+      <tag id="generated-1" origin="generated" field="Camera" sourceIndexes="0">用户认可的摄影机</tag>
+    </generatedtags>
+    <manualtags owner="IMDb Tech Manager" schema="1">
+      <tag id="manual-1" origin="manual-add">手工设备标签</tag>
+    </manualtags>
+  </technicalspecs>
+</movie>

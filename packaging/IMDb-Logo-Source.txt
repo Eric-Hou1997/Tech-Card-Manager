@@ -1,0 +1,4 @@
+IMDb Logo source
+https://brand.imdb.com/imdb
+Official IMDb brand toolkit / IMDb brand asset.
+Logo geometry is preserved; no non-uniform scaling is applied.

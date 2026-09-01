@@ -1,0 +1,72 @@
+# Tech Card Manager repository instructions
+
+These instructions are part of the public repository. Apply them to every change in this repository, including changes made in a fork. A fork does not imply authority to publish an official upstream release.
+
+## Maintainer shorthand
+
+- In maintainer conversations only, `card软件` means the Tech Card Manager product in this repository, and `tech软件` means the separate IMDb-Tech-Manager product.
+- These shorthand terms are coordination language, not product branding. Never place `card软件` or `tech软件` in user-facing UI, logs, packages, release names, or marketing copy.
+
+## Repository identity and source of truth
+
+- The formal product name is `Tech Card Manager`. Use it in current UI text, window/tray titles, services, logs, documentation, and other user-visible copy.
+- The repository directory and hosting-site slug are `Tech-Card-Manager`. Machine-oriented artifact filenames may use this hyphenated slug, but it is not the display name.
+- Source history starts at `v4.0.0`; do not import or graft earlier product history, release artifacts, changelogs, tags, or version labels into this repository.
+- The authoritative development line is `main`. Follow the maintainer's branch and review workflow, and never rewrite published history without explicit authorization.
+- The repository is organized by product, not permanently by operating system. The currently supported implementation is the Windows x64 application under `windows/`. A future macOS port belongs here only when explicitly scoped, and it must remain the same read-only Card Manager product.
+- Do not copy IMDb scraping, NFO editing, AI/rule tag production, batch ownership management, or the `IMDb-Tech-Manager` product identity into a platform port of this repository.
+- Platform-specific files or build stubs are not proof that a platform is supported. Support requires a complete product flow, packaging rules, tests, and real-platform acceptance.
+- Inspect the current source, root README, release-note sources, tests, and embedded assets before editing. Extend the existing Go Core, local Web UI, PowerShell engine, tray, and browser integration architecture; do not replace the desktop stack or rewrite the product from scratch.
+- Tests are evidence, not a complete behavior specification. Add characterization coverage before changing NFO parsing, legacy detection, Web Card patching, task scope, persistence, elevation, or lifecycle ownership.
+
+## Repository and contribution hygiene
+
+- Keep product code, documentation, filenames, UI text, package metadata, and artifacts free of prerelease branding and pre-repository product version labels. Do not confuse compatibility identifiers with current branding.
+- Do not commit local configuration, credentials, tokens, caches, browser profiles, logs, generated binaries, packaged executables, backups copied from a user's Emby installation, or release archives.
+- Do not add or change the repository license, trademark policy, or asset-redistribution claims without an explicit maintainer decision. A brand-source URL records provenance; it is not by itself a software or asset license.
+- Treat `packaging/` as release-input source and `tools/build-release.sh` as a release recipe. Their presence does not mean that a package has been built, validated, tagged, or published.
+- Do not claim that a source checkout, cross-build, fixture, mock, or static contract proves real Windows, PowerShell, UAC, tray, browser, or Emby DOM behavior.
+- Preserve unrelated contributor changes. Do not perform broad cleanup, global replacement, history rewriting, dependency upgrades, or architecture migrations unless they are in the reviewed task scope.
+- Do not assume access to a maintainer's local folders, private issue archives, previous repositories, credentials, Emby server, or release systems. The public repository must remain understandable and testable on its own.
+
+## Product responsibilities and read-only boundary
+
+- Tech Card Manager is a read-only Emby NFO index and Web Card manager on every platform.
+- It may read configured Movie and TV library roots, build its own derived index, serve card assets, and transactionally install, upgrade, or remove the Web Card integration in Emby's web files.
+- It must never scrape IMDb, modify media NFO files, generate or delete tags, run AI/Qwen/Prompt/Token workflows, edit Technical Specs, or migrate NFO ownership.
+- Movie and TV are separate spaces with independent roots, selection, filters, refresh scopes, and visible state. “Refresh current library” must not silently scan the other space; full-library work is never the default.
+- NFO ownership metadata may be displayed as read-only evidence. Never infer ownership from tag text and never rewrite the metadata.
+- Errors identify the affected title, year, IMDb ID, full NFO path, media kind, and task when those fields are available, and UI errors must link back to the indexed item.
+
+## Compatibility identifiers are data, not branding
+
+- Existing `IMDbTechManager WebPatch` markers, related mutex/lock identifiers, the old Windows Run value, legacy executable detection, and ownership value `IMDb Tech Manager` are compatibility and provenance evidence. They intentionally identify artifacts created outside the current product identity.
+- Do not globally replace those identifiers with `Tech Card Manager`, and do not present them as the current product name. Any change requires an explicit migration design, backward-compatible detection, rollback, and regression coverage against existing installations and NFO fixtures.
+- Legacy process or component detection must use authoritative path, command-line, marker, manifest, and/or ownership evidence as appropriate. A process name, window title, stale PID, or text resemblance alone is never sufficient.
+- Unknown or conflicting legacy ownership remains unclaimed. Cleanup must stop safely rather than delete, terminate, or overwrite an uncertain target.
+
+## Web integration safety and lifecycle
+
+- Media NFO files are read-only. Preserve their bytes and timestamps; index generation must not “normalize,” repair, or rewrite them.
+- Emby Web Card installation or removal must validate the exact target, establish and verify a recoverable external backup, build a complete candidate, preserve required BOM/newline behavior, and commit transactionally. Partial or unverifiable work must roll back and report failure.
+- Old-component migration, process termination, patch replacement, and destructive maintenance require a visible itemized plan and explicit user confirmation. Revalidate every target immediately before mutation and verify the postcondition afterward.
+- Give every window, tray icon, browser profile, child/elevated process, timer, observer, job, port, lease, lock, temporary file, backup, and service one explicit owner with idempotent creation and synchronously verified shutdown.
+- Second launch, repeated clicks, restore/minimize, upgrade, cancel, service stop, tray exit, and application exit must not create duplicate UI/resources or leave services, patches, locks, or processes in an ambiguous state.
+
+## Product maturity
+
+- A feature is complete only when its real chain is proven: configured roots -> parsed read-only NFO -> derived index -> served assets -> browser/client load -> visible cards -> stop and cleanup behavior.
+- Status must distinguish requested, running, disk-ready, service-served, client-loaded, rendered, stopped, failed, and unverified states. Never report success from an intermediate prerequisite.
+- Core setup, permissions/elevation, progress, cancellation, recovery, and actionable failures must be visible in normal product flows. Long work must provide honest phase/progress feedback.
+- Preserve structured failure reasons and surface concise actionable messages; do not swallow errors that affect visible behavior.
+- Proactively audit normal, first-run, empty, slow, cancelled, minimized/restored, repeated-click, second-launch, upgrade, rollback, partial-failure, crash-recovery, offline, permission-denied, and exit paths.
+- Add behavioral and state-transition regression coverage for every defect and adjacent negative path. Source-string assertions alone are not sufficient proof.
+
+## Verification and release boundary
+
+- For relevant changes, run all Windows Python contract/regression tests, JavaScript syntax checks, Go tests and vet, architecture checks, and the Windows x64 GUI cross-build. Report commands, results, migrations, modified files, and all untested real-platform items.
+- Preserve regression coverage for LOWORD exit-code handling, BOM/newline-safe Web Card patching, read-only NFO behavior, legacy compatibility, elevation results, Movie/TV scope, and lifecycle cleanup.
+- Real Windows x64 tray/process behavior, PowerShell 5.1, UAC/elevation, login startup, browser loading, and real Emby DOM/installation behavior are explicit acceptance boundaries; cross-compilation cannot satisfy them.
+- The current formal Windows deliverable is a GUI x64 `.exe` contained in a ZIP. Never place a bare `.exe` in `releases/`. Do not infer packaging rules for a future platform port; define and verify them when that port is explicitly undertaken.
+- Audit the exact release range and all primary flows before packaging. Create a new version rather than overwrite an artifact.
+- Do not build a release package, create a tag, push, or publish a release unless the maintainer explicitly requests that release after review. A successful build alone is not release approval.
