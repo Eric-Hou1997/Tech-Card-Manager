@@ -32,8 +32,8 @@ $RootStateFile = Join-Path $CustomDir 'manager-root-state.json'
 $LibraryDb = Join-Path $EmbyRoot 'programdata\data\library.db'
 $XmlErrorFile = Join-Path $CustomDir 'manager-xml-errors.json'
 $CatalogFile = Join-Path $CustomDir 'manager-catalog.json'
-$ExpectedWebCardVersion = '4.0.2'
-$ManagerVersion = '4.0.2'
+$ExpectedWebCardVersion = '4.0.3'
+$ManagerVersion = '4.0.3'
 $ParserCacheVersion = 'tech-card-cache-1'
 $PatchBegin = '<!-- IMDbTechManager WebPatch BEGIN -->'
 $PatchEnd = '<!-- IMDbTechManager WebPatch END -->'
@@ -2324,9 +2324,9 @@ try {
 Write-Host '✅ 已确保旧的每分钟 PowerShell 计划任务不存在。' -ForegroundColor Green
 
 Write-Host ''
-Write-Host '✅ Tech Card Manager Windows 4.0.2 Portable 索引引擎启用完成。' -ForegroundColor Green
+Write-Host '✅ Tech Card Manager Windows 4.0.3 Portable 索引引擎启用完成。' -ForegroundColor Green
 Write-Host ''
-Write-Host 'Tech Card Manager 4.0.2 支持 Portable 数据目录、用户选择媒体目录、目录级扫描与只读 NFO 目录。'
+Write-Host 'Tech Card Manager 4.0.3 支持 Portable 数据目录、用户选择媒体目录、目录级扫描与只读 NFO 目录。'
 Write-Host '安全边界：后台增量检查永不改动 Emby index.html；Web Card 只在用户点击安装/修复时执行事务化注入。'
 Write-Host '支持多个电影库/电视剧库、同一虚拟库多个物理路径和混合库；离线根保留缓存，恢复后自动续扫。'
 Write-Host '网页卡片：电影优先沿用真实视频卡片，ISO/BDMV 使用独立卡片；电视剧只在节目首页展示，季和单集页面不显示；页面切换后自动校验条目身份。'

@@ -71,6 +71,7 @@ These instructions are part of the public repository. Apply them to every change
 - The current formal Windows deliverable is a GUI x64 `.exe` contained in a ZIP. Never place a bare `.exe` in `releases/`. Do not infer packaging rules for a future platform port; define and verify them when that port is explicitly undertaken.
 - Audit the exact release range and all primary flows before packaging. Create a new version rather than overwrite an artifact.
 - Do not build a release package, create a tag, push, or publish a release unless the maintainer explicitly requests that release after review. A successful build alone is not release approval.
+- Do not add the phrase “修复一些提交初期的草台班子问题” to release notes unless the maintainer explicitly asks for that exact phrase for that release.
 
 ## Release naming, tags, and update-package compatibility
 

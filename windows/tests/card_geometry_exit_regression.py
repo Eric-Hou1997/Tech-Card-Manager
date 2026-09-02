@@ -18,13 +18,13 @@ confirm_end = platform.index("\nfunc openPath", confirm_start)
 confirm_exit = platform[confirm_start:confirm_end]
 
 checks = {
-    "v4.0.2 source versions are synchronized": all(value in source for source, value in [
-        (main, 'const appVersion = "4.0.2"'),
-        (engine, "$ManagerVersion = '4.0.2'"),
-        (web, "v4.0.2"),
-        (card, 'const WEB_CARD_VERSION = "4.0.2"'),
-        (engine, "$ExpectedWebCardVersion = '4.0.2'"),
-        (platform, 'const expectedWebCardVersion = "4.0.2"'),
+    "v4.0.3 source versions are synchronized": all(value in source for source, value in [
+        (main, 'const appVersion = "4.0.3"'),
+        (engine, "$ManagerVersion = '4.0.3'"),
+        (web, "v4.0.3"),
+        (card, 'const WEB_CARD_VERSION = "4.0.3"'),
+        (engine, "$ExpectedWebCardVersion = '4.0.3'"),
+        (platform, 'const expectedWebCardVersion = "4.0.3"'),
     ]),
     "geometry reset is scoped to Manager cards": all(value in card for value in [
         "[data-tech-spec-card='1'] .cardContent",

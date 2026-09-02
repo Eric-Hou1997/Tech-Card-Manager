@@ -26,7 +26,7 @@ import (
 const oldWinTaskName = "Emby Technical Specs Web Card"
 const winRunValueName = "Tech Card Manager"
 const legacyWinRunValueName = "IMDb Tech Manager Agent"
-const expectedWebCardVersion = "4.0.2"
+const expectedWebCardVersion = "4.0.3"
 
 func baseDir() string {
 	return filepath.Join(portableRootDir(), "data")
@@ -784,7 +784,7 @@ func collectStatus() (Status, error) {
 		Notes: []string{
 			"服务由可视化 Manager 主进程拥有；最小化继续运行，关闭窗口停止全部服务。",
 			"停止服务会失效运行许可，Emby 页面随后撤下本程序拥有的技术规格卡片。",
-			"网页卡片 v4.0.2：后台索引永不修改 Emby index.html，网页维护仍需用户明确确认。",
+			"网页卡片 v4.0.3：后台索引永不修改 Emby index.html，网页维护仍需用户明确确认。",
 		},
 		Paths: map[string]string{
 			"emby_root":       embyRoot(),

@@ -14,16 +14,16 @@ update = (ROOT / "update.go").read_text(encoding="utf-8")
 checks = {
     "formal version is synchronized": all(
         value in source for source, value in [
-            (main, 'const appVersion = "4.0.2"'),
-            (web, "v4.0.2"),
-            (engine, "$ManagerVersion = '4.0.2'"),
-            (engine, "$ExpectedWebCardVersion = '4.0.2'"),
-            (platform, 'const expectedWebCardVersion = "4.0.2"'),
-            (card, 'const WEB_CARD_VERSION = "4.0.2"'),
+            (main, 'const appVersion = "4.0.3"'),
+            (web, "v4.0.3"),
+            (engine, "$ManagerVersion = '4.0.3'"),
+            (engine, "$ExpectedWebCardVersion = '4.0.3'"),
+            (platform, 'const expectedWebCardVersion = "4.0.3"'),
+            (card, 'const WEB_CARD_VERSION = "4.0.3"'),
         ]
     ),
     "about metadata has a real release date": (
-        "v4.0.2　2026-09-02 发布　Windows · x64 Portable" in web
+        "v4.0.3　2026-09-02 发布　Windows · x64 Portable" in web
         and "正式发布时写入日期" not in web
     ),
     "every settings path starts an update check": (
@@ -73,4 +73,4 @@ for name, ok in checks.items():
     print(("OK  " if ok else "FAIL ") + name)
 if failed:
     raise SystemExit("Windows release metadata/update contract failed: " + ", ".join(failed))
-print("OK Tech Card Manager v4.0.2 release metadata and settings update contract")
+print("OK Tech Card Manager v4.0.3 release metadata and settings update contract")

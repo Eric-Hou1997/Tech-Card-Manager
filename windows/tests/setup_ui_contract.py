@@ -45,6 +45,31 @@ checks = {
         in platform
     ),
     "setup copy points to the visible action": "点击下方按钮完成" in web,
+    "settings header stays available while the modal scrolls": all(
+        value in web
+        for value in [
+            "#settingsBackdrop .modal{display:flex;flex-direction:column;overflow:hidden;padding:0}",
+            "#settingsBackdrop .settingsBody{min-height:0;overflow:auto;padding:16px 20px 20px}",
+            '<div class="settingsBody" id="settingsContent">',
+            "data-close-modal=\"settingsBackdrop\" aria-label=\"关闭\"",
+            '<div class="setupFlowIntro">配置媒体目录和检查周期</div>',
+        ]
+    ) and '<div class="muted">配置媒体目录和检查周期</div>' not in web and "settingsContent.insertAdjacentHTML('afterbegin'" in web,
+    "settings has one persistent close control and no redundant done button": (
+        web.count('data-close-modal="settingsBackdrop"') == 1
+        and ">完成</button>" not in web
+    ),
+    "media-directory setup uses the standard settings-heading treatment": all(
+        value in web
+        for value in [
+            '<div class="settingGroup"><h3>设置媒体目录</h3>',
+            "#settingsBackdrop .settingGroup h3{color:var(--text);font-size:14px;font-weight:700}",
+        ]
+    ),
+    "setup-flow introduction matches standard settings-heading emphasis": (
+        ".setupFlowIntro{margin:0 0 10px;color:var(--text);font-size:14px;font-weight:700}"
+        in web
+    ),
 }
 
 failed = [name for name, ok in checks.items() if not ok]

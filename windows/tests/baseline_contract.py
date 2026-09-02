@@ -10,7 +10,7 @@ engine = engine_bytes.decode('utf-8-sig')
 web = (ROOT / 'web' / 'index.html').read_text(encoding='utf-8')
 
 checks = {
-    'manager version 4.0.2': 'const appVersion = "4.0.2"' in main,
+    'manager version 4.0.3': 'const appVersion = "4.0.3"' in main,
     'PowerShell source has UTF-8 BOM': engine_bytes.startswith(b'\xef\xbb\xbf'),
     'installed PowerShell BOM is enforced': 'withUTF8BOM' in main,
     'configured roots are persisted': all(x in main for x in ['LibraryRoot', 'library_roots', 'roots_configured']),
