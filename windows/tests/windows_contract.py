@@ -7,17 +7,17 @@ card=(ROOT/'engine/technical-specs-card.js').read_text(encoding='utf-8')
 platform=(ROOT/'platform_windows.go').read_text(encoding='utf-8')
 tray=(ROOT/'tray_windows.go').read_text(encoding='utf-8')
 checks={
- 'manager version 4.0.1':'const appVersion = "4.0.1"' in main,
+ 'manager version 4.0.2':'const appVersion = "4.0.2"' in main,
  'windows-only embed':'engine/mac-engine.py' not in main and 'engine/windows-engine.ps1' in main,
  'no AI runtime UI':all(x not in web for x in ['AI Runtime','Qwen','AI 智能生成 Tag','本地自动生成 Tag','System Prompt','ai-generate','local-rebuild']),
  'no AI runtime code':all(x not in main for x in ['AIConfig','defaultAIPrompt','/api/ai-config','ai-generate','local-rebuild']),
  'no imdb producer actions':all(x not in main for x in ['"backfill"','"reconcile"','"refresh"','"test-imdb"']),
- 'card v4.0.1':'const WEB_CARD_VERSION = "4.0.1"' in card,
+ 'card v4.0.2':'const WEB_CARD_VERSION = "4.0.2"' in card,
  'movie series eligible':'CARD_ELIGIBLE_TYPES = new Set(["Movie", "Series"])' in card,
  'episode season suppressed':'CARD_SUPPRESSED_TYPES = new Set(["Episode", "Season"])' in card,
  'iso native hierarchy':'getOrCreateNativeTarget(detailRoot)' in card and 'createNativeMediaHost' in card,
  'spa watchdog':'stale-card-watchdog' in card and 'item-watchdog' in card and 'misplaced-card-watchdog' not in card,
- 'windows card version':"$ExpectedWebCardVersion = '4.0.1'" in win,
+ 'windows card version':"$ExpectedWebCardVersion = '4.0.2'" in win,
  'no historical js overwrite':'$JsBase64' not in win and 'FromBase64String' not in win,
  'episode and season excluded from public index':"([string]$obj.type) -eq 'Episode' -or ([string]$obj.type) -eq 'Season'" in win and 'episodeSpecsExcludedFromWeb' in win,
  'read-only positioning':'technicalspecs' in win.lower(),

@@ -1,4 +1,4 @@
-Tech Card Manager Windows v4.0.1 - Changelog
+Tech Card Manager Windows v4.0.2 - Changelog
 ==================================================
 
 Release scope
@@ -15,7 +15,7 @@ Manager UI and lifecycle
 - 更新检查增加并发保护，重复打开或点击不会同时发起多次请求。
 - 界面标题、日志、托盘、自启动项、PowerShell 输出和系统对话框统一使用正式产品名 Tech Card Manager；仓库与发布文件名继续使用机器友好的 `Tech-Card-Manager`。
 - 设置加入登录后启动选项；Windows 可选“仅在登录启动时最小化到托盘”。
-- 保存并恢复语言偏好（简体中文、English (United States)）；4.0.1 的界面暂不切换语言，避免把只读 NFO/技术规格数据误当作可翻译内容。
+- 保存并恢复语言偏好（简体中文、English (United States)）；4.0.2 的界面暂不切换语言，避免把只读 NFO/技术规格数据误当作可翻译内容。
 - 电影与电视剧空间的“刷新当前媒体库”按当前分类选择扫描根目录，降低无关扫描。
 - 启动与托盘偏好使用同一份持久化状态，避免静默启动独立于登录启动而产生歧义。
 
@@ -27,6 +27,6 @@ Platform boundary
 Validation status
 -----------------
 
-- 当前源码基线已通过全部 Windows Python contract/regression tests、v4.0.1 Go 设置/刷新范围测试、JavaScript 语法、Windows x64 Go test compilation、go vet 和 GUI cross-build。
+- 当前源码基线已通过全部 Windows Python contract/regression tests、v4.0.2 Go 设置/刷新范围测试、JavaScript 语法、Windows x64 Go test compilation、go vet 和 GUI cross-build。
 - 当前尚未生成正式发布包，因此不声明 ZIP 内容或 SHA256 已通过发布验证。
 - 真实 Windows、PowerShell 5.1、UAC、托盘及真实 Emby DOM 仍需要目标机器验收。

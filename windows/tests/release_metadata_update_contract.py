@@ -14,16 +14,16 @@ update = (ROOT / "update.go").read_text(encoding="utf-8")
 checks = {
     "formal version is synchronized": all(
         value in source for source, value in [
-            (main, 'const appVersion = "4.0.1"'),
-            (web, "v4.0.1"),
-            (engine, "$ManagerVersion = '4.0.1'"),
-            (engine, "$ExpectedWebCardVersion = '4.0.1'"),
-            (platform, 'const expectedWebCardVersion = "4.0.1"'),
-            (card, 'const WEB_CARD_VERSION = "4.0.1"'),
+            (main, 'const appVersion = "4.0.2"'),
+            (web, "v4.0.2"),
+            (engine, "$ManagerVersion = '4.0.2'"),
+            (engine, "$ExpectedWebCardVersion = '4.0.2'"),
+            (platform, 'const expectedWebCardVersion = "4.0.2"'),
+            (card, 'const WEB_CARD_VERSION = "4.0.2"'),
         ]
     ),
     "about metadata has a real release date": (
-        "v4.0.1　2026-09-02 发布　Windows · x64 Portable" in web
+        "v4.0.2　2026-09-02 发布　Windows · x64 Portable" in web
         and "正式发布时写入日期" not in web
     ),
     "every settings path starts an update check": (
@@ -39,6 +39,12 @@ checks = {
             "已是最新版本 ",
             "最新版本 ",
             "检查失败：",
+        ]
+    ),
+    "about icons and download actions have resilient spacing": all(
+        value in web for value in [
+            ".aboutHead img{width:44px;height:32px}",
+            ".aboutInstall>div:last-child{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}",
         ]
     ),
     "repeated settings opens cannot overlap checks": (
@@ -67,4 +73,4 @@ for name, ok in checks.items():
     print(("OK  " if ok else "FAIL ") + name)
 if failed:
     raise SystemExit("Windows release metadata/update contract failed: " + ", ".join(failed))
-print("OK Tech Card Manager v4.0.1 release metadata and settings update contract")
+print("OK Tech Card Manager v4.0.2 release metadata and settings update contract")

@@ -11,10 +11,10 @@ card = (ROOT / "engine" / "technical-specs-card.js").read_text(encoding="utf-8")
 web = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
 
 checks = {
-    "manager version 4.0.1": 'const appVersion = "4.0.1"' in main,
-    "web ui version 4.0.1": '4.0.1' in web,
-    "web card version 4.0.1": 'const WEB_CARD_VERSION = "4.0.1"' in card,
-    "engine expects card 4.0.1": "$ExpectedWebCardVersion = '4.0.1'" in engine,
+    "manager version 4.0.2": 'const appVersion = "4.0.2"' in main,
+    "web ui version 4.0.2": '4.0.2' in web,
+    "web card version 4.0.2": 'const WEB_CARD_VERSION = "4.0.2"' in card,
+    "engine expects card 4.0.2": "$ExpectedWebCardVersion = '4.0.2'" in engine,
     # Bug 1: catalog is actually generated now (search had no results because
     # nothing ever wrote manager-catalog.json in the earlier implementation).
     "catalog rows are built from the path-keyed cache": all(

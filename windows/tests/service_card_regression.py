@@ -15,14 +15,14 @@ visible_guard = card.split("function isRenderedCardVisible(card)", 1)[1].split(
 
 checks = {
     "legacy source version is synchronized": all(value in source for source, value in [
-        (main, 'const appVersion = "4.0.1"'),
-        (engine, "$ManagerVersion = '4.0.1'"),
-        (web, "v4.0.1"),
+        (main, 'const appVersion = "4.0.2"'),
+        (engine, "$ManagerVersion = '4.0.2'"),
+        (web, "v4.0.2"),
     ]),
     "Web Card cache version advances everywhere": all(value in source for source, value in [
-        (card, 'const WEB_CARD_VERSION = "4.0.1"'),
-        (engine, "$ExpectedWebCardVersion = '4.0.1'"),
-        (platform, 'const expectedWebCardVersion = "4.0.1"'),
+        (card, 'const WEB_CARD_VERSION = "4.0.2"'),
+        (engine, "$ExpectedWebCardVersion = '4.0.2'"),
+        (platform, 'const expectedWebCardVersion = "4.0.2"'),
     ]),
     "technical card and native descendants grow with meaningful content": all(value in card for value in [
         ".cardBox",

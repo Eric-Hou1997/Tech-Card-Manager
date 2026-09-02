@@ -16,10 +16,10 @@ confirm_exit = main[confirm_start:confirm_end]
 confirmed_exit = confirm_exit[confirm_exit.index("platformHideManagerWindow()"):]
 
 checks = {
-    "manager version is 4.0.1": all(x in main + engine + web for x in [
-        'const appVersion = "4.0.1"',
-        "$ManagerVersion = '4.0.1'",
-        "v4.0.1",
+    "manager version is 4.0.2": all(x in main + engine + web for x in [
+        'const appVersion = "4.0.2"',
+        "$ManagerVersion = '4.0.2'",
+        "v4.0.2",
     ]),
     "cross-folder upgrade accepts only one exact owned block": all(x in engine for x in [
         "$strictOwnedPatch", "$insideScriptCount -eq 1", "$scriptCount -eq 1",

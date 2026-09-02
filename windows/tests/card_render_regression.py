@@ -12,9 +12,9 @@ checks = {
     "web card cache key is bumped across all components": all(
         value in source
         for source, value in [
-            (card, 'const WEB_CARD_VERSION = "4.0.1"'),
-            (engine, "$ExpectedWebCardVersion = '4.0.1'"),
-            (platform, 'const expectedWebCardVersion = "4.0.1"'),
+            (card, 'const WEB_CARD_VERSION = "4.0.2"'),
+            (engine, "$ExpectedWebCardVersion = '4.0.2'"),
+            (platform, 'const expectedWebCardVersion = "4.0.2"'),
         ]
     ),
     "real Emby detail roots are accepted": all(
