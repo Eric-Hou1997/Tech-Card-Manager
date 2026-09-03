@@ -50,7 +50,7 @@ checks = {
         for value in [
             "#settingsBackdrop .modal{display:flex;flex-direction:column;overflow:hidden;padding:0}",
             "#settingsBackdrop .settingsBody{min-height:0;overflow:auto;padding:16px 20px 20px}",
-            '<div class="settingsBody" id="settingsContent">',
+            '<div class="settingsBody scrollSurface" id="settingsContent">',
             "data-close-modal=\"settingsBackdrop\" aria-label=\"关闭\"",
             '<div class="setupFlowIntro">配置媒体目录和检查周期</div>',
         ]
