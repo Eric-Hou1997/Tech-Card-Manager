@@ -2,7 +2,7 @@
 
 # Tech Card Manager
 
-[简体中文](./README.md) | **English**
+[简体中文](./README.md) | [繁體中文](./README.zh-Hant.md) | **English** | [Français](./README.fr.md) | [Русский](./README.ru.md) | [日本語](./README.ja.md) | [Español](./README.es.md) | [ไทย](./README.th.md)
 
 <p align="center">
 
@@ -60,7 +60,7 @@ The core goals of TCM are to:
 * Safely maintain the Emby Technical Specifications Web Card
 * Provide a Windows GUI, system-tray integration, and local service suitable for long-running use
 * Keep important states, errors, and maintenance operations observable and verifiable
-* Support Simplified Chinese and English across the Manager, task output, and native entry points while preserving stable extension points for more languages
+* Include Simplified Chinese, Traditional Chinese, and English (United States), with version-bound packs for French, Russian, Japanese, Spanish, and Thai
 
 ---
 
@@ -109,7 +109,7 @@ Web Card maintenance and media NFO data are two completely separate operation do
 
 TCM may maintain Emby Web integration files, but **it does not modify media NFO files as part of that process**.
 
-The Manager can switch instantly between Simplified Chinese and English (United States) in Settings without reloading or clearing current UI state. The Emby Web Card uses an independent locale registry: Chinese and English use their translated display labels, while other untranslated Emby locales fall back to Chinese. Technical Specs keys such as `Camera` and `Sound mix`, and the underlying data structure, never change with the display language.
+The Manager can switch instantly among Simplified Chinese, Traditional Chinese, and English (United States) without reloading or clearing current UI state. French, Russian, Japanese, Spanish, and Thai are separate assets on the `v4.1.0` GitHub Release and load only after download and verification. The Emby Web Card has an independent locale registry; uninstalled or unsupported Emby locales fall back to Simplified Chinese. Technical Specs keys such as `Camera` and `Sound mix`, and the underlying data structure, never change with the display language.
 
 ---
 
@@ -558,6 +558,12 @@ Go to:
 
 The project does not publish a standalone bare `.exe` as a Release asset.
 
+The current official package is:
+
+```text
+TCM-v4.1.0-Windows-x64-EXE.zip
+```
+
 ---
 
 ### 2. Extract the ZIP Completely
@@ -567,7 +573,7 @@ Extract the entire ZIP into a fixed directory first.
 Then run:
 
 ```text
-Tech-Card-Manager-Windows-x64-vx.x.x.exe
+Tech-Card-Manager.exe
 ```
 
 Do not run the application directly from inside the compressed archive.
@@ -660,7 +666,7 @@ Verify Runtime Status
 The Release also provides:
 
 ```text
-SHA256SUMS-Tech-Card-Manager-Windows-v4.0.0.txt
+TCM-v4.1.0-Windows-x64-EXE-SHA256SUMS.txt
 ```
 
 for package-integrity verification.
@@ -752,7 +758,7 @@ Currently available:
 
 * Complete public source code
 * Windows x64 Portable GUI
-* v4.0.0 Release
+* v4.1.0 Release
 * SHA-256 checksum file
 * Read-only NFO indexing
 * Emby Technical Specifications Web Card
@@ -787,6 +793,12 @@ Currently available:
 * [x] Establish base regression tests
 * [x] Establish the Release build workflow
 * [x] Publish the first public release, `v4.0.0`
+* [x] Release the `v4.1.0` localization registry and version-bound language packs
+* [x] Complete the built-in Simplified Chinese, Traditional Chinese, and English (United States) interfaces
+* [x] Publish French, Russian, Japanese, Spanish, and Thai language packs
+* [x] Freeze new-task log language while preserving historical logs, indexes, and NFO bytes
+* [x] Distinguish proxy/network, GitHub throttling, missing-asset, and download failures
+* [x] Complete content-measured responsive layouts for the header, dashboard, and NFO toolbar
 
 ### In Progress
 
@@ -801,7 +813,6 @@ Currently available:
 * [ ] Add more real Windows / Emby regression tests
 * [ ] Improve Manager status visualization
 * [ ] Improve settings UX
-* [ ] Complete the English UI
 * [ ] Improve the Portable update experience
 * [ ] Continue improving `AGENTS.md`
 * [ ] Continue improving Coding Agent Context

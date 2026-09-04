@@ -2,7 +2,7 @@
 
 # Tech Card Manager
 
-**简体中文** | [English](./README.en.md)
+**简体中文** | [繁體中文](./README.zh-Hant.md) | [English](./README.en.md) | [Français](./README.fr.md) | [Русский](./README.ru.md) | [日本語](./README.ja.md) | [Español](./README.es.md) | [ไทย](./README.th.md)
 
 <p align="center">
 
@@ -60,7 +60,7 @@ TCM 的核心目标包括：
 * 安全地维护 Emby Technical Specifications Web Card
 * 提供长期运行所需的 Windows GUI、系统托盘和本地服务能力
 * 让重要状态、错误和维护操作尽可能可观察、可验证
-* 让 Manager、任务输出与原生入口支持简体中文和英语，并为更多语言保留稳定扩展接口
+* 内置简体中文、繁體中文和 English (United States)，并通过版本绑定的语言包支持法语、俄语、日语、西班牙语和泰语
 
 ---
 
@@ -109,7 +109,7 @@ Web Card 的维护与媒体 NFO 是两个完全独立的操作域。
 
 TCM 可以维护 Emby Web 集成文件，但**不会因此修改媒体 NFO**。
 
-Manager 可在设置中即时切换简体中文与 English (United States)，不会重载页面或清空当前界面状态。Emby Web Card 使用独立的语言注册表：中文与英文使用对应显示名称，其他暂未翻译的 Emby 语言回退中文；`Camera`、`Sound mix` 等 Technical Specs 字段键和数据结构不会随显示语言改变。
+Manager 可在设置中即时切换简体中文、繁體中文与 English (United States)，不会重载页面或清空当前界面状态。法语、俄语、日语、西班牙语和泰语以 `v4.1.0` GitHub Release 的独立语言包提供，下载并验证后才能加载。Emby Web Card 使用独立的语言注册表；未安装或不支持的 Emby 语言回退简体中文。`Camera`、`Sound mix` 等 Technical Specs 字段键和数据结构不会随显示语言改变。
 
 ---
 
@@ -560,6 +560,12 @@ Repository 按**产品**组织，而不是永久按照操作系统组织。
 
 项目不单独提供裸 `.exe` Release。
 
+当前正式安装包为：
+
+```text
+TCM-v4.1.0-Windows-x64-EXE.zip
+```
+
 ---
 
 ### 2. 完整解压
@@ -569,7 +575,7 @@ Repository 按**产品**组织，而不是永久按照操作系统组织。
 然后运行其中的：
 
 ```text
-Tech-Card-Manager-Windows-x64-vx.x.x.exe
+Tech-Card-Manager.exe
 ```
 
 不要直接在压缩包内部运行程序。
@@ -662,7 +668,7 @@ TCM 可以在设置页检查 GitHub 官方 Release。
 Release 同时提供：
 
 ```text
-SHA256SUMS-Tech-Card-Manager-Windows-v4.0.0.txt
+TCM-v4.1.0-Windows-x64-EXE-SHA256SUMS.txt
 ```
 
 用于验证下载包完整性。
@@ -756,7 +762,7 @@ main
 
 * 完整公开源码
 * Windows x64 Portable GUI
-* v4.0.0 Release
+* v4.1.0 Release
 * SHA-256 校验文件
 * 只读 NFO 索引
 * Emby Technical Specifications Web Card
@@ -791,6 +797,12 @@ main
 * [x] 建立基础回归测试
 * [x] 建立 Release 构建流程
 * [x] 发布首个公开版本 `v4.0.0`
+* [x] 发布 `v4.1.0` 多语言注册表与版本绑定语言包
+* [x] 完成简体中文、繁體中文和 English (United States) 内置界面
+* [x] 发布法语、俄语、日语、西班牙语和泰语语言包
+* [x] 固定新任务的日志语言并保留旧日志、索引和 NFO 原文
+* [x] 区分代理/网络、GitHub 限流、资产缺失和下载失败
+* [x] 完成内容测量驱动的标题区、控制台与 NFO 工具栏响应式布局
 
 ### 持续推进
 
@@ -805,7 +817,6 @@ main
 * [ ] 增加更多真实 Windows / Emby 回归测试
 * [ ] 完善 Manager 状态可视化
 * [ ] 完善设置体验
-* [ ] 完善 English UI
 * [ ] 改进 Portable 更新体验
 * [ ] 持续完善 `AGENTS.md`
 * [ ] 持续完善 Coding Agent Context
