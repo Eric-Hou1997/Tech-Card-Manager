@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const WEB_CARD_VERSION = "4.0.3";
+    const WEB_CARD_VERSION = "4.0.4";
 
     // Single-run guard: if another copy of this card script (older or equal)
     // is already active on the page, only the newest version may run. Old
@@ -109,18 +109,32 @@
         "Printed Film Format"
     ];
 
-    const ZH_LABELS = {
-        "Runtime": "正片时长",
-        "Sound mix": "声音制式",
-        "Color": "色彩类型",
-        "Aspect ratio": "画幅比例",
-        "Camera": "摄影器材",
-        "Laboratory": "冲印流程",
-        "Film Length": "胶片长度",
-        "Negative Format": "底片格式",
-        "Cinematographic Process": "摄影工艺",
-        "Printed Film Format": "放映格式"
-    };
+    // Protocol field keys remain stable. Locales provide display labels only,
+    // so adding another language never changes Technical Specs data or caches.
+    const CARD_LOCALES = Object.freeze({
+        "zh-CN": Object.freeze({
+            title: "技术规格",
+            empty: "暂无技术规格数据",
+            fields: Object.freeze({
+                "Runtime": "正片时长",
+                "Sound mix": "声音制式",
+                "Color": "色彩类型",
+                "Aspect ratio": "画幅比例",
+                "Camera": "摄影器材",
+                "Laboratory": "冲印流程",
+                "Film Length": "胶片长度",
+                "Negative Format": "底片格式",
+                "Cinematographic Process": "摄影工艺",
+                "Printed Film Format": "放映格式"
+            })
+        }),
+        "en-US": Object.freeze({
+            title: "Technical Specs",
+            empty: "No Technical Specs data",
+            fields: Object.freeze(Object.fromEntries(FIELD_ORDER.map(field => [field, field])))
+        })
+    });
+    const DEFAULT_CARD_LOCALE = "zh-CN";
 
     const TECH_CARD_SELECTOR = "[data-tech-spec-card='1']";
     const NATIVE_HOST_SELECTOR = "[data-tech-spec-native-host='1']";
@@ -196,17 +210,23 @@
         return String(value || "").replace(/\s+/g, " ").trim();
     }
 
-    function uiIsChinese() {
-        const lang = String(document.documentElement.lang || "").toLowerCase();
-        if (lang.startsWith("zh")) return true;
-
+    function resolveCardLocale() {
+        const candidates = [document.documentElement.lang];
         const culture =
             document.body && (
                 document.body.getAttribute("data-culture") ||
                 document.body.getAttribute("lang")
             );
-
-        return String(culture || "").toLowerCase().startsWith("zh");
+        candidates.push(culture);
+        for (const candidate of candidates) {
+            const language = String(candidate || "").trim().toLowerCase();
+            if (!language) continue;
+            if (language === "en" || language.startsWith("en-")) return "en-US";
+            if (language === "zh" || language.startsWith("zh-")) return "zh-CN";
+            return DEFAULT_CARD_LOCALE;
+        }
+        // Unsupported Emby languages intentionally fall back to Chinese.
+        return DEFAULT_CARD_LOCALE;
     }
 
     function decodeRouteValue(value) {
@@ -698,7 +718,8 @@
         heading.appendChild(document.createTextNode(title));
     }
 
-    function appendNativeSpecFooter(footer, templateHeading, specs, zh) {
+    function appendNativeSpecFooter(footer, templateHeading, specs, localeCode) {
+        const locale = CARD_LOCALES[localeCode] || CARD_LOCALES[DEFAULT_CARD_LOCALE];
         const titleRow = document.createElement("div");
         titleRow.className = "mediaStreamInnerCardFooter-cardText cardText text-align-start innerFooter-cardText cardText-first-padded";
         const heading = templateHeading
@@ -708,7 +729,7 @@
             heading.className = "flex align-items-center";
             heading.style.margin = ".6em 0 .8em";
         }
-        replaceHeadingText(heading, zh ? "技术规格" : "Technical Specs");
+        replaceHeadingText(heading, locale.title);
         titleRow.appendChild(heading);
         footer.appendChild(titleRow);
 
@@ -725,7 +746,7 @@
             row.className = "flex mediaStreamAttribute";
             const label = document.createElement("span");
             label.className = "mediaInfoAttributeLabel";
-            label.textContent = zh ? (ZH_LABELS[field] || field) : field;
+            label.textContent = locale.fields[field] || field;
             const valueHost = document.createElement("span");
             valueHost.className = "mediaInfoAttributeValue secondaryText";
             for (const value of values) {
@@ -739,10 +760,17 @@
             footer.appendChild(rowHost);
             groups++;
         }
+        if (!groups) {
+            const emptyRow = document.createElement("div");
+            emptyRow.className = "mediaStreamInnerCardFooter-cardText cardText text-align-start innerFooter-cardText secondaryText";
+            emptyRow.textContent = locale.empty;
+            footer.appendChild(emptyRow);
+            groups = 1;
+        }
         return groups;
     }
 
-    function buildTechnicalCard(specs, zh, layoutMode, widthPx, template) {
+    function buildTechnicalCard(specs, localeCode, layoutMode, widthPx, template) {
         // Prefer a byte-for-byte DOM clone of the live Video/media card. Pages
         // without media cards use the captured Emby 4.9.5.0 native shell.
         ensureCardStyles();
@@ -759,7 +787,8 @@
             : "itm-tech-card--wide");
         card.setAttribute("data-tech-spec-card", "1");
         card.setAttribute("data-tech-spec-render-mode", layoutMode);
-        card.setAttribute("aria-label", zh ? "技术规格" : "Technical Specs");
+        const locale = CARD_LOCALES[localeCode] || CARD_LOCALES[DEFAULT_CARD_LOCALE];
+        card.setAttribute("aria-label", locale.title);
 
         const standardWidth = widthPx ||
             measureNativeCardWidth(template && template.card) ||
@@ -776,7 +805,7 @@
             footer,
             template && template.heading,
             specs,
-            zh
+            localeCode
         );
         if (!groups) return null;
         if (layoutMode === "native-card") {
@@ -1760,12 +1789,12 @@
             return "item-not-in-index-yet";
         }
 
-        const zh = uiIsChinese();
+        const localeCode = resolveCardLocale();
         const key = [
             itemId || imdb,
             itemType || "unknown",
             imdb,
-            zh ? "zh" : "en",
+            localeCode,
             database.generatedAt || ""
         ].join("|");
 
@@ -1791,7 +1820,7 @@
 
                 const card = buildTechnicalCard(
                     specs,
-                    zh,
+                    localeCode,
                     "native-card",
                     measureNativeCardWidth(native.card),
                     native
@@ -1903,7 +1932,7 @@
         const nativeTemplate = findAnyNativeMediaCard(detailRoot);
         const card = buildTechnicalCard(
             specs,
-            zh,
+            localeCode,
             "wide-card",
             null,
             nativeTemplate

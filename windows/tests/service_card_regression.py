@@ -15,14 +15,14 @@ visible_guard = card.split("function isRenderedCardVisible(card)", 1)[1].split(
 
 checks = {
     "legacy source version is synchronized": all(value in source for source, value in [
-        (main, 'const appVersion = "4.0.3"'),
-        (engine, "$ManagerVersion = '4.0.3'"),
-        (web, "v4.0.3"),
+        (main, 'const appVersion = "4.0.4"'),
+        (engine, "$ManagerVersion = '4.0.4'"),
+        (web, "v4.0.4"),
     ]),
     "Web Card cache version advances everywhere": all(value in source for source, value in [
-        (card, 'const WEB_CARD_VERSION = "4.0.3"'),
-        (engine, "$ExpectedWebCardVersion = '4.0.3'"),
-        (platform, 'const expectedWebCardVersion = "4.0.3"'),
+        (card, 'const WEB_CARD_VERSION = "4.0.4"'),
+        (engine, "$ExpectedWebCardVersion = '4.0.4'"),
+        (platform, 'const expectedWebCardVersion = "4.0.4"'),
     ]),
     "technical card and native descendants grow with meaningful content": all(value in card for value in [
         ".cardBox",
@@ -111,8 +111,8 @@ checks = {
         'class="serviceStateText" id="serviceStateText"',
         'class="serviceStartedAt" id="serviceStartedAt"',
     ]),
-    "right action is a rounded square and says only start or stop": all(value in web for value in [
-        ".serviceButton{flex:0 0 72px;width:72px;height:72px;min-width:72px",
+    "right action is content-sized for every locale and says only start or stop": all(value in web for value in [
+        ".serviceButton{flex:0 0 auto;min-width:max-content;min-height:72px",
         "border-radius:14px",
         "button.textContent=stopAction?'停止':'启动'",
     ]),

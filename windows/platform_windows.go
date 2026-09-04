@@ -26,7 +26,7 @@ import (
 const oldWinTaskName = "Emby Technical Specs Web Card"
 const winRunValueName = "Tech Card Manager"
 const legacyWinRunValueName = "IMDb Tech Manager Agent"
-const expectedWebCardVersion = "4.0.3"
+const expectedWebCardVersion = "4.0.4"
 
 func baseDir() string {
 	return filepath.Join(portableRootDir(), "data")
@@ -181,7 +181,7 @@ func recoverSettingsFromIndexSummary() (Settings, error) {
 	if strings.TrimSpace(summary.GeneratedAt) == "" || summary.ScanStats == nil || summary.Items == nil {
 		return Settings{}, fmt.Errorf("索引摘要不完整，不能作为目录恢复依据")
 	}
-	settings := Settings{IntervalSeconds: 60, RootsConfigured: true}
+	settings := Settings{IntervalSeconds: 60, Language: defaultLanguage, RootsConfigured: true}
 	for _, library := range summary.Libraries {
 		if strings.TrimSpace(library.Path) == "" {
 			continue
@@ -281,6 +281,7 @@ func platformInstall(ctx context.Context, w io.Writer) error {
 		output,
 		"powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
 		"-File", enginePath(), "-RepairWebOnly", "-BackupRootPath", webPatchBackupRoot(),
+		"-OutputLanguage", outputLanguageForWriter(w),
 	); err != nil {
 		message := compactPowerShellFailure(details.String())
 		if message == "" {
@@ -680,6 +681,7 @@ func platformRunEngine(ctx context.Context, action, arg string, w io.Writer) err
 		args := []string{
 			"-NoProfile", "-ExecutionPolicy", "Bypass", "-File", enginePath(),
 			"-IndexOnly", "-RootConfigPath", settingsPath(), "-BackupRootPath", webPatchBackupRoot(),
+			"-OutputLanguage", outputLanguageForWriter(w),
 		}
 		if strings.TrimSpace(arg) != "" {
 			args = append(args, "-OnlyRoot", arg)
@@ -691,6 +693,7 @@ func platformRunEngine(ctx context.Context, action, arg string, w io.Writer) err
 			w,
 			"powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
 			"-File", enginePath(), "-RepairWebOnly", "-BackupRootPath", webPatchBackupRoot(),
+			"-OutputLanguage", outputLanguageForWriter(w),
 		)
 	case "disable-integration":
 		return runCommandToWriterContext(
@@ -698,6 +701,7 @@ func platformRunEngine(ctx context.Context, action, arg string, w io.Writer) err
 			w,
 			"powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
 			"-File", enginePath(), "-DisableIntegration", "-BackupRootPath", webPatchBackupRoot(),
+			"-OutputLanguage", outputLanguageForWriter(w),
 		)
 	case "diagnose":
 		return runCommandToWriterContext(
@@ -705,7 +709,7 @@ func platformRunEngine(ctx context.Context, action, arg string, w io.Writer) err
 			w,
 			"powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
 			"-File", enginePath(), "-CheckOnly", "-RootConfigPath", settingsPath(),
-			"-BackupRootPath", webPatchBackupRoot(),
+			"-BackupRootPath", webPatchBackupRoot(), "-OutputLanguage", outputLanguageForWriter(w),
 		)
 	case "rebuild-index":
 		return runCommandToWriterContext(
@@ -713,7 +717,7 @@ func platformRunEngine(ctx context.Context, action, arg string, w io.Writer) err
 			w,
 			"powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
 			"-File", enginePath(), "-RebuildIndexOnly", "-RootConfigPath", settingsPath(),
-			"-BackupRootPath", webPatchBackupRoot(),
+			"-BackupRootPath", webPatchBackupRoot(), "-OutputLanguage", outputLanguageForWriter(w),
 		)
 	case "discover-roots":
 		return runCommandToWriterContext(
@@ -721,7 +725,7 @@ func platformRunEngine(ctx context.Context, action, arg string, w io.Writer) err
 			w,
 			"powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
 			"-File", enginePath(), "-DiscoverOnly", "-RootConfigPath", settingsPath(),
-			"-BackupRootPath", webPatchBackupRoot(),
+			"-BackupRootPath", webPatchBackupRoot(), "-OutputLanguage", outputLanguageForWriter(w),
 		)
 	default:
 		return fmt.Errorf("Windows 不支持操作：%s", action)
@@ -729,7 +733,9 @@ func platformRunEngine(ctx context.Context, action, arg string, w io.Writer) err
 }
 
 func platformChooseFolder() (string, error) {
-	script := `[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false); Add-Type -AssemblyName System.Windows.Forms; $dialog = New-Object System.Windows.Forms.FolderBrowserDialog; $dialog.Description = '选择电影或电视剧媒体目录'; $dialog.ShowNewFolderButton = $false; if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { [Console]::Write($dialog.SelectedPath) }`
+	description := currentLocalized("选择电影或电视剧媒体目录", "Select a Movie or TV Show media folder")
+	description = strings.ReplaceAll(description, "'", "''")
+	script := `[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false); Add-Type -AssemblyName System.Windows.Forms; $dialog = New-Object System.Windows.Forms.FolderBrowserDialog; $dialog.Description = '` + description + `'; $dialog.ShowNewFolderButton = $false; if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { [Console]::Write($dialog.SelectedPath) }`
 	out, err := commandOutput("powershell.exe", "-NoProfile", "-STA", "-Command", script)
 	if err != nil {
 		return "", fmt.Errorf("打开目录选择窗口失败：%w", err)
@@ -784,7 +790,7 @@ func collectStatus() (Status, error) {
 		Notes: []string{
 			"服务由可视化 Manager 主进程拥有；最小化继续运行，关闭窗口停止全部服务。",
 			"停止服务会失效运行许可，Emby 页面随后撤下本程序拥有的技术规格卡片。",
-			"网页卡片 v4.0.3：后台索引永不修改 Emby index.html，网页维护仍需用户明确确认。",
+			"网页卡片 v4.0.4：后台索引永不修改 Emby index.html，网页维护仍需用户明确确认。",
 		},
 		Paths: map[string]string{
 			"emby_root":       embyRoot(),
@@ -1317,8 +1323,8 @@ func platformShowShutdownError(err error) {
 	}
 	user32 := syscall.NewLazyDLL("user32.dll")
 	messageBox := user32.NewProc("MessageBoxW")
-	message, _ := syscall.UTF16PtrFromString("服务、界面或所属进程没有完全停止，程序将保持运行以便重试。\n\n" + err.Error())
-	title, _ := syscall.UTF16PtrFromString("Tech Card Manager 退出未完成")
+	message, _ := syscall.UTF16PtrFromString(currentLocalized("服务、界面或所属进程没有完全停止，程序将保持运行以便重试。", "The service, window, or owned processes did not stop completely. The app will remain open so you can retry.") + "\n\n" + localizeBackendText(currentLanguage(), err.Error()))
+	title, _ := syscall.UTF16PtrFromString(currentLocalized("Tech Card Manager 退出未完成", "Tech Card Manager did not exit completely"))
 	const mbOKIconError = 0x00000010
 	messageBox.Call(0, uintptr(unsafe.Pointer(message)), uintptr(unsafe.Pointer(title)), mbOKIconError)
 }
@@ -1329,31 +1335,32 @@ func platformShowStartupError(err error) {
 	}
 	user32 := syscall.NewLazyDLL("user32.dll")
 	messageBox := user32.NewProc("MessageBoxW")
-	message, _ := syscall.UTF16PtrFromString("无法打开 Tech Card Manager 可视化界面，程序不会在后台继续运行。\n\n" + err.Error())
-	title, _ := syscall.UTF16PtrFromString("Tech Card Manager 启动失败")
+	message, _ := syscall.UTF16PtrFromString(currentLocalized("无法打开 Tech Card Manager 可视化界面，程序不会在后台继续运行。", "Tech Card Manager could not open its window and will not continue running in the background.") + "\n\n" + localizeBackendText(currentLanguage(), err.Error()))
+	title, _ := syscall.UTF16PtrFromString(currentLocalized("Tech Card Manager 启动失败", "Tech Card Manager startup failed"))
 	const mbOKIconError = 0x00000010
 	messageBox.Call(0, uintptr(unsafe.Pointer(message)), uintptr(unsafe.Pointer(title)), mbOKIconError)
 }
 
 func platformConfirmExit(service ServiceSnapshot, jobRunning, maintenanceRunning, windowAlreadyClosed bool) bool {
-	message := "即将退出 Tech Card Manager。退出后将停止全部服务，并从当前打开的 Emby 页面撤下技术规格卡片。媒体文件和 NFO 不会被修改。"
+	language := currentLanguage()
+	message := localized(language, "即将退出 Tech Card Manager。退出后将停止全部服务，并从当前打开的 Emby 页面撤下技术规格卡片。媒体文件和 NFO 不会被修改。", "Tech Card Manager is about to exit. All services will stop and the Technical Specs card will be removed from currently open Emby pages. Media files and NFO files will not be changed.")
 	if service.State == serviceLegacyBlocked {
-		message = "当前新版服务尚未启动。退出不会修改检测到的旧版组件；旧版仍可能继续控制 Emby 技术规格卡片。"
+		message = localized(language, "当前新版服务尚未启动。退出不会修改检测到的旧版组件；旧版仍可能继续控制 Emby 技术规格卡片。", "The new service has not started. Exiting will not change detected legacy components; a legacy component may continue to control the Emby Technical Specs card.")
 	} else if service.State == serviceStopError {
-		message = "上一次停止未能确认 Emby 撤卡状态。程序会再次尝试停止；如果仍失败，将保留界面并显示错误，不会伪装成已经退出。"
+		message = localized(language, "上一次停止未能确认 Emby 撤卡状态。程序会再次尝试停止；如果仍失败，将保留界面并显示错误，不会伪装成已经退出。", "The last stop attempt could not confirm that the card was removed from Emby. The app will try again; if it still fails, the window will remain open and show the error.")
 	} else if !service.Running {
-		message = "Tech Card Manager 服务已经停止。退出后将关闭管理界面，Emby 不会显示由新版服务提供的技术规格卡片。"
+		message = localized(language, "Tech Card Manager 服务已经停止。退出后将关闭管理界面，Emby 不会显示由新版服务提供的技术规格卡片。", "The Tech Card Manager service is already stopped. Exiting will close the Manager, and Emby will not show a Technical Specs card supplied by the new service.")
 	}
 	if maintenanceRunning {
-		message += "\n\n管理员维护事务正在执行。确认退出后，程序会先等待该事务安全结束，不会把提权进程留在后台。"
+		message += localized(language, "\n\n管理员维护事务正在执行。确认退出后，程序会先等待该事务安全结束，不会把提权进程留在后台。", "\n\nAn administrator maintenance transaction is running. After you confirm, the app will wait for it to finish safely and will not leave an elevated process behind.")
 	} else if jobRunning {
-		message += "\n\n当前媒体库检查将被安全取消。"
+		message += localized(language, "\n\n当前媒体库检查将被安全取消。", "\n\nThe current media-library check will be cancelled safely.")
 	}
-	message += "\n\n是否退出？"
+	message += localized(language, "\n\n是否退出？", "\n\nExit now?")
 	user32 := syscall.NewLazyDLL("user32.dll")
 	messageBox := user32.NewProc("MessageBoxW")
 	text, _ := syscall.UTF16PtrFromString(message)
-	title, _ := syscall.UTF16PtrFromString("退出 Tech Card Manager？")
+	title, _ := syscall.UTF16PtrFromString(localized(language, "退出 Tech Card Manager？", "Exit Tech Card Manager?"))
 	const (
 		mbOKCancel      = 0x00000001
 		mbIconWarn      = 0x00000030

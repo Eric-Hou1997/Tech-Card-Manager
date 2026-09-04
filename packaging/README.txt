@@ -1,25 +1,29 @@
-Tech Card Manager Windows v4.0.3
-=====================================
+Tech Card Manager v4.0.4 / 使用说明
+===================================
 
-- Windows x64 Portable GUI；完整解压 ZIP 后运行其中 EXE。
+中文
+----
+
+- Windows x64 Portable GUI；完整解压 `TCM-v4.0.4-Windows-x64-EXE.zip` 后运行其中的 `Tech-Card-Manager.exe`。
 - Windows 只读索引 Emby NFO 并维护技术规格卡片；不抓取 IMDb、不写 NFO、不生成标签、不运行 AI。
-- 正式发布包仅为 `TCM-v4.0.3-Windows-x64-EXE.zip`，不提供裸 EXE。
-- ZIP 内的程序名固定为 `Tech-Card-Manager.exe`，升级时用它替换旧程序，不要保留多个版本化 EXE。
+- 可在设置中即时切换简体中文与 English (United States)。切换不会重载页面，也不会丢失筛选、选择、滚动位置、弹窗或未保存表单。
+- 老用户无需转换 NFO、索引缓存、卡片数据、日志或备份。缺少语言字段的旧设置默认使用简体中文；旧日志原样保留，新任务按启动时的语言生成日志。
+- 未提供翻译的 Emby 界面语言会让 Web Card 回退简体中文。Technical Specs 字段键与缓存结构保持不变。
+- 升级时先从系统托盘完全退出旧版，用 ZIP 中的同名 EXE 替换当前程序；保留 `data`、`logs`、`backup`、`runtime`、`updates` 及其他用户文件夹。
 
-本版重点
---------
+English
+-------
 
-- 设置中加入登录后启动，并可选择在登录启动时静默最小化至系统托盘。
-- 设置中加入简体中文 / English (United States) 语言选择。4.0.3 暂保持中文界面，为后续语言包保留设置；它不改变 NFO、技术规格或卡片数据。
-- “关于”区域显示正式发布日期，并在每次打开设置页面时自动检查 GitHub 正式更新。
-- “刷新当前媒体库”按当前电影或电视剧空间分别刷新对应目录，避免不必要地扫描另一类媒体库。
-- Windows 端继续保持只读 NFO 边界；所有设置和刷新均不写入 NFO。
+- This is a Windows x64 portable GUI. Fully extract `TCM-v4.0.4-Windows-x64-EXE.zip`, then run `Tech-Card-Manager.exe`.
+- Windows indexes Emby NFO files in read-only mode and maintains the Technical Specs Web Card. It does not scrape IMDb, write NFO files, generate tags, or run AI.
+- Settings can switch instantly between Simplified Chinese and English (United States). Switching does not reload the page or lose filters, selection, scroll position, dialogs, or unsaved form state.
+- Existing users do not need to convert NFO files, index caches, card data, logs, or backups. Old settings without a language use Simplified Chinese; historical logs remain unchanged, while each new task uses the language captured when it starts.
+- Unsupported Emby UI languages make the Web Card fall back to Simplified Chinese. Technical Specs field keys and cache schemas remain unchanged.
+- Before upgrading, fully exit the old version from the system tray, replace the current executable with the same-named EXE from the ZIP, and preserve `data`, `logs`, `backup`, `runtime`, `updates`, and all other user folders.
 
-使用与验收
-----------
+Validation boundary / 验收边界
+------------------------------
 
-- 打开 Tech Card Manager 即启动服务；最小化后继续运行；关闭或托盘退出会撤下 Emby 卡片并停止服务。
-- 在实际 Windows x64、PowerShell 5.1、UAC、托盘和 Emby Server 上验收登录启动、静默启动、电影/电视剧分区刷新及 Web Card。
-- 当前源码基线已完成源码回归、JavaScript 语法和 Windows x64 交叉构建验证。
-- 当前仓库尚未据此声明 ZIP 内容、SHA256 或正式发布验收完成；这些结果只能在实际运行发布构建并核对产物后记录。
-- 真实 Windows / Emby 页面仍需目标环境验收。
+- Source contracts, JavaScript syntax, Windows x64 Go test compilation, Go vet, and Windows x64 GUI cross-build are checked before packaging.
+- Real Windows, PowerShell 5.1, UAC, tray behavior, Edge Web UI, and a live Emby DOM require target-machine acceptance.
+- The repository does not claim that a ZIP, checksum, tag, or GitHub Release exists until the maintainer explicitly authorizes and completes release packaging.

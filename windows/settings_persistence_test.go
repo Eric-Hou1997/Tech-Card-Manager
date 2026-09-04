@@ -2,7 +2,11 @@
 
 package main
 
-import "testing"
+import (
+	"bytes"
+	"strings"
+	"testing"
+)
 
 func TestLanguageDefaultsAndValidation(t *testing.T) {
 	if got := normalizedLanguage(""); got != "zh-CN" {
@@ -47,5 +51,58 @@ func TestCurrentLibraryRefreshNeverIncludesOtherOrMixedRoots(t *testing.T) {
 	tv, mixed := enabledRootsForSpace(roots, "tv")
 	if len(tv) != 1 || tv[0].Path != `D:\TV` || mixed != 1 {
 		t.Fatalf("TV refresh escaped its exact scope: roots=%#v mixed=%d", tv, mixed)
+	}
+}
+
+func TestLocalizedLineWriterFreezesLanguageAcrossSplitWrites(t *testing.T) {
+	var output bytes.Buffer
+	writer := newLocalizedLineWriter(&output, "en-US")
+	if _, err := writer.Write([]byte("任务：运行")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := writer.Write([]byte("诊断\n完成")); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Flush(); err != nil {
+		t.Fatal(err)
+	}
+	if outputLanguageForWriter(writer) != "en-US" {
+		t.Fatalf("writer language changed: %q", outputLanguageForWriter(writer))
+	}
+	if got := output.String(); strings.ContainsAny(got, "任务运行诊断完成") || !strings.Contains(got, "Task") || !strings.Contains(got, "Run diagnostics") || !strings.Contains(got, "Completed") {
+		t.Fatalf("unexpected localized output: %q", got)
+	}
+}
+
+func TestBackendLocalizationPreservesChineseWindowsPaths(t *testing.T) {
+	path := `D:\电影\完成\任务.nfo`
+	got := localizeBackendText("en-US", "NFO XML 解析失败，已跳过："+path)
+	if !strings.Contains(got, path) {
+		t.Fatalf("localized task output changed the user path: %q", got)
+	}
+	if !strings.HasPrefix(got, "NFO XML parsing failed and was skipped") {
+		t.Fatalf("product-owned message was not localized: %q", got)
+	}
+}
+
+func TestStatusLocalizationPreservesPathsProtocolAndHistoricalJob(t *testing.T) {
+	status := Status{
+		Language: "en-US",
+		Service:  ServiceSnapshot{Message: "服务运行中", Legacy: LegacyReport{Items: []string{"旧版后台 Agent 正在运行"}}},
+		Job:      JobState{Language: "zh-CN", Message: "完成", Log: "任务：运行诊断\n完成\n"},
+		Libraries: []LibraryInfo{{
+			Path: `D:\电影\完成`, Evidence: "用户选择",
+		}},
+		Extra: map[string]interface{}{"index_summary_error": "Manager 索引摘要尚未生成", "protocol": "Camera"},
+	}
+	localizeStatusForPresentation(&status)
+	if status.Service.Message != "Service running" || strings.Contains(status.Service.Legacy.Items[0], "旧版") {
+		t.Fatalf("service presentation was not localized: %#v", status.Service)
+	}
+	if status.Libraries[0].Path != `D:\电影\完成` || status.Extra["protocol"] != "Camera" {
+		t.Fatalf("user path or protocol changed: %#v %#v", status.Libraries, status.Extra)
+	}
+	if status.Job.Language != "zh-CN" || status.Job.Message != "完成" || !strings.Contains(status.Job.Log, "任务：运行诊断") {
+		t.Fatalf("historical job was rewritten: %#v", status.Job)
 	}
 }

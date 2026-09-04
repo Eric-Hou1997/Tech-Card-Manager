@@ -60,6 +60,7 @@ TCM 的核心目标包括：
 * 安全地维护 Emby Technical Specifications Web Card
 * 提供长期运行所需的 Windows GUI、系统托盘和本地服务能力
 * 让重要状态、错误和维护操作尽可能可观察、可验证
+* 让 Manager、任务输出与原生入口支持简体中文和英语，并为更多语言保留稳定扩展接口
 
 ---
 
@@ -107,6 +108,8 @@ TCM 会将索引后的技术规格转换为适合媒体库展示的数据，并�
 Web Card 的维护与媒体 NFO 是两个完全独立的操作域。
 
 TCM 可以维护 Emby Web 集成文件，但**不会因此修改媒体 NFO**。
+
+Manager 可在设置中即时切换简体中文与 English (United States)，不会重载页面或清空当前界面状态。Emby Web Card 使用独立的语言注册表：中文与英文使用对应显示名称，其他暂未翻译的 Emby 语言回退中文；`Camera`、`Sound mix` 等 Technical Specs 字段键和数据结构不会随显示语言改变。
 
 ---
 

@@ -12,9 +12,9 @@ web = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
 
 
 checks = {
-    "manager version 4.0.3": 'const appVersion = "4.0.3"' in main,
-    "web card version 4.0.3": 'const WEB_CARD_VERSION = "4.0.3"' in card,
-    "engine expects card 4.0.3": "$ExpectedWebCardVersion = '4.0.3'" in engine,
+    "manager version 4.0.4": 'const appVersion = "4.0.4"' in main,
+    "web card version 4.0.4": 'const WEB_CARD_VERSION = "4.0.4"' in card,
+    "engine expects card 4.0.4": "$ExpectedWebCardVersion = '4.0.4'" in engine,
     "portable root follows current exe": all(
         value in platform
         for value in ["portableRootDir", "os.Executable()", "filepath.Dir(exe)"]

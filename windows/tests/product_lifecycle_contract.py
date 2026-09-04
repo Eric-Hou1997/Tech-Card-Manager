@@ -78,8 +78,8 @@ checks = {
         "standardWidth * 2",
     ]),
     "header matches product naming": all(x in web for x in [
-        "<title>Tech Card Manager</title>", "v4.0.3",
-        "Emby Server 技术规格卡片", 'src="/assets/TCM_logo_letter_only.png"',
+        "<title>Tech Card Manager</title>", "v4.0.4",
+        "Emby Server 技术规格卡片", 'src="../assets/TCM_logo_letter_only.png"',
     ]) and "IMDb Tech Manager Windows" not in web,
     "formal display name is consistent across runtime surfaces": (
         all(x in main + platform + tray + engine + web for x in [
@@ -87,7 +87,7 @@ checks = {
         ])
     ),
     "logo works in file preview and the packaged HTTP app": (
-        'href="/assets/TCM_logo_letter_only.png"' in web
+        'href="../assets/TCM_logo_letter_only.png"' in web
         and '//go:embed web/index.html engine/windows-engine.ps1 engine/technical-specs-card.js assets/TCM_logo_letter_only.png assets/TCM_logo_tiny.png' in main
         and 'mux.HandleFunc("/assets/TCM_logo_letter_only.png", serveAppIcon("assets/TCM_logo_letter_only.png"))' in main
         and 'assets.ReadFile(name)' in main
@@ -106,12 +106,19 @@ checks = {
         and "登录后自动启动" not in web
         and "服务由当前可视化程序统一管理。" not in web
     ),
-    "console visual hierarchy matches the accepted UI": all(x in web for x in [
+    "console visual hierarchy is content-responsive without shrinking action labels": all(x in web for x in [
         ".version{color:var(--muted);font-size:21px;font-weight:400",
-        "h1{font-size:23px}.version{font-size:18px}",
-        ".console{display:grid;grid-template-columns:minmax(320px,.72fr) minmax(0,1.28fr);gap:18px;align-items:stretch}",
+        ".top.layoutStatusBelow",
+        "padding:clamp(19px,2.8vw,28px)",
+        ".console{grid-template-columns:1fr}",
+        ".console.layoutFiveCards{grid-template-columns:",
+        ".metrics{grid-template-columns:repeat(4,minmax(0,1fr))}",
+        ".metrics.layoutTwoColumns{grid-template-columns:repeat(2,minmax(0,1fr))}",
         ".serviceCard{width:100%;min-width:300px;min-height:94px",
-        ".serviceButton{flex:0 0 72px;width:72px;height:72px;min-width:72px",
+        ".serviceButton{flex:0 0 auto;min-width:max-content;min-height:72px",
+        ".top{display:flex;align-items:center;justify-content:space-between;gap:18px 22px;flex-wrap:wrap",
+        ".commandActions{flex:0 0 auto;flex-wrap:nowrap}",
+        ".catalogTools.layoutCompact{grid-template-columns:minmax(0,1fr) max-content}",
         ".serviceButton.running{background:var(--imdb-yellow)",
         "Emby 卡片显示服务已启动",
         "上次启动时间：",
@@ -135,4 +142,4 @@ for name, ok in checks.items():
     print(("OK  " if ok else "FAIL ") + name)
 if failed:
     raise SystemExit("Windows legacy product contract failed: " + ", ".join(failed))
-print("OK Windows v4.0.3 product lifecycle, migration, lease, UI and NFO behavior")
+print("OK Windows v4.0.4 product lifecycle, migration, lease, UI and NFO behavior")

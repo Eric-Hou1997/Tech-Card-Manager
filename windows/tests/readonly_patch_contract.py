@@ -16,10 +16,10 @@ public_write = engine.split("Keep it limited to the card lookup", 1)[1].split("r
 
 checks = {
     "version triplet": all(x for x in [
-        'const appVersion = "4.0.3"' in main,
-        "$ManagerVersion = '4.0.3'" in engine,
-        'const WEB_CARD_VERSION = "4.0.3"' in card,
-        "$ExpectedWebCardVersion = '4.0.3'" in engine,
+        'const appVersion = "4.0.4"' in main,
+        "$ManagerVersion = '4.0.4'" in engine,
+        'const WEB_CARD_VERSION = "4.0.4"' in card,
+        "$ExpectedWebCardVersion = '4.0.4'" in engine,
     ]),
     "startup is web-read-only": 'platformRunEngine("repair-web"' not in main,
     "index branch cannot patch web": all(x not in index_branch for x in [
@@ -101,4 +101,4 @@ for name, ok in checks.items():
     print(("OK  " if ok else "FAIL ") + name)
 if failed:
     raise SystemExit("Windows read-only patch contract failed: " + ", ".join(failed))
-print("OK Windows v4.0.3: transactional Web Patch, read-only NFO catalog, scoped Web Card")
+print("OK Windows v4.0.4: transactional Web Patch, read-only NFO catalog, scoped Web Card")

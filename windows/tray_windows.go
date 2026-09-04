@@ -585,8 +585,8 @@ func showTrayMenu(hwnd uintptr) {
 		return
 	}
 	defer procDestroyMenu.Call(menu)
-	openText, _ := syscall.UTF16PtrFromString("打开 Tech Card Manager")
-	exitText, _ := syscall.UTF16PtrFromString("退出 Tech Card Manager")
+	openText, _ := syscall.UTF16PtrFromString(currentLocalized("打开 Tech Card Manager", "Open Tech Card Manager"))
+	exitText, _ := syscall.UTF16PtrFromString(currentLocalized("退出 Tech Card Manager", "Exit Tech Card Manager"))
 	procAppendMenu.Call(menu, mfString, menuRestore, uintptr(unsafe.Pointer(openText)))
 	procAppendMenu.Call(menu, mfString, menuExit, uintptr(unsafe.Pointer(exitText)))
 	var pt winPoint

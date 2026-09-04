@@ -26,10 +26,10 @@ checks = {
     "originaltitle searchable": "row.originalTitle" in web,
     "search debounce 200ms": "setTimeout(renderCatalog,200)" in web,
     # Versions.
-    "manager version 4.0.3": 'const appVersion = "4.0.3"' in main,
-    "card version 4.0.3": 'const WEB_CARD_VERSION = "4.0.3"' in card,
-    "engine expects 4.0.3": "$ExpectedWebCardVersion = '4.0.3'" in engine,
-    "web ui version 4.0.3": "4.0.3" in web,
+    "manager version 4.0.4": 'const appVersion = "4.0.4"' in main,
+    "card version 4.0.4": 'const WEB_CARD_VERSION = "4.0.4"' in card,
+    "engine expects 4.0.4": "$ExpectedWebCardVersion = '4.0.4'" in engine,
+    "web ui version 4.0.4": "4.0.4" in web,
     # Still suppressed: Season/Episode (product rule unchanged).
     "episode season still suppressed": 'CARD_SUPPRESSED_TYPES = new Set(["Episode", "Season"])' in card,
 }

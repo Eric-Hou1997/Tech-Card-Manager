@@ -60,6 +60,7 @@ The core goals of TCM are to:
 * Safely maintain the Emby Technical Specifications Web Card
 * Provide a Windows GUI, system-tray integration, and local service suitable for long-running use
 * Keep important states, errors, and maintenance operations observable and verifiable
+* Support Simplified Chinese and English across the Manager, task output, and native entry points while preserving stable extension points for more languages
 
 ---
 
@@ -107,6 +108,8 @@ Current capabilities include:
 Web Card maintenance and media NFO data are two completely separate operation domains.
 
 TCM may maintain Emby Web integration files, but **it does not modify media NFO files as part of that process**.
+
+The Manager can switch instantly between Simplified Chinese and English (United States) in Settings without reloading or clearing current UI state. The Emby Web Card uses an independent locale registry: Chinese and English use their translated display labels, while other untranslated Emby locales fall back to Chinese. Technical Specs keys such as `Camera` and `Sound mix`, and the underlying data structure, never change with the display language.
 
 ---
 

@@ -1,35 +1,35 @@
-Tech Card Manager Windows v4.0.3 - Changelog
-==================================================
+v4.0.4 / 更新说明 / Changelog
+=============================
 
-Release scope
--------------
+中文
+----
 
-- 本仓库以当前已审查的 Windows 源码为独立基线，从 v4.0.0 开始记录历史。
-- Portable x64 GUI，ZIP-only；发布目录不放裸 EXE。
+- 完成 Manager Web UI 简体中文与 English (United States) 即时切换，包括主界面、目录、筛选、设置、维护、任务、更新、Toast、空状态、placeholder、title、aria-label、日期与 `<html lang>`。
+- 语言切换只更新显示文案，不重载页面，不改变电影/电视剧空间状态、选择、筛选、滚动、弹窗和未保存输入。
+- 建立可扩展语言注册表。Technical Specs 协议字段键、NFO 数据、Ownership、索引结构和 JSON 协议保持稳定，只翻译显示名称。
+- Web Card 对中文 Emby 使用中文、对英文变体使用英文；日语、西班牙语等暂未翻译语言回退中文。卡片 aria-label 与无数据提示同步本地化。
+- Go API 状态、错误、更新信息、原生托盘菜单、目录选择说明、启动/退出错误与退出确认支持双语。
+- 任务启动时固定日志语言，避免运行中切换形成混合日志；旧日志不改写。
+- 响应式布局改为由实际内容宽度和 Flex/Grid 换行决定，按钮组保持成组，长语言不会依赖中英文专用断点。
+- 老用户不需要缓存迁移：旧设置缺少语言时默认中文，现有 NFO、`manager-items-cache.json`、`manager-state.json`、`manager-index-summary.json`、`manager-catalog.json`、Web Card v7 数据、备份与日志均不做破坏性转换。
+- 增加英文隐私政策、使用条款以及中英双语发布文档。
 
-Manager UI and lifecycle
-------------------------
+English
+-------
 
-- 设置弹窗改为紧凑固定标题栏与独立滚动内容区；“设置”和关闭按钮始终可见，内容不会从标题栏上方穿出。
-- 移除重复的底部“完成”按钮；“配置媒体目录和检查周期”及“设置媒体目录”统一为标准设置标题层级。
-- “关于”区域图标、更新提示操作按钮间距与更新状态显示已整理为一致布局。
-- “关于”区域显示真实发布日期 2026-09-02，不再包含发布占位文字。
-- 每次打开设置页面都会自动检查一次 GitHub 正式更新，并在原“软件更新”区域显示检查中、最新版本、已有新版或失败状态。
-- 更新检查增加并发保护，重复打开或点击不会同时发起多次请求。
-- 界面标题、日志、托盘、自启动项、PowerShell 输出和系统对话框统一使用正式产品名 Tech Card Manager；仓库与发布文件名继续使用机器友好的 `Tech-Card-Manager`。
-- 设置加入登录后启动选项；Windows 可选“仅在登录启动时最小化到托盘”。
-- 保存并恢复语言偏好（简体中文、English (United States)）；4.0.3 的界面暂不切换语言，避免把只读 NFO/技术规格数据误当作可翻译内容。
-- 电影与电视剧空间的“刷新当前媒体库”按当前分类选择扫描根目录，降低无关扫描。
-- 启动与托盘偏好使用同一份持久化状态，避免静默启动独立于登录启动而产生歧义。
+- Added instant Simplified Chinese and English (United States) switching across the Manager Web UI, including the dashboard, folders, filters, settings, maintenance, tasks, updater, toasts, empty states, placeholder/title/aria-label text, dates, and `<html lang>`.
+- Language switching updates display copy only. It does not reload the page or reset Movie/TV state, selection, filters, scroll positions, dialogs, or unsaved input.
+- Added extensible locale registries. Technical Specs protocol keys, NFO data, ownership, index structures, and JSON protocols remain stable; only display labels are translated.
+- The Web Card uses Chinese for Chinese Emby locales and English for English variants. Untranslated locales such as Japanese and Spanish fall back to Chinese. Card aria labels and empty states are localized too.
+- Added bilingual Go API status and errors, update information, native tray actions, folder-picker description, startup/shutdown errors, and exit confirmation.
+- Each task captures its log language when it starts, preventing mixed-language logs after a live switch. Historical logs are not rewritten.
+- Responsive layout now follows measured content through Flex/Grid wrapping. Command groups stay together, and long translations do not rely on Chinese- or English-specific breakpoints.
+- Existing users need no cache migration. Old settings without a language default to Chinese; existing NFO files, `manager-items-cache.json`, `manager-state.json`, `manager-index-summary.json`, `manager-catalog.json`, Web Card v7 data, backups, and logs are not destructively converted.
+- Added English privacy and terms documents plus bilingual release documentation.
 
-Platform boundary
------------------
+Validation status / 验证状态
+----------------------------
 
-- Windows 仍只读索引 Emby NFO、维护 Web Card；不包含 IMDb 抓取、NFO 写入、AI 标签或 ownership 迁移能力。
-
-Validation status
------------------
-
-- 当前源码基线已通过全部 Windows Python contract/regression tests、v4.0.3 Go 设置/刷新范围测试、JavaScript 语法、Windows x64 Go test compilation、go vet 和 GUI cross-build。
-- 当前尚未生成正式发布包，因此不声明 ZIP 内容或 SHA256 已通过发布验证。
-- 真实 Windows、PowerShell 5.1、UAC、托盘及真实 Emby DOM 仍需要目标机器验收。
+- Source contracts, runtime localization checks, JavaScript syntax, Windows x64 Go test compilation, Go vet, and Windows x64 GUI cross-build are part of the source gate.
+- Real Windows, PowerShell 5.1, UAC, tray, Edge, and live Emby DOM behavior remain target-machine acceptance items.
+- No release package, tag, push, or GitHub Release is implied by this source changelog.

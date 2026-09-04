@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-const appVersion = "4.0.3"
+const appVersion = "4.0.4"
 
 //go:embed web/index.html engine/windows-engine.ps1 engine/technical-specs-card.js assets/TCM_logo_letter_only.png assets/TCM_logo_tiny.png
 var assets embed.FS
@@ -69,6 +69,7 @@ type JobState struct {
 	BlocksExit   bool   `json:"blocks_exit,omitempty"`
 	NeedsAdmin   bool   `json:"needs_admin,omitempty"`
 	AlreadyAdmin bool   `json:"already_admin,omitempty"`
+	Language     string `json:"language,omitempty"`
 }
 
 type AgentCycleState struct {
@@ -94,6 +95,7 @@ type Status struct {
 	AutoStart       bool                   `json:"auto_start"`
 	SilentStart     bool                   `json:"silent_start"`
 	Language        string                 `json:"language"`
+	Languages       []LanguageOption       `json:"languages"`
 	AgentPID        int                    `json:"agent_pid,omitempty"`
 	LastHeartbeat   string                 `json:"last_heartbeat,omitempty"`
 	LastCycle       AgentCycleState        `json:"last_cycle"`
@@ -491,6 +493,7 @@ func handleStatus(w http.ResponseWriter, r *http.Request) {
 	st.Job = jobs.st
 	jobs.mu.Unlock()
 	st.Service = services.snapshot()
+	localizeStatusForPresentation(&st)
 	writeJSON(w, st)
 }
 
@@ -536,6 +539,7 @@ func decorateCommonStatus(st *Status) {
 	st.AutoStart = platformAutoStartEnabled()
 	st.SilentStart = set.SilentStart
 	st.Language = normalizedLanguage(set.Language)
+	st.Languages = supportedLanguages()
 	st.Service = services.snapshot()
 	st.AgentRunning = st.Service.Running
 	if st.Service.Running {
@@ -616,7 +620,7 @@ func handleSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	if v, ok := raw["language"]; ok {
 		var language string
-		if err := json.Unmarshal(v, &language); err != nil || (language != "zh-CN" && language != "en-US") {
+		if err := json.Unmarshal(v, &language); err != nil || !supportedLanguage(language) {
 			writeJSONStatus(w, 400, map[string]string{"error": "语言只能选择简体中文或 English (United States)"})
 			return
 		}
@@ -822,6 +826,7 @@ func startJobWithParent(parent context.Context, action, arg string) error {
 }
 
 func startManagedJob(parent context.Context, action string, options managedJobOptions) error {
+	jobLanguage := currentLanguage()
 	jobs.mu.Lock()
 	if jobs.st.Running {
 		jobs.mu.Unlock()
@@ -834,6 +839,7 @@ func startManagedJob(parent context.Context, action string, options managedJobOp
 	if message == "" {
 		message = "运行中"
 	}
+	message = localizeBackendText(jobLanguage, message)
 	jobs.st = JobState{
 		Running:      true,
 		Action:       action,
@@ -842,6 +848,7 @@ func startManagedJob(parent context.Context, action string, options managedJobOp
 		BlocksExit:   options.blocksExit,
 		NeedsAdmin:   options.needsAdmin,
 		AlreadyAdmin: options.alreadyAdmin,
+		Language:     jobLanguage,
 	}
 	jobs.cancel = cancel
 	jobs.done = done
@@ -860,19 +867,21 @@ func startManagedJob(parent context.Context, action string, options managedJobOp
 			return
 		}
 		defer f.Close()
-		fmt.Fprintf(f, "Tech Card Manager %s\n任务：%s\n开始时间：%s\n\n", appVersion, actionLabel(action), now)
+		jobWriter := newLocalizedLineWriter(f, jobLanguage)
+		fmt.Fprintf(jobWriter, "Tech Card Manager %s\n任务：%s\n开始时间：%s\n\n", appVersion, actionLabel(action), now)
 		if options.run == nil {
 			err = fmt.Errorf("任务没有可执行入口：%s", action)
 		} else {
-			err = options.run(ctx, f)
+			err = options.run(ctx, jobWriter)
 		}
 		code := 0
-		msg := "完成"
+		msg := localizeBackendText(jobLanguage, "完成")
 		if err != nil {
 			code = 1
-			msg = err.Error()
-			fmt.Fprintf(f, "\n错误：%v\n", err)
+			msg = localizeBackendText(jobLanguage, err.Error())
+			fmt.Fprintf(jobWriter, "\n错误：%v\n", err)
 		}
+		_ = jobWriter.Flush()
 		_ = f.Sync()
 		finishJob(action, code, msg)
 		if options.after != nil {
@@ -1150,22 +1159,15 @@ func ensureAssets() error {
 		appendManagerLog("restored media settings from " + source)
 	}
 	if _, err := os.Stat(settingsPath()); errors.Is(err, os.ErrNotExist) {
-		if err := saveSettings(Settings{IntervalSeconds: 60, Language: "zh-CN"}); err != nil {
+		if err := saveSettings(Settings{IntervalSeconds: 60, Language: defaultLanguage}); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func normalizedLanguage(language string) string {
-	if language == "en-US" {
-		return language
-	}
-	return "zh-CN"
-}
-
 func loadSettings() Settings {
-	s := Settings{IntervalSeconds: 60, Language: "zh-CN"}
+	s := Settings{IntervalSeconds: 60, Language: defaultLanguage}
 	b, err := os.ReadFile(settingsPath())
 	if err == nil {
 		_ = json.Unmarshal(b, &s)
@@ -1277,14 +1279,14 @@ func atomicWrite(path string, b []byte, mode fs.FileMode) error {
 func writeJSON(w http.ResponseWriter, v interface{}) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	_ = json.NewEncoder(w).Encode(v)
+	_ = json.NewEncoder(w).Encode(localizeResponsePayload(currentLanguage(), v))
 }
 
 func writeJSONStatus(w http.ResponseWriter, code int, v interface{}) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(v)
+	_ = json.NewEncoder(w).Encode(localizeResponsePayload(currentLanguage(), v))
 }
 
 func tailString(s string, max int) string {

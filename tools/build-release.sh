@@ -4,7 +4,7 @@ set -eu
 # Tech Card Manager: package the reviewed portable x64 GUI as ZIP only.
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 OUT="$ROOT/releases"
-VERSION="4.0.3"
+VERSION="4.0.4"
 ARTIFACT_BASE="TCM-v${VERSION}-Windows-x64-EXE"
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/tech-card-manager-win-${VERSION}.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT HUP INT TERM
@@ -23,9 +23,9 @@ for target in "$OUT/$WIN_ZIP_NAME" "$OUT/$SHA_NAME" "$OUT/$README_NAME" "$OUT/$C
   fi
 done
 
-grep -Fq 'const appVersion = "4.0.3"' "$ROOT/windows/main.go"
-grep -Fq "\$ManagerVersion = '4.0.3'" "$ROOT/windows/engine/windows-engine.ps1"
-grep -Fq 'const WEB_CARD_VERSION = "4.0.3"' "$ROOT/windows/engine/technical-specs-card.js"
+grep -Fq 'const appVersion = "4.0.4"' "$ROOT/windows/main.go"
+grep -Fq "\$ManagerVersion = '4.0.4'" "$ROOT/windows/engine/windows-engine.ps1"
+grep -Fq 'const WEB_CARD_VERSION = "4.0.4"' "$ROOT/windows/engine/technical-specs-card.js"
 git -C "$ROOT" diff --check
 
 mkdir -p "$OUT" "$TMP/windows"
@@ -58,4 +58,4 @@ if find "$OUT" -maxdepth 1 -type f -name '*.exe' -print -quit | grep -q .; then
   exit 3
 fi
 file "$TMP/windows/$WIN_EXE_NAME"
-echo "Tech Card Manager v4.0.3 Windows 发布文件已生成（仅 ZIP）：$OUT/$WIN_ZIP_NAME"
+echo "Tech Card Manager v4.0.4 Windows 发布文件已生成（仅 ZIP）：$OUT/$WIN_ZIP_NAME"
