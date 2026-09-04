@@ -1,31 +1,27 @@
-v4.0.4 / 更新说明 / Changelog
+v4.1.0 / 更新说明 / Changelog
 =============================
 
 中文
 ----
 
-- 完成 Manager Web UI 简体中文与 English (United States) 即时切换，包括主界面、目录、筛选、设置、维护、任务、更新、Toast、空状态、placeholder、title、aria-label、日期与 `<html lang>`。
-- 语言切换只更新显示文案，不重载页面，不改变电影/电视剧空间状态、选择、筛选、滚动、弹窗和未保存输入。
-- 建立可扩展语言注册表。Technical Specs 协议字段键、NFO 数据、Ownership、索引结构和 JSON 协议保持稳定，只翻译显示名称。
-- Web Card 对中文 Emby 使用中文、对英文变体使用英文；日语、西班牙语等暂未翻译语言回退中文。卡片 aria-label 与无数据提示同步本地化。
-- Go API 状态、错误、更新信息、原生托盘菜单、目录选择说明、启动/退出错误与退出确认支持双语。
-- 任务启动时固定日志语言，避免运行中切换形成混合日志；旧日志不改写。
-- 响应式布局改为由实际内容宽度和 Flex/Grid 换行决定，按钮组保持成组，长语言不会依赖中英文专用断点。
-- 老用户不需要缓存迁移：旧设置缺少语言时默认中文，现有 NFO、`manager-items-cache.json`、`manager-state.json`、`manager-index-summary.json`、`manager-catalog.json`、Web Card v7 数据、备份与日志均不做破坏性转换。
-- 增加英文隐私政策、使用条款以及中英双语发布文档。
+- 简体中文、繁體中文与 English (United States) 继续内置；新增法语、俄语、日语、西班牙语和泰语可下载语言包。每个包随 v4.1.0 GitHub Release 发布并由主程序目录绑定版本与修订，不需要单独执行语言包更新。
+- 语言选择器使用固定矩形国旗、当前界面语言名称、语言自身名称与通用下载图标。语言包经过大小、文件名、ZIP 结构、清单、消息集合与 SHA-256 校验后原子安装到 Portable 数据目录。
+- Go Core、PowerShell Engine、Manager Web UI、原生托盘与 Web Card 共用可扩展本地化注册表。Web Card 的 `Camera`、`Sound mix` 等协议键保持不变，只翻译显示名、aria-label 与无数据提示；未安装或不支持的 Emby 语言回退简体中文。
+- 更新检查增加条件缓存、退避与代理兼容处理，并分别呈现网络/代理连接失败、GitHub 主限额、二级限流、无明确限额的 403、正式资产缺失及下载失败。
+- 任务在启动时固定日志语言；旧日志保持原文。旧设置缺少语言时默认简体中文，现有 NFO、索引缓存、Web Card 数据、备份和用户目录均不转换或删除。
+- 控制台状态卡、NFO 工具栏和标题区的响应式布局按内容宽度切换，保留宽屏五卡横排，避免孤立单卡占行、过早换行与反复起跳。
+- 发布语言包新增完整覆盖、占位符与协议标记、目标文字及错位译文门禁；Technical Specs、Tag、JSON、Ownership 与只读 NFO 边界不受语言影响。
 
 English
 -------
 
-- Added instant Simplified Chinese and English (United States) switching across the Manager Web UI, including the dashboard, folders, filters, settings, maintenance, tasks, updater, toasts, empty states, placeholder/title/aria-label text, dates, and `<html lang>`.
-- Language switching updates display copy only. It does not reload the page or reset Movie/TV state, selection, filters, scroll positions, dialogs, or unsaved input.
-- Added extensible locale registries. Technical Specs protocol keys, NFO data, ownership, index structures, and JSON protocols remain stable; only display labels are translated.
-- The Web Card uses Chinese for Chinese Emby locales and English for English variants. Untranslated locales such as Japanese and Spanish fall back to Chinese. Card aria labels and empty states are localized too.
-- Added bilingual Go API status and errors, update information, native tray actions, folder-picker description, startup/shutdown errors, and exit confirmation.
-- Each task captures its log language when it starts, preventing mixed-language logs after a live switch. Historical logs are not rewritten.
-- Responsive layout now follows measured content through Flex/Grid wrapping. Command groups stay together, and long translations do not rely on Chinese- or English-specific breakpoints.
-- Existing users need no cache migration. Old settings without a language default to Chinese; existing NFO files, `manager-items-cache.json`, `manager-state.json`, `manager-index-summary.json`, `manager-catalog.json`, Web Card v7 data, backups, and logs are not destructively converted.
-- Added English privacy and terms documents plus bilingual release documentation.
+- Simplified Chinese, Traditional Chinese, and English (United States) remain built in. French, Russian, Japanese, Spanish, and Thai are downloadable packs attached to the v4.1.0 GitHub Release. The app catalog binds each pack revision to this version, so there is no separate language-pack update operation.
+- The language picker uses fixed rectangular flags, the name in the current UI language, each language's native name, and a universal download icon. Packs are size, filename, ZIP-layout, manifest, message-set, and SHA-256 checked before atomic installation into portable data.
+- Go Core, PowerShell Engine, Manager Web UI, native tray, and Web Card use extensible localization registries. Protocol keys such as `Camera` and `Sound mix` remain stable; only display labels, aria-label text, and empty states are translated. Uninstalled or unsupported Emby languages fall back to Simplified Chinese.
+- Update checks now use conditional caching, backoff, and proxy-aware handling while separately reporting network/proxy connection failures, GitHub primary limits, secondary throttling, unexplained 403 responses, missing official assets, and download failures.
+- Each task captures its log language at start; historical logs remain unchanged. Old settings without a language default to Simplified Chinese, while existing NFO files, index caches, Web Card data, backups, and user directories are neither converted nor deleted.
+- Dashboard cards, the NFO toolbar, and the title area now switch responsive layouts by measured content width, preserving the five-card wide layout and preventing orphan cards, premature wrapping, and breakpoint bounce.
+- Release packs have full-coverage, placeholder/protocol-token, target-script, and translation-alignment gates. Technical Specs, Tag, JSON, Ownership, and read-only NFO boundaries remain language-independent.
 
 Validation status / 验证状态
 ----------------------------

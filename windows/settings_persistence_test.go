@@ -15,8 +15,17 @@ func TestLanguageDefaultsAndValidation(t *testing.T) {
 	if got := normalizedLanguage("en-US"); got != "en-US" {
 		t.Fatalf("en-US language = %q", got)
 	}
+	if got := normalizedLanguage("zh-TW"); got != "zh-Hant" {
+		t.Fatalf("Traditional Chinese alias was not normalized: %q", got)
+	}
 	if got := normalizedLanguage("fr-FR"); got != "zh-CN" {
-		t.Fatalf("unsupported language must fail closed to zh-CN, got %q", got)
+		t.Fatalf("uninstalled language must fail closed to zh-CN, got %q", got)
+	}
+	if got := configuredLanguage("fr-FR"); got != "fr-FR" {
+		t.Fatalf("registered language preference must survive an app upgrade, got %q", got)
+	}
+	if got := configuredLanguage("ko-KR"); got != "zh-CN" {
+		t.Fatalf("unknown configured language must fail closed, got %q", got)
 	}
 }
 
@@ -71,6 +80,18 @@ func TestLocalizedLineWriterFreezesLanguageAcrossSplitWrites(t *testing.T) {
 	}
 	if got := output.String(); strings.ContainsAny(got, "任务运行诊断完成") || !strings.Contains(got, "Task") || !strings.Contains(got, "Run diagnostics") || !strings.Contains(got, "Completed") {
 		t.Fatalf("unexpected localized output: %q", got)
+	}
+}
+
+func TestEngineOutputLanguageRemainsBilingualForPackLocales(t *testing.T) {
+	if got := engineOutputLanguageForWriter(newLocalizedLineWriter(&bytes.Buffer{}, "zh-CN")); got != "zh-CN" {
+		t.Fatalf("Simplified Chinese engine language = %q", got)
+	}
+	for _, language := range []string{"zh-Hant", "en-US", "fr-FR", "ru-RU", "ja-JP", "es-ES", "th-TH"} {
+		writer := &localizedLineWriter{dst: &bytes.Buffer{}, language: language}
+		if got := engineOutputLanguageForWriter(writer); got != "en-US" {
+			t.Fatalf("%s engine language = %q, want en-US", language, got)
+		}
 	}
 }
 

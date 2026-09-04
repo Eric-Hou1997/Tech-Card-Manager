@@ -22,10 +22,10 @@ for line_number, line in enumerate(engine.splitlines(), 1):
             failures.append(f"windows-engine.ps1:{line_number}: {source}")
 
 for path in ROOT.glob("*.go"):
-    if path.name.endswith("_test.go") or path.name == "localization.go":
+    if path.name.endswith("_test.go") or path.name in {"localization.go", "language_packs.go"}:
         continue
     for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-        if "currentLocalized(" in line or "localized(" in line:
+        if any(call in line for call in ("currentLocalized(", "localized(", "currentNativeLocalized(", "localizedNative(")):
             continue
         for match in re.finditer(r'"([^"\\]*(?:\\.[^"\\]*)*[\u3400-\u9fff][^"\\]*(?:\\.[^"\\]*)*)"|`([^`]*[\u3400-\u9fff][^`]*)`', line):
             source = match.group(1) if match.group(1) is not None else match.group(2)

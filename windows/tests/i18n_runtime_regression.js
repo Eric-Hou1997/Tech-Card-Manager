@@ -95,7 +95,8 @@ assert(document.documentElement.lang === "zh-CN", "Chinese restores html lang im
 assert(buttonText.data === "设置", "Chinese round trip restores visible source text");
 assert(button.getAttribute("aria-label") === "关闭", "Chinese round trip restores aria-label");
 assert(input.getAttribute("placeholder") === "搜索片名、原标题、年份、IMDb ID 或路径", "Chinese round trip restores placeholder");
-assert(context.i18nTest.normalizeUILanguage("ja-JP") === "zh-CN", "unsupported Manager locale fails closed to Chinese");
+assert(context.i18nTest.normalizeUILanguage("ja-JP") === "ja-JP", "registered external Manager locale is recognized by the UI");
+assert(context.i18nTest.normalizeUILanguage("ko-KR") === "zh-CN", "unknown Manager locale fails closed to Chinese");
 
 const staticMarkup = html.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "");
 const staticChinese = [...staticMarkup.matchAll(/>([^<>]+)</g)]
@@ -105,18 +106,24 @@ context.i18nTest.setUILanguage("en-US");
 assert(staticChinese.every(value => !/[\u3400-\u9fff]/.test(context.i18nTest.uiMessage(value))), "all static visible Manager copy has an English rendering");
 
 const dynamicChinese = new Set();
-for (const source of scripts.slice(1)) {
+for (const rawSource of scripts.slice(1)) {
+    // Language names and the static-preview fallback catalog are locale
+    // metadata, not Manager UI copy awaiting English translation.
+    const source = rawSource
+        .replace(/const LANGUAGE_NAMES=\{[\s\S]*?\n\};/, "")
+        .replace(/const DEFAULT_LANGUAGE_OPTIONS=Object\.freeze\(\[[\s\S]*?\n\]\);/, "");
     for (const match of source.matchAll(/'(?:\\.|[^'\\\r\n])*'|"(?:\\.|[^"\\\r\n])*"/g)) {
         let value;
         try { value = vm.runInNewContext(match[0]); } catch (_) { continue; }
         if (/[\u3400-\u9fff]/.test(value)) dynamicChinese.add(value);
     }
 }
-assert([...dynamicChinese].every(value => {
+const missingDynamicTranslations = [...dynamicChinese].filter(value => {
     let visible = value.replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
     if (visible === " 项") visible = "1 项";
-    return !/[\u3400-\u9fff]/.test(context.i18nTest.uiMessage(visible));
-}), "all dynamic Manager UI literals have an English rendering");
+    return /[\u3400-\u9fff]/.test(context.i18nTest.uiMessage(visible));
+});
+assert(!missingDynamicTranslations.length, "all dynamic Manager UI literals have an English rendering: " + JSON.stringify(missingDynamicTranslations));
 
 const card = fs.readFileSync(path.join(windowsRoot, "engine", "technical-specs-card.js"), "utf8");
 const fieldStart = card.indexOf("    const FIELD_ORDER = [");
@@ -132,11 +139,12 @@ const cardDocument = {
 const cardContext = {Object, String, document: cardDocument};
 vm.createContext(cardContext);
 vm.runInContext(cardLocaleSource, cardContext);
-assert(cardContext.cardI18nTest.resolveCardLocale() === "zh-CN", "unsupported Emby locale falls back to Chinese");
+assert(cardContext.cardI18nTest.resolveCardLocale() === "es-ES", "registered downloadable Emby locale is resolved without changing field keys");
+cardDocument.documentElement.lang = "ko-KR";
 cardDocument.body.getAttribute = () => "en-US";
-assert(cardContext.cardI18nTest.resolveCardLocale() === "zh-CN", "an explicit unsupported Emby html locale does not fall through to English");
+assert(cardContext.cardI18nTest.resolveCardLocale() === "zh-CN", "an unsupported primary Emby locale fails closed to Chinese");
 cardDocument.documentElement.lang = "ja-JP";
-assert(cardContext.cardI18nTest.resolveCardLocale() === "zh-CN", "future untranslated Emby locale also falls back to Chinese");
+assert(cardContext.cardI18nTest.resolveCardLocale() === "ja-JP", "registered Japanese Emby locale can load its downloaded card pack");
 cardDocument.documentElement.lang = "en-GB";
 assert(cardContext.cardI18nTest.resolveCardLocale() === "en-US", "English Emby variants use English card labels");
 cardDocument.documentElement.lang = "zh-Hant";

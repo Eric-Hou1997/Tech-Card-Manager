@@ -4,7 +4,7 @@ set -eu
 # Tech Card Manager: package the reviewed portable x64 GUI as ZIP only.
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 OUT="$ROOT/releases"
-VERSION="4.0.4"
+VERSION="4.1.0"
 ARTIFACT_BASE="TCM-v${VERSION}-Windows-x64-EXE"
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/tech-card-manager-win-${VERSION}.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT HUP INT TERM
@@ -23,10 +23,11 @@ for target in "$OUT/$WIN_ZIP_NAME" "$OUT/$SHA_NAME" "$OUT/$README_NAME" "$OUT/$C
   fi
 done
 
-grep -Fq 'const appVersion = "4.0.4"' "$ROOT/windows/main.go"
-grep -Fq "\$ManagerVersion = '4.0.4'" "$ROOT/windows/engine/windows-engine.ps1"
-grep -Fq 'const WEB_CARD_VERSION = "4.0.4"' "$ROOT/windows/engine/technical-specs-card.js"
+grep -Fq 'const appVersion = "4.1.0"' "$ROOT/windows/main.go"
+grep -Fq "\$ManagerVersion = '4.1.0'" "$ROOT/windows/engine/windows-engine.ps1"
+grep -Fq 'const WEB_CARD_VERSION = "4.1.0"' "$ROOT/windows/engine/technical-specs-card.js"
 git -C "$ROOT" diff --check
+python3 "$ROOT/tools/build-language-packs.py" --app-version "v$VERSION" --require-complete
 
 mkdir -p "$OUT" "$TMP/windows"
 sh "$ROOT/tools/test-source.sh"
@@ -46,9 +47,15 @@ cp "$ROOT/packaging/CHANGELOG.txt" "$TMP/windows/CHANGELOG.txt"
   unzip -t "$OUT/$WIN_ZIP_NAME" >/dev/null
   [ "$(unzip -Z1 "$OUT/$WIN_ZIP_NAME" | sort)" = "$(printf '%s\n' "$WIN_EXE_NAME" CHANGELOG.txt README.txt | sort)" ]
 )
+python3 "$ROOT/tools/build-language-packs.py" --app-version "v$VERSION" --changed-only --output "$OUT"
 (
   cd "$OUT"
-  shasum -a 256 "$WIN_ZIP_NAME" > "$SHA_NAME"
+  set -- "$WIN_ZIP_NAME"
+  for language_asset in TCM-Language-*-r*.zip; do
+    [ -f "$language_asset" ] || continue
+    set -- "$@" "$language_asset"
+  done
+  shasum -a 256 "$@" > "$SHA_NAME"
   shasum -a 256 -c "$SHA_NAME"
 )
 cp "$ROOT/packaging/README.txt" "$OUT/$README_NAME"
@@ -58,4 +65,4 @@ if find "$OUT" -maxdepth 1 -type f -name '*.exe' -print -quit | grep -q .; then
   exit 3
 fi
 file "$TMP/windows/$WIN_EXE_NAME"
-echo "Tech Card Manager v4.0.4 Windows 发布文件已生成（仅 ZIP）：$OUT/$WIN_ZIP_NAME"
+echo "Tech Card Manager v4.1.0 Windows 发布文件已生成（仅 ZIP）：$OUT/$WIN_ZIP_NAME"

@@ -14,16 +14,16 @@ update = (ROOT / "update.go").read_text(encoding="utf-8")
 checks = {
     "formal version is synchronized": all(
         value in source for source, value in [
-            (main, 'const appVersion = "4.0.4"'),
-            (web, "v4.0.4"),
-            (engine, "$ManagerVersion = '4.0.4'"),
-            (engine, "$ExpectedWebCardVersion = '4.0.4'"),
-            (platform, 'const expectedWebCardVersion = "4.0.4"'),
-            (card, 'const WEB_CARD_VERSION = "4.0.4"'),
+            (main, 'const appVersion = "4.1.0"'),
+            (web, "v4.1.0"),
+            (engine, "$ManagerVersion = '4.1.0'"),
+            (engine, "$ExpectedWebCardVersion = '4.1.0'"),
+            (platform, 'const expectedWebCardVersion = "4.1.0"'),
+            (card, 'const WEB_CARD_VERSION = "4.1.0"'),
         ]
     ),
     "about metadata identifies the source version without claiming release": (
-        "v4.0.4　Windows · x64 Portable" in web
+        "v4.1.0　Windows · x64 Portable" in web
         and "2026-09-02 发布" not in web
         and "正式发布时写入日期" not in web
     ),
@@ -53,6 +53,23 @@ checks = {
         and "if(cardUpdateCheckInFlight)return" in web
         and "cardUpdateCheckInFlight=false" in web
     ),
+    "update checks cache results and classify blocked requests": all(
+        value in update for value in [
+            '"update-state.json"',
+            '"If-None-Match"',
+            '"github-primary-rate-limit"',
+            '"github-secondary-rate-limit"',
+            '"proxy-forbidden"',
+            '"github-forbidden"',
+            "discoverCardReleaseViaPage",
+        ]
+    ),
+    "download opens the exact verified package": (
+        "cardPackageURL=result.package_url" in web
+        and "const target=cardPackageURL||cardReleaseURL" in web
+        and "下载指定安装包" in web
+        and "?force=1" in web
+    ),
     "release filenames use the short canonical scheme": all(
         value in build for value in [
             'ARTIFACT_BASE="TCM-v${VERSION}-Windows-x64-EXE"',
@@ -60,6 +77,12 @@ checks = {
             'WIN_EXE_NAME="Tech-Card-Manager.exe"',
             'SHA_NAME="${ARTIFACT_BASE}-SHA256SUMS.txt"',
         ]
+    ),
+    "new language assets share the release checksum manifest": (
+        "for language_asset in TCM-Language-*-r*.zip" in build
+        and 'set -- "$@" "$language_asset"' in build
+        and '--app-version "v$VERSION" --require-complete' in build
+        and build.index("--changed-only --output") < build.index("shasum -a 256")
     ),
     "update check requires the exact Windows package": (
         'TCM-v%s.%s.%s-Windows-x64-EXE.zip' in update
@@ -74,4 +97,4 @@ for name, ok in checks.items():
     print(("OK  " if ok else "FAIL ") + name)
 if failed:
     raise SystemExit("Windows release metadata/update contract failed: " + ", ".join(failed))
-print("OK Tech Card Manager v4.0.4 release metadata and settings update contract")
+print("OK Tech Card Manager v4.1.0 release metadata and settings update contract")

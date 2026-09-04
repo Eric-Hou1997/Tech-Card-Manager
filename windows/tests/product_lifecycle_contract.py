@@ -78,7 +78,7 @@ checks = {
         "standardWidth * 2",
     ]),
     "header matches product naming": all(x in web for x in [
-        "<title>Tech Card Manager</title>", "v4.0.4",
+        "<title>Tech Card Manager</title>", "v4.1.0",
         "Emby Server 技术规格卡片", 'src="../assets/TCM_logo_letter_only.png"',
     ]) and "IMDb Tech Manager Windows" not in web,
     "formal display name is consistent across runtime surfaces": (
@@ -142,4 +142,4 @@ for name, ok in checks.items():
     print(("OK  " if ok else "FAIL ") + name)
 if failed:
     raise SystemExit("Windows legacy product contract failed: " + ", ".join(failed))
-print("OK Windows v4.0.4 product lifecycle, migration, lease, UI and NFO behavior")
+print("OK Windows v4.1.0 product lifecycle, migration, lease, UI and NFO behavior")

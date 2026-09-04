@@ -25,9 +25,9 @@ import (
 	"time"
 )
 
-const appVersion = "4.0.4"
+const appVersion = "4.1.0"
 
-//go:embed web/index.html engine/windows-engine.ps1 engine/technical-specs-card.js assets/TCM_logo_letter_only.png assets/TCM_logo_tiny.png
+//go:embed web/index.html engine/windows-engine.ps1 engine/technical-specs-card.js assets/TCM_logo_letter_only.png assets/TCM_logo_tiny.png language_catalog.json
 var assets embed.FS
 
 type Settings struct {
@@ -59,17 +59,19 @@ type LibraryInfo struct {
 }
 
 type JobState struct {
-	Running      bool   `json:"running"`
-	Action       string `json:"action,omitempty"`
-	StartedAt    string `json:"started_at,omitempty"`
-	EndedAt      string `json:"ended_at,omitempty"`
-	ExitCode     int    `json:"exit_code,omitempty"`
-	Message      string `json:"message,omitempty"`
-	Log          string `json:"log,omitempty"`
-	BlocksExit   bool   `json:"blocks_exit,omitempty"`
-	NeedsAdmin   bool   `json:"needs_admin,omitempty"`
-	AlreadyAdmin bool   `json:"already_admin,omitempty"`
-	Language     string `json:"language,omitempty"`
+	Running              bool   `json:"running"`
+	Action               string `json:"action,omitempty"`
+	StartedAt            string `json:"started_at,omitempty"`
+	EndedAt              string `json:"ended_at,omitempty"`
+	ExitCode             int    `json:"exit_code,omitempty"`
+	Message              string `json:"message,omitempty"`
+	Log                  string `json:"log,omitempty"`
+	BlocksExit           bool   `json:"blocks_exit,omitempty"`
+	NeedsAdmin           bool   `json:"needs_admin,omitempty"`
+	AlreadyAdmin         bool   `json:"already_admin,omitempty"`
+	Language             string `json:"language,omitempty"`
+	LanguagePackRevision int    `json:"language_pack_revision,omitempty"`
+	LanguageCatalogHash  string `json:"language_catalog_hash,omitempty"`
 }
 
 type AgentCycleState struct {
@@ -300,6 +302,7 @@ func runUI(loginStartup bool) {
 	mux.HandleFunc("/api/settings", requireToken(handleSettings))
 	mux.HandleFunc("/api/job", requireToken(handleJob))
 	mux.HandleFunc("/api/update", requireToken(handleCardUpdate))
+	mux.HandleFunc("/api/languages", requireToken(handleLanguagePacks))
 	mux.HandleFunc("/api/heartbeat", requireToken(func(w http.ResponseWriter, r *http.Request) {
 		lastHeartbeatUnix.Store(time.Now().Unix())
 		writeJSON(w, map[string]bool{"ok": true})
@@ -326,6 +329,7 @@ func runUI(loginStartup bool) {
 			appendManagerLog("http: " + err.Error())
 		}
 	}()
+	go ensureConfiguredLanguagePack()
 
 	if err := openAppWindow(url); err != nil {
 		appendManagerLog("open UI: " + err.Error())
@@ -620,8 +624,13 @@ func handleSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	if v, ok := raw["language"]; ok {
 		var language string
-		if err := json.Unmarshal(v, &language); err != nil || !supportedLanguage(language) {
-			writeJSONStatus(w, 400, map[string]string{"error": "语言只能选择简体中文或 English (United States)"})
+		if err := json.Unmarshal(v, &language); err != nil {
+			writeJSONStatus(w, 400, map[string]string{"error": "所选语言无效"})
+			return
+		}
+		language = normalizedLanguageAlias(language)
+		if !supportedLanguage(language) {
+			writeJSONStatus(w, 400, map[string]string{"error": "所选语言尚未安装或不受当前版本支持"})
 			return
 		}
 		set.Language = language
@@ -827,6 +836,7 @@ func startJobWithParent(parent context.Context, action, arg string) error {
 
 func startManagedJob(parent context.Context, action string, options managedJobOptions) error {
 	jobLanguage := currentLanguage()
+	packRevision, catalogHash := languagePackIdentity(jobLanguage)
 	jobs.mu.Lock()
 	if jobs.st.Running {
 		jobs.mu.Unlock()
@@ -841,14 +851,16 @@ func startManagedJob(parent context.Context, action string, options managedJobOp
 	}
 	message = localizeBackendText(jobLanguage, message)
 	jobs.st = JobState{
-		Running:      true,
-		Action:       action,
-		StartedAt:    now,
-		Message:      message,
-		BlocksExit:   options.blocksExit,
-		NeedsAdmin:   options.needsAdmin,
-		AlreadyAdmin: options.alreadyAdmin,
-		Language:     jobLanguage,
+		Running:              true,
+		Action:               action,
+		StartedAt:            now,
+		Message:              message,
+		BlocksExit:           options.blocksExit,
+		NeedsAdmin:           options.needsAdmin,
+		AlreadyAdmin:         options.alreadyAdmin,
+		Language:             jobLanguage,
+		LanguagePackRevision: packRevision,
+		LanguageCatalogHash:  catalogHash,
 	}
 	jobs.cancel = cancel
 	jobs.done = done
@@ -1175,7 +1187,7 @@ func loadSettings() Settings {
 	if s.IntervalSeconds < 30 {
 		s.IntervalSeconds = 60
 	}
-	s.Language = normalizedLanguage(s.Language)
+	s.Language = configuredLanguage(s.Language)
 	return s
 }
 
@@ -1243,7 +1255,7 @@ func saveSettings(s Settings) error {
 	if s.IntervalSeconds < 30 {
 		s.IntervalSeconds = 60
 	}
-	s.Language = normalizedLanguage(s.Language)
+	s.Language = configuredLanguage(s.Language)
 	b, _ := json.MarshalIndent(s, "", "  ")
 	return atomicWrite(settingsPath(), b, 0644)
 }

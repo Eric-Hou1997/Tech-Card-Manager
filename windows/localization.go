@@ -12,14 +12,28 @@ import (
 const defaultLanguage = "zh-CN"
 
 type LanguageOption struct {
-	Code        string `json:"code"`
-	NativeName  string `json:"native_name"`
-	EnglishName string `json:"english_name"`
+	Code         string `json:"code"`
+	NativeName   string `json:"native_name"`
+	EnglishName  string `json:"english_name"`
+	Flag         string `json:"flag"`
+	BuiltIn      bool   `json:"built_in"`
+	Installed    bool   `json:"installed"`
+	Downloadable bool   `json:"downloadable"`
+	State        string `json:"state"`
+	Revision     int    `json:"revision,omitempty"`
+	ReleasedWith string `json:"released_with,omitempty"`
+	Error        string `json:"error,omitempty"`
 }
 
 var languageOptions = []LanguageOption{
-	{Code: "zh-CN", NativeName: "简体中文", EnglishName: "Simplified Chinese"},
-	{Code: "en-US", NativeName: "English (United States)", EnglishName: "English (United States)"},
+	{Code: "zh-CN", NativeName: "简体中文", EnglishName: "Simplified Chinese", Flag: "cn", BuiltIn: true, Installed: true, State: "built-in"},
+	{Code: "zh-Hant", NativeName: "繁體中文", EnglishName: "Traditional Chinese", Flag: "cn", BuiltIn: true, Installed: true, State: "built-in"},
+	{Code: "en-US", NativeName: "English (United States)", EnglishName: "English (United States)", Flag: "us", BuiltIn: true, Installed: true, State: "built-in"},
+	{Code: "fr-FR", NativeName: "Français", EnglishName: "French", Flag: "fr", Downloadable: true, State: "not-installed"},
+	{Code: "ru-RU", NativeName: "Русский", EnglishName: "Russian", Flag: "ru", Downloadable: true, State: "not-installed"},
+	{Code: "ja-JP", NativeName: "日本語", EnglishName: "Japanese", Flag: "jp", Downloadable: true, State: "not-installed"},
+	{Code: "es-ES", NativeName: "Español", EnglishName: "Spanish", Flag: "es", Downloadable: true, State: "not-installed"},
+	{Code: "th-TH", NativeName: "ไทย", EnglishName: "Thai", Flag: "th", Downloadable: true, State: "not-installed"},
 }
 
 var languageByCode = func() map[string]LanguageOption {
@@ -31,13 +45,29 @@ var languageByCode = func() map[string]LanguageOption {
 }()
 
 func supportedLanguage(language string) bool {
-	_, ok := languageByCode[strings.TrimSpace(language)]
-	return ok
+	option, ok := languageByCode[strings.TrimSpace(language)]
+	return ok && (option.BuiltIn || (languageCatalogActive() && languagePackInstalled(option.Code)))
+}
+
+func normalizedLanguageAlias(language string) string {
+	language = strings.TrimSpace(language)
+	if language == "zh-TW" || language == "zh-HK" || language == "zh-MO" {
+		return "zh-Hant"
+	}
+	return language
 }
 
 func normalizedLanguage(language string) string {
-	language = strings.TrimSpace(language)
+	language = configuredLanguage(language)
 	if supportedLanguage(language) {
+		return language
+	}
+	return defaultLanguage
+}
+
+func configuredLanguage(language string) string {
+	language = normalizedLanguageAlias(language)
+	if _, ok := languageByCode[language]; ok {
 		return language
 	}
 	return defaultLanguage
@@ -46,11 +76,22 @@ func normalizedLanguage(language string) string {
 func supportedLanguages() []LanguageOption {
 	result := make([]LanguageOption, len(languageOptions))
 	copy(result, languageOptions)
+	decorateLanguageOptions(result)
 	return result
 }
 
 func localized(language, chinese, english string) string {
-	if normalizedLanguage(language) == "en-US" {
+	language = normalizedLanguage(language)
+	if language == "en-US" {
+		return english
+	}
+	if language == "zh-Hant" {
+		return traditionalChinese(chinese)
+	}
+	if value, ok := languagePackMessage(language, "core", stableMessageID(english)); ok {
+		return value
+	}
+	if language != "zh-CN" {
 		return english
 	}
 	return chinese
@@ -62,7 +103,51 @@ func currentLocalized(chinese, english string) string {
 	return localized(currentLanguage(), chinese, english)
 }
 
+func localizedNative(language, chinese, english string) string {
+	language = normalizedLanguage(language)
+	if language == "en-US" {
+		return english
+	}
+	if language == "zh-Hant" {
+		return traditionalChinese(chinese)
+	}
+	if value, ok := languagePackMessage(language, "native", stableMessageID(english)); ok {
+		return value
+	}
+	if language != "zh-CN" {
+		return english
+	}
+	return chinese
+}
+
+func currentNativeLocalized(chinese, english string) string {
+	return localizedNative(currentLanguage(), chinese, english)
+}
+
 var englishBackendPhrases = []struct{ zh, en string }{
+	{"语言包目录记录不完整", "The language-pack catalog entry is incomplete"},
+	{"语言包文件名无效", "The language-pack filename is invalid"},
+	{"该语言不需要下载", "This language does not need to be downloaded"},
+	{"当前版本没有为该语言指定语言包", "This app version does not specify a pack for that language"},
+	{"该语言包尚未随正式版本发布", "This language pack has not been published with a stable release"},
+	{"该语言包正在下载", "This language pack is already downloading"},
+	{"语言包下载失败", "Language-pack download failed"},
+	{"语言包下载重定向次数过多", "Too many language-pack download redirects"},
+	{"语言包下载重定向到非官方主机", "The language-pack download redirected to an unofficial host"},
+	{"语言包过大，已拒绝安装", "The language pack is too large and was rejected"},
+	{"语言包摘要验证失败", "The language-pack checksum verification failed"},
+	{"语言包 ZIP 无效", "The language-pack ZIP is invalid"},
+	{"语言包文件集合无效", "The language-pack file set is invalid"},
+	{"语言包包含不允许的文件", "The language pack contains a disallowed file"},
+	{"语言包内容过大", "The language-pack content is too large"},
+	{"语言包内容读取失败", "The language-pack content could not be read"},
+	{"语言包清单与当前应用目录不匹配", "The language-pack manifest does not match this app catalog"},
+	{"语言包目录无效", "The language-pack catalog is invalid"},
+	{"语言包目录不安全", "The language-pack directory is unsafe"},
+	{"语言包目录不属于当前应用版本", "The language-pack catalog does not belong to this app version"},
+	{"语言包已安装，但网页卡片语言文件发布失败", "The language pack was installed, but publishing the Web Card language file failed"},
+	{"所选语言无效", "The selected language is invalid"},
+	{"所选语言尚未安装或不受当前版本支持", "The selected language is not installed or is unsupported by this app version"},
 	{"服务已停止；请先确认媒体目录", "Service stopped; confirm media folders first"},
 	{"服务调度已停止，但撤卡状态写入失败；请重试停止", "Scheduling stopped, but the card-removal state could not be written. Retry stopping"},
 	{"全部服务已停止；正在退出", "All services stopped; exiting"},
@@ -79,7 +164,7 @@ var englishBackendPhrases = []struct{ zh, en string }{
 	{"旧计划任务清理提示", "Legacy scheduled-task cleanup note"},
 	{"服务由可视化 Manager 主进程拥有；最小化继续运行，关闭窗口停止全部服务", "The service is owned by the visual Manager process; it continues while minimized, and closing the window stops all services"},
 	{"停止服务会失效运行许可，Emby 页面随后撤下本程序拥有的技术规格卡片", "Stopping the service invalidates the runtime lease, after which Emby removes the Technical Specs card owned by this app"},
-	{"网页卡片 v4.0.4：后台索引永不修改 Emby index.html，网页维护仍需用户明确确认", "Web Card v4.0.4: background indexing never changes Emby index.html, and Web maintenance still requires explicit user approval"},
+	{"网页卡片 v4.1.0：后台索引永不修改 Emby index.html，网页维护仍需用户明确确认", "Web Card v4.1.0: background indexing never changes Emby index.html, and Web maintenance still requires explicit user approval"},
 	{"Manager 索引摘要损坏", "The Manager index summary is damaged"},
 	{"Manager 索引摘要读取失败", "Could not read the Manager index summary"},
 	{"读取管理员维护进程退出状态失败", "Could not read the administrator maintenance process exit status"},
@@ -100,7 +185,7 @@ var englishBackendPhrases = []struct{ zh, en string }{
 	{" 与 ", " and "},
 	{"本轮只扫描此目录", "Scanning only this folder"},
 	{"没有识别出任何电影/电视剧媒体库物理路径", "No physical Movie or TV Show library path was identified"},
-	{"Tech Card Manager 4.0.4 支持 Portable 数据目录、用户选择媒体目录、目录级扫描与只读 NFO 目录", "Tech Card Manager 4.0.4 supports portable data folders, user-selected media folders, folder-level scans, and a read-only NFO catalog"},
+	{"Tech Card Manager 4.1.0 支持 Portable 数据目录、用户选择媒体目录、目录级扫描与只读 NFO 目录", "Tech Card Manager 4.1.0 supports portable data folders, user-selected media folders, folder-level scans, and a read-only NFO catalog"},
 	{"当前媒体库没有独立分类目录；请先在设置中把混合目录拆分或标记为电影/电视剧，已避免误扫另一类媒体", "The current library has no separately categorized folder. Split mixed folders or mark them as Movies or TV Shows in Settings to avoid scanning the other media type"},
 	{"服务调度已停止，但未能确认 Emby 撤卡；请点击按钮重试", "Scheduling stopped, but removal of the card from Emby could not be confirmed. Use the button to retry"},
 	{"服务调度已停止，但未能确认 Emby 撤卡；退出已暂停", "Scheduling stopped, but removal of the card from Emby could not be confirmed. Exit has been paused"},
@@ -319,6 +404,19 @@ var englishBackendPhrases = []struct{ zh, en string }{
 	{"GitHub 更新检查失败", "GitHub update check failed"},
 	{"GitHub 更新信息无效", "The GitHub update response is invalid"},
 	{"GitHub 最新发布不是可用的正式 vX.Y.Z 版本", "The latest GitHub release is not a valid stable vX.Y.Z release"},
+	{"GitHub 更新重定向次数过多", "Too many GitHub update redirects"},
+	{"GitHub 更新重定向到非官方主机 %s，已拒绝", "The GitHub update redirected to the unofficial host %s and was rejected"},
+	{"GitHub 匿名 API 的出口 IP 额度已用完", "The GitHub anonymous API quota for this public IP has been exhausted"},
+	{"GitHub 触发了次级限流，请按提示时间后再检查", "GitHub applied a secondary rate limit; check again after the indicated time"},
+	{"代理或中间网络拒绝了更新请求", "A proxy or intermediary network rejected the update request"},
+	{"GitHub 拒绝了更新请求，但未标明为额度耗尽", "GitHub rejected the update request without identifying an exhausted quota"},
+	{"GitHub 更新服务暂时不可用", "The GitHub update service is temporarily unavailable"},
+	{"GitHub 更新请求失败（HTTP %d）", "The GitHub update request failed (HTTP %d)"},
+	{"无法连接代理服务器", "Could not connect to the proxy server"},
+	{"正式发布返回了非官方或不匹配的更新地址", "The official release returned an unofficial or mismatched update URL"},
+	{"GitHub 最新发布页面没有返回有效的正式版本", "The GitHub latest-release page did not return a valid stable version"},
+	{"GitHub 返回了无法使用的未修改状态", "GitHub returned an unusable not-modified response"},
+	{"已检查到更新，但无法保存更新状态", "The update was checked, but its state could not be saved"},
 	{"NFO 管理目录损坏，请运行增量检查重建", "The NFO Manager catalog is damaged. Run an incremental check to rebuild it"},
 	{"服务已启动", "Service started"},
 	{"服务已停止，Emby 将不再显示技术规格卡片", "Service stopped. Emby will no longer show the Technical Specs card"},
@@ -365,7 +463,8 @@ var englishBackendPhrasesByLength = func() []struct{ zh, en string } {
 var windowsPathPattern = regexp.MustCompile(`(?i)(?:[a-z]:\\|\\\\)[^\r\n]*`)
 
 func localizeBackendText(language, value string) string {
-	if normalizedLanguage(language) != "en-US" {
+	language = normalizedLanguage(language)
+	if language == "zh-CN" {
 		return value
 	}
 	// Task output can append user-supplied Windows paths to product messages.
@@ -377,7 +476,20 @@ func localizeBackendText(language, value string) string {
 		value = strings.Replace(value, path, backendPathPlaceholder(index), 1)
 	}
 	for _, phrase := range englishBackendPhrasesByLength {
-		value = strings.ReplaceAll(value, phrase.zh, phrase.en)
+		translated := phrase.en
+		if language == "zh-Hant" {
+			translated = traditionalChinese(phrase.zh)
+		} else if language != "en-US" {
+			if packed, ok := languagePackMessage(language, "core", stableMessageID(phrase.en)); ok {
+				translated = packed
+			} else if packed, ok := languagePackMessage(language, "engine", stableMessageID(phrase.en)); ok {
+				translated = packed
+			}
+		}
+		value = strings.ReplaceAll(value, phrase.zh, translated)
+		if language != "en-US" {
+			value = strings.ReplaceAll(value, phrase.en, translated)
+		}
 	}
 	for index, path := range protectedPaths {
 		value = strings.Replace(value, backendPathPlaceholder(index), path, 1)
@@ -466,6 +578,16 @@ func outputLanguageForWriter(writer io.Writer) string {
 		return localizedWriter.language
 	}
 	return currentLanguage()
+}
+
+// The bundled PowerShell engine intentionally remains bilingual. External UI
+// languages consume its stable English presentation strings and translate
+// them in localizedLineWriter, while structured values remain untouched.
+func engineOutputLanguageForWriter(writer io.Writer) string {
+	if outputLanguageForWriter(writer) == "zh-CN" {
+		return "zh-CN"
+	}
+	return "en-US"
 }
 
 func (w *localizedLineWriter) Write(p []byte) (int, error) {

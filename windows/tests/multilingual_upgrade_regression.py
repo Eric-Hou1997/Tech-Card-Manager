@@ -16,7 +16,7 @@ checks = {
             (localization, 'const defaultLanguage = "zh-CN"'),
             (main, "s := Settings{IntervalSeconds: 60, Language: defaultLanguage}"),
             (main, "_ = json.Unmarshal(b, &s)"),
-            (main, "s.Language = normalizedLanguage(s.Language)"),
+            (main, "s.Language = configuredLanguage(s.Language)"),
         ]
     ) and "languageMigration" not in main + platform,
     "unsupported saved language fails closed while supported English survives": all(
@@ -45,7 +45,9 @@ checks = {
     "new task language is captured once and persisted with the job": all(
         value in main for value in [
             "jobLanguage := currentLanguage()",
-            "Language:     jobLanguage",
+            "Language:             jobLanguage",
+            "LanguagePackRevision: packRevision",
+            "LanguageCatalogHash:  catalogHash",
             "newLocalizedLineWriter(f, jobLanguage)",
         ]
     ),
@@ -57,7 +59,8 @@ checks = {
     ),
     "PowerShell receives the frozen writer language on every engine action": (
         engine.count("[string]$OutputLanguage = 'zh-CN'") == 1
-        and platform.count('"-OutputLanguage", outputLanguageForWriter(w)') >= 6
+        and platform.count('"-OutputLanguage", engineOutputLanguageForWriter(w)') >= 6
+        and "func engineOutputLanguageForWriter" in localization
     ),
     "Manager language registry and Web Card locale registry are independent of data keys": all(
         value in source for source, value in [
@@ -75,4 +78,15 @@ for name, ok in checks.items():
     print(("OK  " if ok else "FAIL ") + name)
 if failed:
     raise SystemExit("TCM multilingual upgrade regression failed: " + ", ".join(failed))
+assert '{Code: "zh-CN", NativeName: "简体中文", EnglishName: "Simplified Chinese", Flag: "cn"' in localization
+assert '{Code: "zh-Hant", NativeName: "繁體中文", EnglishName: "Traditional Chinese", Flag: "cn"' in localization
+assert '{Code: "en-US", NativeName: "English (United States)", EnglishName: "English (United States)", Flag: "us"' in localization
+assert "const LANGUAGE_NAMES={" in web and "native=option.code===uiLanguage?'':option.native_name" in web
+assert "function languageFlag(code)" in web and "const star='<path" in web
+assert "function languageActionIcon(option)" in web and "M12 3v12" in web
+assert "const DEFAULT_LANGUAGE_OPTIONS=Object.freeze([" in web
+assert "languageOptionsState=DEFAULT_LANGUAGE_OPTIONS.map" in web
+assert "background-image:none" in web
+assert ".dataset.languagePicker=" in web
+assert "🇨🇳" not in web and "🇺🇸" not in web
 print("OK TCM multilingual upgrade keeps old settings, caches, logs, and NFO data compatible")

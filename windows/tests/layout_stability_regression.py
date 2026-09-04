@@ -14,14 +14,14 @@ height_end = card.index("function scheduleTechnicalCardHeightSync", height_start
 height_sync = card[height_start:height_end]
 
 checks = {
-    "legacy and Web Card 4.0.4 are synchronized": all(
+    "legacy and Web Card 4.1.0 are synchronized": all(
         value in source for source, value in [
-            (main, 'const appVersion = "4.0.4"'),
-            (engine, "$ManagerVersion = '4.0.4'"),
-            (web, "v4.0.4"),
-            (card, 'const WEB_CARD_VERSION = "4.0.4"'),
-            (engine, "$ExpectedWebCardVersion = '4.0.4'"),
-            (platform, 'const expectedWebCardVersion = "4.0.4"'),
+            (main, 'const appVersion = "4.1.0"'),
+            (engine, "$ManagerVersion = '4.1.0'"),
+            (web, "v4.1.0"),
+            (card, 'const WEB_CARD_VERSION = "4.1.0"'),
+            (engine, "$ExpectedWebCardVersion = '4.1.0'"),
+            (platform, 'const expectedWebCardVersion = "4.1.0"'),
         ]
     ),
     "card bottom reserves one measured text line": all(value in card for value in [

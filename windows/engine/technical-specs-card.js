@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const WEB_CARD_VERSION = "4.0.4";
+    const WEB_CARD_VERSION = "4.1.0";
 
     // Single-run guard: if another copy of this card script (older or equal)
     // is already active on the page, only the newest version may run. Old
@@ -93,6 +93,7 @@
     const BASE_URL = new URL(".", SCRIPT_URL).href;
     const DATA_URL = new URL("technical-specs-data.json", BASE_URL).href;
     const RUNTIME_URL = new URL("technical-specs-runtime.json", BASE_URL).href;
+    const LANGUAGE_URL = new URL("technical-specs-languages.json", BASE_URL).href;
     const DEFAULT_STANDARD_CARD_WIDTH_PX = 278;
     const CARD_LEASE_POLL_MS = 1200;
 
@@ -135,6 +136,42 @@
         })
     });
     const DEFAULT_CARD_LOCALE = "zh-CN";
+    const EXTERNAL_CARD_LOCALES = Object.create(null);
+    const EXTERNAL_LOCALE_CODES = Object.freeze({ fr: "fr-FR", ru: "ru-RU", ja: "ja-JP", es: "es-ES", th: "th-TH" });
+
+    function stableMessageID(value) {
+        let hash = 14695981039346656037n;
+        for (const byte of new TextEncoder().encode(String(value).trim())) {
+            hash ^= BigInt(byte);
+            hash = BigInt.asUintN(64, hash * 1099511628211n);
+        }
+        return "legacy." + hash.toString(16).padStart(16, "0");
+    }
+
+    function cardLocale(localeCode) {
+        return CARD_LOCALES[localeCode] || EXTERNAL_CARD_LOCALES[localeCode] || CARD_LOCALES[DEFAULT_CARD_LOCALE];
+    }
+
+    async function loadExternalCardLocale(localeCode) {
+        if (CARD_LOCALES[localeCode] || EXTERNAL_CARD_LOCALES[localeCode]) return true;
+        if (!Object.values(EXTERNAL_LOCALE_CODES).includes(localeCode)) return false;
+        try {
+            const response = await fetch(`${LANGUAGE_URL}?v=${Date.now()}`, { cache: "no-store", credentials: "same-origin" });
+            if (!response.ok) return false;
+            const payload = await response.json();
+            if (payload.schema !== 1 || payload.catalog_app_version !== `v${WEB_CARD_VERSION}`) return false;
+            const messages = payload.languages && payload.languages[localeCode];
+            if (!messages || typeof messages !== "object") return false;
+            const translated = english => String(messages[stableMessageID(english)] || "").trim();
+            const title = translated("Technical Specs"), empty = translated("No Technical Specs data");
+            const fields = Object.fromEntries(FIELD_ORDER.map(field => [field, translated(field)]));
+            if (!title || !empty || Object.values(fields).some(value => !value)) return false;
+            EXTERNAL_CARD_LOCALES[localeCode] = Object.freeze({ title, empty, fields: Object.freeze(fields) });
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
 
     const TECH_CARD_SELECTOR = "[data-tech-spec-card='1']";
     const NATIVE_HOST_SELECTOR = "[data-tech-spec-native-host='1']";
@@ -223,6 +260,8 @@
             if (!language) continue;
             if (language === "en" || language.startsWith("en-")) return "en-US";
             if (language === "zh" || language.startsWith("zh-")) return "zh-CN";
+            const external = EXTERNAL_LOCALE_CODES[language.split("-")[0]];
+            if (external) return external;
             return DEFAULT_CARD_LOCALE;
         }
         // Unsupported Emby languages intentionally fall back to Chinese.
@@ -719,7 +758,7 @@
     }
 
     function appendNativeSpecFooter(footer, templateHeading, specs, localeCode) {
-        const locale = CARD_LOCALES[localeCode] || CARD_LOCALES[DEFAULT_CARD_LOCALE];
+        const locale = cardLocale(localeCode);
         const titleRow = document.createElement("div");
         titleRow.className = "mediaStreamInnerCardFooter-cardText cardText text-align-start innerFooter-cardText cardText-first-padded";
         const heading = templateHeading
@@ -787,7 +826,7 @@
             : "itm-tech-card--wide");
         card.setAttribute("data-tech-spec-card", "1");
         card.setAttribute("data-tech-spec-render-mode", layoutMode);
-        const locale = CARD_LOCALES[localeCode] || CARD_LOCALES[DEFAULT_CARD_LOCALE];
+        const locale = cardLocale(localeCode);
         card.setAttribute("aria-label", locale.title);
 
         const standardWidth = widthPx ||
@@ -1789,7 +1828,10 @@
             return "item-not-in-index-yet";
         }
 
-        const localeCode = resolveCardLocale();
+        let localeCode = resolveCardLocale();
+        if (!CARD_LOCALES[localeCode] && !await loadExternalCardLocale(localeCode)) {
+            localeCode = DEFAULT_CARD_LOCALE;
+        }
         const key = [
             itemId || imdb,
             itemType || "unknown",
