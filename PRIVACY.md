@@ -1,5 +1,7 @@
 # 隐私政策
 
+**简体中文** | [繁體中文](./docs/legal/PRIVACY.zh-Hant.md) | [English](./docs/legal/PRIVACY.en.md) | [Français](./docs/legal/PRIVACY.fr.md) | [Русский](./docs/legal/PRIVACY.ru.md) | [日本語](./docs/legal/PRIVACY.ja.md) | [Español](./docs/legal/PRIVACY.es.md) | [ไทย](./docs/legal/PRIVACY.th.md)
+
 Tech Card Manager 是本地 Windows Portable 工具。它不会建立本产品自己的遥测、广告追踪或账号系统。
 
 - 您选择的媒体目录、只读 NFO 索引、配置、日志、备份和运行时文件保存在当前 Portable 软件目录。

@@ -1,5 +1,7 @@
 # Privacy Policy
 
+[简体中文](../../PRIVACY.md) | [繁體中文](./PRIVACY.zh-Hant.md) | **English** | [Français](./PRIVACY.fr.md) | [Русский](./PRIVACY.ru.md) | [日本語](./PRIVACY.ja.md) | [Español](./PRIVACY.es.md) | [ไทย](./PRIVACY.th.md)
+
 Tech Card Manager is a local Windows portable application. It does not operate its own telemetry, advertising-tracking, or account system.
 
 - Media folders you select, the read-only NFO index, settings, logs, backups, and runtime files are stored in the current portable application folder.

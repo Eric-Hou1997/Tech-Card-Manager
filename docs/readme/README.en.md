@@ -910,9 +910,9 @@ Full license:
 Additional project documents:
 
 * [NOTICE](../../NOTICE)
-* [PRIVACY.md](../../PRIVACY.md)
+* [PRIVACY.md](../legal/PRIVACY.en.md)
 * [SECURITY.md](../../SECURITY.md)
-* [TERMS.md](../../TERMS.md)
+* [TERMS.md](../legal/TERMS.en.md)
 
 Author: **侯雁泽**
 
