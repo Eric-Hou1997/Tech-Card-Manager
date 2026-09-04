@@ -2,7 +2,7 @@
 
 # Tech Card Manager
 
-[简体中文](./README.md) | [繁體中文](./README.zh-Hant.md) | **English** | [Français](./README.fr.md) | [Русский](./README.ru.md) | [日本語](./README.ja.md) | [Español](./README.es.md) | [ไทย](./README.th.md)
+[简体中文](../../README.md) | [繁體中文](./README.zh-Hant.md) | **English** | [Français](./README.fr.md) | [Русский](./README.ru.md) | [日本語](./README.ja.md) | [Español](./README.es.md) | [ไทย](./README.th.md)
 
 <p align="center">
 
@@ -13,7 +13,7 @@
 
 </p>
 
-<img src="./windows/assets/TCM_logo.png" alt="Tech Card Manager" width="220">
+<img src="../../windows/assets/TCM_logo.png" alt="Tech Card Manager" width="220">
 
 **Technical specifications card management and Emby media library integration tool.**
 
@@ -206,7 +206,7 @@ The Manager UI is used to inspect:
 
 <div align="center">
 
-<img src="./docs/images/card-manager.PNG" alt="Tech Card Manager Manager UI" width="700">
+<img src="../images/card-manager.PNG" alt="Tech Card Manager Manager UI" width="700">
 
 </div>
 
@@ -228,7 +228,7 @@ The settings area is used to manage:
 
 <div align="center">
 
-<img src="./docs/images/media-etting.PNG" alt="Tech Card Manager Settings" width="700">
+<img src="../images/media-etting.PNG" alt="Tech Card Manager Settings" width="700">
 
 </div>
 
@@ -255,7 +255,7 @@ The card can present information such as:
 
 <div align="center">
 
-<img src="./docs/images/media-library-card.png" alt="Tech Card Manager Emby Media Library Card" width="700">
+<img src="../images/media-library-card.png" alt="Tech Card Manager Emby Media Library Card" width="700">
 
 </div>
 
@@ -271,12 +271,12 @@ Show-level Technical Specifications can be presented on the corresponding Emby m
 >
 > Suggested file:
 >
-> `./docs/images/emby-series-card.png`
+> `../images/emby-series-card.png`
 
 <!--
 <div align="center">
 
-<img src="./docs/images/emby-series-card.png" alt="Tech Card Manager Emby Series Card" width="700">
+<img src="../images/emby-series-card.png" alt="Tech Card Manager Emby Series Card" width="700">
 
 </div>
 -->
@@ -301,12 +301,12 @@ This section can be used to show the complete visual result of the Technical Spe
 >
 > Suggested file:
 >
-> `./docs/images/technical-specs-card-detail.png`
+> `../images/technical-specs-card-detail.png`
 
 <!--
 <div align="center">
 
-<img src="./docs/images/technical-specs-card-detail.png" alt="Tech Card Manager Technical Specifications Card" width="700">
+<img src="../images/technical-specs-card-detail.png" alt="Tech Card Manager Technical Specifications Card" width="700">
 
 </div>
 -->
@@ -677,7 +677,7 @@ for package-integrity verification.
 
 The repository includes:
 
-[**`AGENTS.md` →**](./AGENTS.md)
+[**`AGENTS.md` →**](../../AGENTS.md)
 
 It is one of the primary context entry points for Coding Agents such as Codex when working with Tech Card Manager.
 
@@ -877,7 +877,7 @@ Contributions are welcome, including:
 
 Before modifying the code, please read:
 
-[**`AGENTS.md` →**](./AGENTS.md)
+[**`AGENTS.md` →**](../../AGENTS.md)
 
 In particular, preserve the existing product boundaries when modifying:
 
@@ -905,14 +905,14 @@ Tech Card Manager is licensed under the:
 
 Full license:
 
-[**LICENSE →**](./LICENSE)
+[**LICENSE →**](../../LICENSE)
 
 Additional project documents:
 
-* [NOTICE](./NOTICE)
-* [PRIVACY.md](./PRIVACY.md)
-* [SECURITY.md](./SECURITY.md)
-* [TERMS.md](./TERMS.md)
+* [NOTICE](../../NOTICE)
+* [PRIVACY.md](../../PRIVACY.md)
+* [SECURITY.md](../../SECURITY.md)
+* [TERMS.md](../../TERMS.md)
 
 Author: **侯雁泽**
 

@@ -2,12 +2,12 @@
 
 # Tech Card Manager
 
-[简体中文](./README.md) | [繁體中文](./README.zh-Hant.md) | [English](./README.en.md) | [Français](./README.fr.md) | [Русский](./README.ru.md) | [日本語](./README.ja.md) | [Español](./README.es.md) | **ไทย**
+[简体中文](../../README.md) | [繁體中文](./README.zh-Hant.md) | [English](./README.en.md) | [Français](./README.fr.md) | [Русский](./README.ru.md) | [日本語](./README.ja.md) | [Español](./README.es.md) | **ไทย**
 
 [![Release](https://img.shields.io/github/v/release/Eric-Hou1997/Tech-Card-Manager?label=release)](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases)
 [![Downloads](https://img.shields.io/github/downloads/Eric-Hou1997/Tech-Card-Manager/total?label=downloads)](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases)
 
-<img src="./windows/assets/TCM_logo.png" alt="Tech Card Manager" width="220">
+<img src="../../windows/assets/TCM_logo.png" alt="Tech Card Manager" width="220">
 
 ดัชนี NFO แบบอ่านอย่างเดียวและเครื่องมือจัดการการ์ด Technical Specifications สำหรับ Emby Server
 
@@ -51,9 +51,9 @@ TCM ไม่ดึงข้อมูล IMDb ไม่เขียน NFO แ�
 
 ## ภาพหน้าจอ
 
-![TCM Manager](./docs/images/card-manager.PNG)
+![TCM Manager](../images/card-manager.PNG)
 
-![Emby Technical Specifications Card](./docs/images/media-library-card.png)
+![Emby Technical Specifications Card](../images/media-library-card.png)
 
 ## การติดตั้งและอัปเดต
 
@@ -69,6 +69,6 @@ TCM ไม่ดึงข้อมูล IMDb ไม่เขียน NFO แ�
 
 ## การพัฒนาและสัญญาอนุญาต
 
-โปรดอ่าน [`AGENTS.md`](./AGENTS.md) ก่อนพัฒนา การออกแบบแพ็กภาษาอยู่ใน [`docs/language-packs.md`](./docs/language-packs.md)
+โปรดอ่าน [`AGENTS.md`](../../AGENTS.md) ก่อนพัฒนา การออกแบบแพ็กภาษาอยู่ใน [`docs/language-packs.md`](../language-packs.md)
 
-โครงการนี้ใช้ [Apache License 2.0](./LICENSE) เครื่องหมายการค้า IMDb, Emby และอื่น ๆ เป็นของเจ้าของแต่ละราย โครงการนี้ไม่มีความเกี่ยวข้อง การอนุญาต หรือการรับรองจาก IMDb.com, Inc. หรือ Emby LLC
+โครงการนี้ใช้ [Apache License 2.0](../../LICENSE) เครื่องหมายการค้า IMDb, Emby และอื่น ๆ เป็นของเจ้าของแต่ละราย โครงการนี้ไม่มีความเกี่ยวข้อง การอนุญาต หรือการรับรองจาก IMDb.com, Inc. หรือ Emby LLC

@@ -2,12 +2,12 @@
 
 # Tech Card Manager
 
-[简体中文](./README.md) | [繁體中文](./README.zh-Hant.md) | [English](./README.en.md) | [Français](./README.fr.md) | [Русский](./README.ru.md) | **日本語** | [Español](./README.es.md) | [ไทย](./README.th.md)
+[简体中文](../../README.md) | [繁體中文](./README.zh-Hant.md) | [English](./README.en.md) | [Français](./README.fr.md) | [Русский](./README.ru.md) | **日本語** | [Español](./README.es.md) | [ไทย](./README.th.md)
 
 [![Release](https://img.shields.io/github/v/release/Eric-Hou1997/Tech-Card-Manager?label=release)](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases)
 [![Downloads](https://img.shields.io/github/downloads/Eric-Hou1997/Tech-Card-Manager/total?label=downloads)](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases)
 
-<img src="./windows/assets/TCM_logo.png" alt="Tech Card Manager" width="220">
+<img src="../../windows/assets/TCM_logo.png" alt="Tech Card Manager" width="220">
 
 Emby Server 向けの読み取り専用 NFO インデックス／Technical Specifications カード管理ツールです。
 
@@ -51,9 +51,9 @@ TCM は IMDb データを取得せず、NFO への書き込みやタグ生成も
 
 ## 画面
 
-![TCM Manager](./docs/images/card-manager.PNG)
+![TCM Manager](../images/card-manager.PNG)
 
-![Emby Technical Specifications Card](./docs/images/media-library-card.png)
+![Emby Technical Specifications Card](../images/media-library-card.png)
 
 ## インストールと更新
 
@@ -69,6 +69,6 @@ Portable 版は実行中の EXE を自動置換しません。トレイから完
 
 ## 開発とライセンス
 
-開発前に [`AGENTS.md`](./AGENTS.md) を確認してください。言語パックの設計は [`docs/language-packs.md`](./docs/language-packs.md) にあります。
+開発前に [`AGENTS.md`](../../AGENTS.md) を確認してください。言語パックの設計は [`docs/language-packs.md`](../language-packs.md) にあります。
 
-本プロジェクトは [Apache License 2.0](./LICENSE) で公開されています。IMDb、Emby などの商標は各所有者に帰属します。本プロジェクトは IMDb.com, Inc. または Emby LLC と提携、承認、推奨の関係にはありません。
+本プロジェクトは [Apache License 2.0](../../LICENSE) で公開されています。IMDb、Emby などの商標は各所有者に帰属します。本プロジェクトは IMDb.com, Inc. または Emby LLC と提携、承認、推奨の関係にはありません。

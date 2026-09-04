@@ -2,12 +2,12 @@
 
 # Tech Card Manager
 
-[简体中文](./README.md) | [繁體中文](./README.zh-Hant.md) | [English](./README.en.md) | [Français](./README.fr.md) | **Русский** | [日本語](./README.ja.md) | [Español](./README.es.md) | [ไทย](./README.th.md)
+[简体中文](../../README.md) | [繁體中文](./README.zh-Hant.md) | [English](./README.en.md) | [Français](./README.fr.md) | **Русский** | [日本語](./README.ja.md) | [Español](./README.es.md) | [ไทย](./README.th.md)
 
 [![Release](https://img.shields.io/github/v/release/Eric-Hou1997/Tech-Card-Manager?label=release)](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases)
 [![Downloads](https://img.shields.io/github/downloads/Eric-Hou1997/Tech-Card-Manager/total?label=downloads)](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases)
 
-<img src="./windows/assets/TCM_logo.png" alt="Tech Card Manager" width="220">
+<img src="../../windows/assets/TCM_logo.png" alt="Tech Card Manager" width="220">
 
 Индекс NFO только для чтения и управление карточками Technical Specifications для Emby Server.
 
@@ -51,9 +51,9 @@ TCM не получает данные IMDb, не записывает NFO и н
 
 ## Интерфейс
 
-![TCM Manager](./docs/images/card-manager.PNG)
+![TCM Manager](../images/card-manager.PNG)
 
-![Карточка Technical Specifications в Emby](./docs/images/media-library-card.png)
+![Карточка Technical Specifications в Emby](../images/media-library-card.png)
 
 ## Установка и обновление
 
@@ -69,6 +69,6 @@ Portable-версия не заменяет работающий EXE автом�
 
 ## Разработка и лицензия
 
-Перед разработкой прочитайте [`AGENTS.md`](./AGENTS.md). Архитектура языковых пакетов описана в [`docs/language-packs.md`](./docs/language-packs.md).
+Перед разработкой прочитайте [`AGENTS.md`](../../AGENTS.md). Архитектура языковых пакетов описана в [`docs/language-packs.md`](../language-packs.md).
 
-Проект распространяется по [Apache License 2.0](./LICENSE). IMDb, Emby и другие товарные знаки принадлежат их владельцам. Проект не связан, не авторизован и не одобрен IMDb.com, Inc. или Emby LLC.
+Проект распространяется по [Apache License 2.0](../../LICENSE). IMDb, Emby и другие товарные знаки принадлежат их владельцам. Проект не связан, не авторизован и не одобрен IMDb.com, Inc. или Emby LLC.

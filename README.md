@@ -2,7 +2,7 @@
 
 # Tech Card Manager
 
-**简体中文** | [繁體中文](./README.zh-Hant.md) | [English](./README.en.md) | [Français](./README.fr.md) | [Русский](./README.ru.md) | [日本語](./README.ja.md) | [Español](./README.es.md) | [ไทย](./README.th.md)
+**简体中文** | [繁體中文](./docs/readme/README.zh-Hant.md) | [English](./docs/readme/README.en.md) | [Français](./docs/readme/README.fr.md) | [Русский](./docs/readme/README.ru.md) | [日本語](./docs/readme/README.ja.md) | [Español](./docs/readme/README.es.md) | [ไทย](./docs/readme/README.th.md)
 
 <p align="center">
 

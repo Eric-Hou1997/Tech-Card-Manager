@@ -2,12 +2,12 @@
 
 # Tech Card Manager
 
-[简体中文](./README.md) | [繁體中文](./README.zh-Hant.md) | [English](./README.en.md) | [Français](./README.fr.md) | [Русский](./README.ru.md) | [日本語](./README.ja.md) | **Español** | [ไทย](./README.th.md)
+[简体中文](../../README.md) | [繁體中文](./README.zh-Hant.md) | [English](./README.en.md) | [Français](./README.fr.md) | [Русский](./README.ru.md) | [日本語](./README.ja.md) | **Español** | [ไทย](./README.th.md)
 
 [![Release](https://img.shields.io/github/v/release/Eric-Hou1997/Tech-Card-Manager?label=release)](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases)
 [![Downloads](https://img.shields.io/github/downloads/Eric-Hou1997/Tech-Card-Manager/total?label=downloads)](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases)
 
-<img src="./windows/assets/TCM_logo.png" alt="Tech Card Manager" width="220">
+<img src="../../windows/assets/TCM_logo.png" alt="Tech Card Manager" width="220">
 
 Índice NFO de solo lectura y gestión de tarjetas Technical Specifications para Emby Server.
 
@@ -51,9 +51,9 @@ El idioma del nuevo registro se fija al iniciar la tarea. Los registros anterior
 
 ## Interfaz
 
-![TCM Manager](./docs/images/card-manager.PNG)
+![TCM Manager](../images/card-manager.PNG)
 
-![Tarjeta Technical Specifications de Emby](./docs/images/media-library-card.png)
+![Tarjeta Technical Specifications de Emby](../images/media-library-card.png)
 
 ## Instalación y actualización
 
@@ -69,6 +69,6 @@ En curso: más pruebas reales Windows/Emby/PowerShell 5.1/UAC, compatibilidad co
 
 ## Desarrollo y licencia
 
-Lee [`AGENTS.md`](./AGENTS.md) antes de contribuir. El diseño de los paquetes está en [`docs/language-packs.md`](./docs/language-packs.md).
+Lee [`AGENTS.md`](../../AGENTS.md) antes de contribuir. El diseño de los paquetes está en [`docs/language-packs.md`](../language-packs.md).
 
-Proyecto bajo [Apache License 2.0](./LICENSE). IMDb, Emby y las demás marcas pertenecen a sus propietarios. Este proyecto no está afiliado, autorizado ni respaldado por IMDb.com, Inc. o Emby LLC.
+Proyecto bajo [Apache License 2.0](../../LICENSE). IMDb, Emby y las demás marcas pertenecen a sus propietarios. Este proyecto no está afiliado, autorizado ni respaldado por IMDb.com, Inc. o Emby LLC.

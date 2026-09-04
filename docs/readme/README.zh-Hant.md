@@ -2,12 +2,12 @@
 
 # Tech Card Manager
 
-[簡體中文](./README.md) | **繁體中文** | [English](./README.en.md) | [Français](./README.fr.md) | [Русский](./README.ru.md) | [日本語](./README.ja.md) | [Español](./README.es.md) | [ไทย](./README.th.md)
+[簡體中文](../../README.md) | **繁體中文** | [English](./README.en.md) | [Français](./README.fr.md) | [Русский](./README.ru.md) | [日本語](./README.ja.md) | [Español](./README.es.md) | [ไทย](./README.th.md)
 
 [![Release](https://img.shields.io/github/v/release/Eric-Hou1997/Tech-Card-Manager?label=release)](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases)
 [![Downloads](https://img.shields.io/github/downloads/Eric-Hou1997/Tech-Card-Manager/total?label=downloads)](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases)
 
-<img src="./windows/assets/TCM_logo.png" alt="Tech Card Manager" width="220">
+<img src="../../windows/assets/TCM_logo.png" alt="Tech Card Manager" width="220">
 
 Emby Server 的唯讀 NFO 索引與 Technical Specifications 卡片管理工具。
 
@@ -51,9 +51,9 @@ TCM 不取得 IMDb 資料，也不寫入 NFO 或產生標籤。需要建立或�
 
 ## 介面預覽
 
-![TCM Manager](./docs/images/card-manager.PNG)
+![TCM Manager](../images/card-manager.PNG)
 
-![Emby Technical Specifications Card](./docs/images/media-library-card.png)
+![Emby Technical Specifications Card](../images/media-library-card.png)
 
 ## 安裝與更新
 
@@ -69,6 +69,6 @@ Portable 更新不會自行取代正在執行的 EXE。請從系統匣完整退�
 
 ## 開發與授權
 
-開發前請閱讀 [`AGENTS.md`](./AGENTS.md)。語言包設計見 [`docs/language-packs.md`](./docs/language-packs.md)。
+開發前請閱讀 [`AGENTS.md`](../../AGENTS.md)。語言包設計見 [`docs/language-packs.md`](../language-packs.md)。
 
-本專案採用 [Apache License 2.0](./LICENSE)。IMDb、Emby 及其他商標歸各自權利人所有；本專案與 IMDb.com, Inc. 或 Emby LLC 無從屬、授權或背書關係。
+本專案採用 [Apache License 2.0](../../LICENSE)。IMDb、Emby 及其他商標歸各自權利人所有；本專案與 IMDb.com, Inc. 或 Emby LLC 無從屬、授權或背書關係。
