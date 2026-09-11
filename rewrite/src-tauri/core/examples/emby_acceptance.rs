@@ -31,7 +31,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     }
     let private = Path::new(&args[1]);
     std::fs::create_dir_all(private)?;
-    let store = Store::open(&private.join("library.sqlite"))?;
+    let store = Arc::new(Store::open(&private.join("library.sqlite"))?);
     store.configure(
         "roots",
         Configuration {
@@ -70,7 +70,8 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         &emby::bundled_card_languages()?,
     )?;
     integration.apply(&plan.id, &plan.fingerprint)?;
-    let mut service = CardService::start(integration.clone(), "ci-session")?;
+    let mut service =
+        CardService::start_with_store(integration.clone(), "ci-session", store.clone())?;
     println!(
         "{}",
         serde_json::json!({"phase":"running","items":index.items.len(),"physical_root_discovery":true})
@@ -82,7 +83,11 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
                 println!("{}", serde_json::to_string(&service.stop()?)?);
             }
             "start" => {
-                service = CardService::start(integration.clone(), "ci-session-restarted")?;
+                service = CardService::start_with_store(
+                    integration.clone(),
+                    "ci-session-restarted",
+                    store.clone(),
+                )?;
                 println!("{}", serde_json::to_string(&service.status()?)?);
             }
             "remove" => {

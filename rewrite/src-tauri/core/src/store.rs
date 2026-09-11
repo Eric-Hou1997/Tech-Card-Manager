@@ -46,7 +46,7 @@ impl Store {
         let connection = Connection::open(path)?;
         connection.busy_timeout(std::time::Duration::from_secs(5))?;
         let version: u32 = connection.pragma_query_value(None, "user_version", |r| r.get(0))?;
-        if version > 2 {
+        if version > 3 {
             return Err(AppError::new(
                 "newer-database",
                 "Database belongs to a newer application; refusing downgrade",
@@ -62,7 +62,13 @@ impl Store {
           CREATE INDEX IF NOT EXISTS items_root ON items(root_id);
           CREATE TABLE IF NOT EXISTS legacy_artifacts(import_id TEXT NOT NULL, path TEXT NOT NULL, category TEXT NOT NULL, sha256 TEXT NOT NULL, body BLOB NOT NULL, PRIMARY KEY(import_id,path));
           CREATE TABLE IF NOT EXISTS preferences(key TEXT PRIMARY KEY, body TEXT NOT NULL);
-          PRAGMA user_version=2; COMMIT;")?;
+          CREATE TABLE IF NOT EXISTS catalog_revision(id INTEGER PRIMARY KEY CHECK(id=1), value INTEGER NOT NULL CHECK(value>=0 AND typeof(value)='integer'));
+          INSERT OR IGNORE INTO catalog_revision VALUES(1,0);
+          CREATE TRIGGER IF NOT EXISTS catalog_insert AFTER INSERT ON items BEGIN UPDATE catalog_revision SET value=value+1 WHERE id=1; END;
+          CREATE TRIGGER IF NOT EXISTS catalog_update AFTER UPDATE OF body ON items WHEN OLD.body<>NEW.body BEGIN UPDATE catalog_revision SET value=value+1 WHERE id=1; END;
+          CREATE TRIGGER IF NOT EXISTS catalog_delete AFTER DELETE ON items BEGIN UPDATE catalog_revision SET value=value+1 WHERE id=1; END;
+          CREATE INDEX IF NOT EXISTS tasks_state ON tasks(json_extract(body,'$.state'));
+          PRAGMA user_version=3; COMMIT;")?;
         let store = Self {
             connection: Mutex::new(connection),
             worker: Mutex::new(()),
@@ -669,6 +675,31 @@ impl Store {
         )?;
         tx.commit()?;
         Ok(task)
+    }
+    /// A stable, completed catalog snapshot. No item deserialization on unchanged
+    /// revisions; active/paused/interrupted scans never publish a partial library.
+    pub fn publication_snapshot(
+        &self,
+        after: Option<i64>,
+    ) -> Result<Option<(i64, Vec<MediaItem>)>> {
+        let db = self.db()?;
+        let revision: i64 =
+            db.query_row("SELECT value FROM catalog_revision WHERE id=1", [], |r| {
+                r.get(0)
+            })?;
+        if after == Some(revision) {
+            return Ok(None);
+        }
+        let active: bool = db.query_row("SELECT EXISTS(SELECT 1 FROM tasks WHERE json_extract(body,'$.state') IN ('requested','running','paused','interrupted'))", [], |r| r.get(0))?;
+        if active {
+            return Ok(None);
+        }
+        let mut statement = db.prepare("SELECT body FROM items ORDER BY id")?;
+        let mut items = Vec::new();
+        for body in statement.query_map([], |row| row.get::<_, String>(0))? {
+            items.push(serde_json::from_str(&body?)?);
+        }
+        Ok(Some((revision, items)))
     }
     pub fn all_items(&self) -> Result<Vec<MediaItem>> {
         let db = self.db()?;
