@@ -56,6 +56,8 @@ def main():
                     raise RuntimeError('unexpected-ELF-loader: ' + str(interpreter))
                 report['elf_interpreter'] = str(interpreter)
             command = [str(server)]
+            server_env = os.environ.copy()
+            server_env["LD_LIBRARY_PATH"] = os.pathsep.join([str(launch_directory / "lib"), str(server.parent)])
             data = work / 'programdata'
             (data / 'config').mkdir(parents=True)
             (data / 'config/system.xml').write_text('''<?xml version="1.0" encoding="utf-8"?>
@@ -68,7 +70,7 @@ def main():
                 log = work / ('server-' + str(cycle) + '.log')
                 with log.open('wb') as output:
                     process = subprocess.Popen(command + ['-programdata', str(data)],
-                                               cwd=launch_directory, stdout=output, stderr=subprocess.STDOUT,
+                                               cwd=launch_directory, env=server_env, stdout=output, stderr=subprocess.STDOUT,
                                                start_new_session=True)
                     try:
                         deadline = time.monotonic() + 90
