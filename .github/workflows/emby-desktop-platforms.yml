@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/emby-desktop-platforms.yml'
       - 'tools/rewrite/emby_other_platforms.py'
+      - 'tools/rewrite/emby_card_acceptance.mjs'
 permissions:
   contents: read
 concurrency:
@@ -47,6 +48,8 @@ jobs:
           workspaces: rewrite/src-tauri
       - name: Build native Rust business driver
         run: cargo build --locked --manifest-path rewrite/src-tauri/Cargo.toml -p tcm-core --example emby_acceptance --target ${{ matrix.target }}
+      - name: Install process ownership inspection
+        run: python -m pip install psutil==7.2.2
       - name: Install browser dependency
         working-directory: rewrite
         run: |

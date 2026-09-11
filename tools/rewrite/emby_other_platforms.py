@@ -49,7 +49,7 @@ def main():
             for cycle in range(2):
                 with (root/('server-'+str(cycle)+'.log')).open('wb') as output:
                     options={'creationflags':subprocess.CREATE_NEW_PROCESS_GROUP} if os.name=='nt' else {'start_new_session':True}
-                    process=subprocess.Popen([str(server),'-programdata',str(data)],cwd=server.parent,stdout=output,stderr=subprocess.STDOUT,**options)
+                    process=subprocess.Popen([str(server),'-programdata',str(data),'-noautorunwebapp'],cwd=server.parent,stdout=output,stderr=subprocess.STDOUT,**options)
                     try:
                         deadline=time.monotonic()+90
                         while True:
@@ -65,12 +65,33 @@ def main():
                             subprocess.run(['node','tools/rewrite/emby_card_acceptance.mjs',str(web),str(root),str(args.driver.resolve()),str(args.reports.resolve())],check=True,timeout=240)
                             report['card_chain']='passed'
                     finally:
+                        owned_children = []
+                        if os.name == 'nt':
+                            import psutil
+                            for candidate in psutil.process_iter(['pid', 'exe', 'create_time']):
+                                try:
+                                    executable = candidate.info['exe']
+                                    if executable and Path(executable).resolve().is_relative_to(package):
+                                        owned_children.append((candidate, candidate.info['create_time'], executable))
+                                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                                    continue
                         if process.poll() is None:
                             if os.name=='nt':process.send_signal(signal.CTRL_BREAK_EVENT)
                             else:os.killpg(process.pid,signal.SIGTERM)
                             try:process.wait(timeout=20)
                             except subprocess.TimeoutExpired:
                                 process.kill();process.wait(timeout=10);raise RuntimeError('Emby-required-forced-shutdown')
+                        if os.name == 'nt':
+                            for child, created, executable in owned_children:
+                                try:
+                                    if child.create_time() != created or child.exe() != executable:
+                                        raise RuntimeError('owned-child-identity-changed')
+                                    child.wait(timeout=2)
+                                except psutil.TimeoutExpired:
+                                    child.terminate()
+                                    child.wait(timeout=10)
+                                except psutil.NoSuchProcess:
+                                    pass
                         try:
                             with socket.create_connection(('127.0.0.1',18096),timeout=1):raise RuntimeError('server-port-still-open')
                         except (ConnectionRefusedError,TimeoutError):pass
