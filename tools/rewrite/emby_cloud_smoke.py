@@ -56,10 +56,21 @@ def main():
                 if interpreter.is_absolute() or not (launch_directory / interpreter).is_file():
                     raise RuntimeError('unexpected-ELF-loader: ' + str(interpreter))
                 report['elf_interpreter'] = str(interpreter)
+            # Mirror the verified official package launcher using this isolated
+            # package root; default paths otherwise point at an absent /opt install.
             command = [str(server)]
+            for name in ['ffdetect', 'ffmpeg', 'ffprobe']:
+                binary = launch_directory / 'bin' / name
+                if not binary.is_file():
+                    raise RuntimeError('missing-package-media-tool: ' + name)
+                command.extend(['-' + name, str(binary)])
             server_env = os.environ.copy()
-            server_env["LD_LIBRARY_PATH"] = os.pathsep.join([str(launch_directory / "lib"), str(server.parent)])
+            server_env["LD_LIBRARY_PATH"] = os.pathsep.join([str(launch_directory / "lib"), str(launch_directory / "extra/lib"), str(server.parent)])
+            server_env["PATH"] = str(launch_directory / "bin") + os.pathsep + server_env.get("PATH", "")
+            server_env["FONTCONFIG_PATH"] = str(launch_directory / "etc/fonts")
+            server_env["SSL_CERT_FILE"] = str(launch_directory / "etc/ssl/certs/ca-certificates.crt")
             data = work / 'programdata'
+            server_env['XDG_CACHE_HOME'] = str(data / 'cache')
             (data / 'config').mkdir(parents=True)
             (data / 'config/system.xml').write_text('''<?xml version="1.0" encoding="utf-8"?>
 <ServerConfiguration><HttpServerPortNumber>18096</HttpServerPortNumber>

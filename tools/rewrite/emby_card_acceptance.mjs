@@ -44,8 +44,9 @@ try {
  const before={sha256:hash(await readFile(nfo)),mtime:(await stat(nfo,{bigint:true})).mtimeNs.toString()};
  await api('Library/VirtualFolders',{Name:'TCM Acceptance Library',CollectionType:'movies',RefreshLibrary:true,Paths:[movieRoot],LibraryOptions:{ContentType:'movies',PathInfos:[{Path:movieRoot}],EnableRealtimeMonitor:false,SaveLocalMetadata:false,MetadataSavers:[],TypeOptions:[{Type:'Movie',MetadataFetchers:[],ImageFetchers:[]}]}});
  let item;const deadline=Date.now()+90000;
- while(Date.now()<deadline){const found=await api(`Users/${auth.User.Id}/Items?Recursive=true&IncludeItemTypes=Movie&Fields=ProviderIds,MediaStreams`);item=found.Items?.find(i=>i.ProviderIds?.Imdb==='tt0061452');if(item)break;await new Promise(r=>setTimeout(r,1000));}
- if(!item)throw Error('Emby did not index the real NFO and video');
+ while(Date.now()<deadline){const found=await api(`Users/${auth.User.Id}/Items?Recursive=true&IncludeItemTypes=Movie&Fields=ProviderIds,MediaStreams`);item=found.Items?.find(i=>i.ProviderIds?.Imdb==='tt0061452'&&i.MediaStreams?.some(stream=>stream.Type==='Video'&&String(stream.Codec).toLowerCase()==='h264'));if(item)break;await new Promise(r=>setTimeout(r,1000));}
+ if(!item)throw Error('Emby did not index the real NFO and probe the H264 video stream');
+ report.checks.push('emby-probed-real-h264-video-stream');
  report.checks.push('emby-library-read-real-nfo-and-video');
  const indexBefore=hash(await readFile(path.join(web,'index.html')));
  rust=spawn(driver,[web,path.join(temporary,'tcm-private'),movieRoot,path.join(temporary,'programdata')],{stdio:['pipe','pipe','pipe']});
