@@ -1,0 +1,116 @@
+{
+  "source_commit": "1742f61",
+  "date": "2026-09-11",
+  "runs": {
+    "linux": 34591347204,
+    "macos_windows": 34591347145
+  },
+  "scope": "Real Emby 4.9.5.0 loaded item page with native H264 video metadata and adjacent Technical Specs card",
+  "targets": [
+    {
+      "artifact": "TCM-Emby-environment-amd64",
+      "report": {
+        "scope": "real-emby-rust-integration-and-web-client",
+        "checks": [
+          "emby-probed-real-h264-video-stream",
+          "emby-library-read-real-nfo-and-video",
+          "readonly-real-emby-database-physical-root-discovery",
+          "rust-index-assets-published-and-served-byte-identical",
+          "loaded-item-native-video-and-tech-card-share-media-row",
+          "real-emby-item-page-rendered-card-value",
+          "eight-card-locales-change-without-changing-spec-values",
+          "service-stop-removes-visible-card",
+          "service-restart-renders-card",
+          "uninstall-restores-html-and-preserves-nfo-bytes-and-mtime"
+        ],
+        "status": "passed",
+        "version": "4.9.5.0"
+      }
+    },
+    {
+      "artifact": "TCM-Emby-environment-arm64",
+      "report": {
+        "scope": "real-emby-rust-integration-and-web-client",
+        "checks": [
+          "emby-probed-real-h264-video-stream",
+          "emby-library-read-real-nfo-and-video",
+          "readonly-real-emby-database-physical-root-discovery",
+          "rust-index-assets-published-and-served-byte-identical",
+          "loaded-item-native-video-and-tech-card-share-media-row",
+          "real-emby-item-page-rendered-card-value",
+          "eight-card-locales-change-without-changing-spec-values",
+          "service-stop-removes-visible-card",
+          "service-restart-renders-card",
+          "uninstall-restores-html-and-preserves-nfo-bytes-and-mtime"
+        ],
+        "status": "passed",
+        "version": "4.9.5.0"
+      }
+    },
+    {
+      "artifact": "TCM-Emby-desktop-aarch64-apple-darwin",
+      "report": {
+        "scope": "real-emby-rust-integration-and-web-client",
+        "checks": [
+          "emby-probed-real-h264-video-stream",
+          "emby-library-read-real-nfo-and-video",
+          "readonly-real-emby-database-physical-root-discovery",
+          "rust-index-assets-published-and-served-byte-identical",
+          "loaded-item-native-video-and-tech-card-share-media-row",
+          "real-emby-item-page-rendered-card-value",
+          "eight-card-locales-change-without-changing-spec-values",
+          "service-stop-removes-visible-card",
+          "service-restart-renders-card",
+          "uninstall-restores-html-and-preserves-nfo-bytes-and-mtime"
+        ],
+        "status": "passed",
+        "version": "4.9.5.0"
+      }
+    },
+    {
+      "artifact": "TCM-Emby-desktop-aarch64-pc-windows-msvc",
+      "report": {
+        "scope": "real-emby-rust-integration-and-web-client",
+        "checks": [
+          "emby-probed-real-h264-video-stream",
+          "emby-library-read-real-nfo-and-video",
+          "readonly-real-emby-database-physical-root-discovery",
+          "rust-index-assets-published-and-served-byte-identical",
+          "loaded-item-native-video-and-tech-card-share-media-row",
+          "real-emby-item-page-rendered-card-value",
+          "eight-card-locales-change-without-changing-spec-values",
+          "service-stop-removes-visible-card",
+          "service-restart-renders-card",
+          "uninstall-restores-html-and-preserves-nfo-bytes-and-mtime"
+        ],
+        "status": "passed",
+        "version": "4.9.5.0"
+      }
+    },
+    {
+      "artifact": "TCM-Emby-desktop-x86_64-pc-windows-msvc",
+      "report": {
+        "scope": "real-emby-rust-integration-and-web-client",
+        "checks": [
+          "emby-probed-real-h264-video-stream",
+          "emby-library-read-real-nfo-and-video",
+          "readonly-real-emby-database-physical-root-discovery",
+          "rust-index-assets-published-and-served-byte-identical",
+          "loaded-item-native-video-and-tech-card-share-media-row",
+          "real-emby-item-page-rendered-card-value",
+          "eight-card-locales-change-without-changing-spec-values",
+          "service-stop-removes-visible-card",
+          "service-restart-renders-card",
+          "uninstall-restores-html-and-preserves-nfo-bytes-and-mtime"
+        ],
+        "status": "passed",
+        "version": "4.9.5.0"
+      }
+    }
+  ],
+  "limits": [
+    "User-owned isolated Emby installations; protected system-root elevation not covered",
+    "Windows ARM64 uses native Rust manager core and x64 Emby under emulation",
+    "Full Tauri Manager UI, all supported OS versions, data migration and OTA remain separate gates"
+  ]
+}
