@@ -39,7 +39,10 @@ fn sync_dir(path: &Path) -> Result<()> {
     let _ = path;
     Ok(())
 }
-fn replace(source: &Path, target: &Path) -> Result<()> {
+fn replace(source: &Path, target: &Path, expected: Option<&str>) -> Result<()> {
+    if digest(target)?.as_deref() != expected {
+        return Err(conflict(target));
+    }
     #[cfg(unix)]
     fs::rename(source, target).map_err(io)?;
     #[cfg(windows)]
@@ -51,9 +54,24 @@ fn replace(source: &Path, target: &Path) -> Result<()> {
         }
         let from: Vec<u16> = source.as_os_str().encode_wide().chain(Some(0)).collect();
         let to: Vec<u16> = target.as_os_str().encode_wide().chain(Some(0)).collect();
-        // Replacement + write-through, without cross-volume copy semantics.
-        if unsafe { MoveFileExW(from.as_ptr(), to.as_ptr(), 1 | 8) } == 0 {
-            return Err(io(std::io::Error::last_os_error()));
+        // A web server can briefly hold a read handle without delete sharing.
+        // Retry only bounded sharing/access errors, with a fresh CAS each time.
+        // Do not turn a permanent permission failure into an unbounded worker.
+        for attempt in 0..8 {
+            if digest(target)?.as_deref() != expected {
+                return Err(conflict(target));
+            }
+            if unsafe { MoveFileExW(from.as_ptr(), to.as_ptr(), 1 | 8) } != 0 {
+                break;
+            }
+            let error = std::io::Error::last_os_error();
+            if attempt == 7
+                || !matches!(error.raw_os_error(), Some(5 | 32 | 33))
+                || fs::metadata(target).is_ok_and(|m| m.permissions().readonly())
+            {
+                return Err(io(error).at(target.display()));
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10 << attempt));
         }
     }
     sync_dir(
@@ -63,6 +81,14 @@ fn replace(source: &Path, target: &Path) -> Result<()> {
     )
 }
 fn atomic(path: &Path, bytes: &[u8]) -> Result<()> {
+    atomic_inner(path, bytes).map_err(|mut error| {
+        if error.path.is_none() {
+            error.path = Some(path.to_string_lossy().into());
+        }
+        error
+    })
+}
+fn atomic_inner(path: &Path, bytes: &[u8]) -> Result<()> {
     let parent = path
         .parent()
         .ok_or_else(|| AppError::new("invalid-path", "Missing parent"))?;
@@ -70,6 +96,7 @@ fn atomic(path: &Path, bytes: &[u8]) -> Result<()> {
     if path.exists() {
         paths::checked(path)?;
     }
+    let expected = digest(path)?;
     let mut temp = tempfile::NamedTempFile::new_in(parent).map_err(io)?;
     temp.write_all(bytes).map_err(io)?;
     if path.exists() {
@@ -86,7 +113,7 @@ fn atomic(path: &Path, bytes: &[u8]) -> Result<()> {
         }
     }
     temp.as_file().sync_all().map_err(io)?;
-    replace(temp.path(), path)?;
+    replace(temp.path(), path, expected.as_deref())?;
     Ok(())
 }
 fn bytes(path: &Path) -> Result<Option<Vec<u8>>> {

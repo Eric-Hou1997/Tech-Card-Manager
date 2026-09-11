@@ -80,7 +80,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     for line in io::stdin().lock().lines() {
         match line?.as_str() {
             "stop" => {
-                println!("{}", serde_json::to_string(&service.stop()?)?);
+                println!(
+                    "{}",
+                    serde_json::to_string(&service.stop().map_err(|e| format!("stop: {e:?}"))?)?
+                );
             }
             "start" => {
                 service = CardService::start_with_store(

@@ -18,7 +18,17 @@ async function api(route,body){
 }
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 let rust,browser,lines;const waiting=[],queued=[];
-function nextLine(){return new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(Error('Rust driver response timeout')),20000);const receive=line=>{clearTimeout(timeout);try{resolve(JSON.parse(line));}catch(e){reject(e);}};if(queued.length)receive(queued.shift());else waiting.push(receive);});}
+let driverError=null,driverStderr='';
+function nextLine(){
+ return new Promise((resolve,reject)=>{
+  if(queued.length){try{resolve(JSON.parse(queued.shift()));}catch(e){reject(e);}return;}
+  if(driverError){reject(driverError);return;}
+  const receive=line=>{clearTimeout(timeout);try{resolve(JSON.parse(line));}catch(e){reject(e);}};
+  receive.reject=error=>{clearTimeout(timeout);const index=waiting.indexOf(receive);if(index>=0)waiting.splice(index,1);reject(error);};
+  const timeout=setTimeout(()=>receive.reject(Error('Rust driver response timeout')),20000);
+  waiting.push(receive);
+ });
+}
 async function command(text){const response=nextLine();rust.stdin.write(text+'\n');return response;}
 try {
  const info=await api('System/Info/Public');report.version=info.Version;
@@ -38,7 +48,10 @@ try {
  if(!item)throw Error('Emby did not index the real NFO and video');
  report.checks.push('emby-library-read-real-nfo-and-video');
  const indexBefore=hash(await readFile(path.join(web,'index.html')));
- rust=spawn(driver,[web,path.join(temporary,'tcm-private'),movieRoot,path.join(temporary,'programdata')],{stdio:['pipe','pipe','inherit']});
+ rust=spawn(driver,[web,path.join(temporary,'tcm-private'),movieRoot,path.join(temporary,'programdata')],{stdio:['pipe','pipe','pipe']});
+ rust.stderr.on('data',bytes=>{driverStderr=(driverStderr+bytes.toString()).slice(-4000);});
+ const driverFailed=error=>{driverError=error;for(const receive of [...waiting])receive.reject(error);};
+ rust.once('error',driverFailed);rust.once('close',(code,signal)=>driverFailed(Error(`Rust driver exited (${code??signal}): ${driverStderr}`)));
  lines=createInterface({input:rust.stdout});lines.on('line',line=>{const receive=waiting.shift();if(receive)receive(line);else queued.push(line);});
  const ready=await nextLine();if(ready.phase!=='running'||ready.items!==1)throw Error('Rust business chain did not start');
  if(!ready.physical_root_discovery)throw Error('Rust did not discover the real Emby physical root');

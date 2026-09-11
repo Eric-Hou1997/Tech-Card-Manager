@@ -298,3 +298,59 @@ fn changed_card_asset_changes_browser_cache_identity_and_removal_restores_origin
     integration.apply(&remove.id, &remove.fingerprint).unwrap();
     assert_eq!(fs::read(web.join("index.html")).unwrap(), html());
 }
+#[cfg(windows)]
+#[test]
+fn windows_temporary_reader_does_not_break_explicit_service_stop() {
+    use std::{os::windows::fs::OpenOptionsExt, time::Duration};
+    let (_temp, web, backup) = setup();
+    let integration = Integration::open(&web, &backup).unwrap();
+    let plan = integration
+        .plan("install", "install", b"js", &index(), b"{}")
+        .unwrap();
+    integration.apply(&plan.id, &plan.fingerprint).unwrap();
+    integration.begin_session("sharing").unwrap();
+    let held = std::fs::OpenOptions::new()
+        .read(true)
+        .share_mode(1)
+        .open(web.join("technical-specs-runtime.json"))
+        .unwrap();
+    let reader = std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(180));
+        drop(held);
+    });
+    let stopped = integration.renew_session("sharing", 2, false).unwrap();
+    reader.join().unwrap();
+    assert!(!stopped.enabled);
+    let disk: Lease =
+        serde_json::from_slice(&fs::read(web.join("technical-specs-runtime.json")).unwrap())
+            .unwrap();
+    assert_eq!(disk.sequence, 2);
+    assert!(!disk.enabled);
+}
+#[cfg(windows)]
+#[test]
+fn windows_retry_never_overwrites_external_bytes_changed_during_sharing() {
+    use std::{os::windows::fs::OpenOptionsExt, time::Duration};
+    let (_temp, web, backup) = setup();
+    let integration = Integration::open(&web, &backup).unwrap();
+    let plan = integration
+        .plan("install", "install", b"js", &index(), b"{}")
+        .unwrap();
+    integration.apply(&plan.id, &plan.fingerprint).unwrap();
+    integration.begin_session("sharing").unwrap();
+    let path = web.join("technical-specs-runtime.json");
+    let held = std::fs::OpenOptions::new()
+        .read(true)
+        .share_mode(1 | 2)
+        .open(&path)
+        .unwrap();
+    let target = path.clone();
+    let editor = std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(180));
+        fs::write(target, b"external changed lease").unwrap();
+        drop(held);
+    });
+    assert!(integration.renew_session("sharing", 2, false).is_err());
+    editor.join().unwrap();
+    assert_eq!(fs::read(path).unwrap(), b"external changed lease");
+}

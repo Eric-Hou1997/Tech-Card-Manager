@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """Isolated official Emby server on Windows or macOS, with real Rust/card checks."""
+import contextlib
+import shutil
+import sys
 import argparse
 import hashlib
 import json
@@ -13,6 +16,29 @@ import subprocess
 import tempfile
 import time
 import urllib.request
+
+
+@contextlib.contextmanager
+def isolated_directory(report):
+    directory=tempfile.mkdtemp(prefix='tcm-emby-')
+    try:
+        yield directory
+    finally:
+        original_error=sys.exc_info()[1]
+        deadline=time.monotonic()+5
+        while True:
+            try:
+                shutil.rmtree(directory)
+                report['temporary_cleanup']='passed'
+                break
+            except PermissionError as error:
+                if time.monotonic()<deadline:
+                    time.sleep(0.1)
+                    continue
+                report['temporary_cleanup']='failed'
+                report['cleanup_error']=str(error)
+                if original_error is None:raise
+                break
 
 
 def main():
@@ -29,7 +55,7 @@ def main():
     try:
         if hashlib.sha256(args.package.read_bytes()).hexdigest()!=args.sha256:raise RuntimeError('official-package-hash-mismatch')
         with socket.socket() as probe:probe.bind(('127.0.0.1',18096))
-        with tempfile.TemporaryDirectory(prefix='tcm-emby-') as temporary:
+        with isolated_directory(report) as temporary:
             root=Path(temporary).resolve();package=root/'package';package.mkdir()
             if os.name=='nt':
                 subprocess.run(['7z','x',str(args.package.resolve()),'-o'+str(package),'-y'],check=True,stdout=subprocess.DEVNULL)
