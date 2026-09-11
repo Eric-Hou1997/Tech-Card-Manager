@@ -5,6 +5,8 @@ on:
     branches: [v5.0.0-rewrite]
   pull_request:
     branches: [v5.0.0-rewrite]
+env:
+  PYTHONUTF8: '1'
 permissions:
   contents: read
 concurrency:
@@ -37,6 +39,8 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Preserve frozen source bytes on checkout
+        run: git config --global core.autocrlf false
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
