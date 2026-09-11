@@ -78,10 +78,9 @@ try {
  },{}, {timeout:15000});
  // A card rendered during Emby's loading screen is insufficient evidence.
  await page.getByRole('heading',{name:'TCM Acceptance',exact:true}).waitFor({state:'visible',timeout:30000});
- await page.getByText('SD H264',{exact:true}).first().waitFor({state:'visible',timeout:30000});
  await page.waitForFunction(()=>Array.from(document.querySelectorAll("[data-tech-spec-card='1']")).some(card=>{
   const row=card.parentElement;
-  return card.textContent.includes('TCM ACCEPTANCE CAMERA') && row?.textContent.includes('H264') && card.getBoundingClientRect().height>0;
+  return card.textContent.includes('TCM ACCEPTANCE CAMERA') && row && Array.from(row.children).some(sibling=>sibling!==card&&sibling.textContent.includes('H264')) && card.getBoundingClientRect().height>0;
  }),{}, {timeout:30000});
  report.checks.push('loaded-item-native-video-and-tech-card-share-media-row');
  await page.getByText('TCM ACCEPTANCE CAMERA',{exact:false}).first().scrollIntoViewIfNeeded();
