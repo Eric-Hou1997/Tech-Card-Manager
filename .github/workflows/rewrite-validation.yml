@@ -53,7 +53,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf libdbus-1-dev libssl-dev libxdo-dev rpm
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf libdbus-1-dev libssl-dev libxdo-dev rpm xvfb dbus-x11
       - name: Toolchain
         run: rustup toolchain install 1.98.1 --profile minimal --component rustfmt --component clippy --target ${{ matrix.target }}
       - name: Frozen entrypoint inventory
@@ -79,6 +79,27 @@ jobs:
         run: npm run tauri build -- --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
       - name: Validate required package inventory
         run: python tools/rewrite/check_artifacts.py --target ${{ matrix.target }}
+      - name: macOS installed DMG startup and cleanup
+        if: runner.os == 'macOS'
+        run: python3 tools/rewrite/macos_smoke.py
+      - name: Windows NSIS install, startup, reinstall and uninstall
+        if: runner.os == 'Windows'
+        run: python tools/rewrite/package_smoke.py --target ${{ matrix.target }}
+      - name: Linux AppImage native startup on virtual desktop
+        if: runner.os == 'Linux'
+        env:
+          WEBKIT_DISABLE_DMABUF_RENDERER: '1'
+        run: xvfb-run -a dbus-run-session -- python3 tools/rewrite/package_smoke.py --target ${{ matrix.target }}
+      - name: Upload native lifecycle evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TCM-runtime-${{ matrix.target }}
+          path: |
+            build/rewrite/native-smoke.json
+            build/rewrite/package-smoke.json
+          retention-days: 3
+          if-no-files-found: ignore
       - name: Original Windows x64 Go behavior
         if: matrix.target == 'x86_64-pc-windows-msvc'
         working-directory: windows

@@ -369,8 +369,11 @@ fn windows_verbatim_root_and_drive_relative_boundaries() {
         paths::checked(Path::new(r"C:relative")).unwrap_err().code,
         "invalid-path"
     );
+    // PathBuf::join normalizes .. for verbatim Windows paths before validation.
+    let mut traversal = root.as_os_str().to_os_string();
+    traversal.push(r"\..");
     assert_eq!(
-        paths::checked(&root.join("..")).unwrap_err().code,
+        paths::checked(Path::new(&traversal)).unwrap_err().code,
         "ambiguous-path"
     );
 }

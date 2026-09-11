@@ -45,20 +45,17 @@ def main():
             server = work / 'package/opt/emby-server/system/EmbyServer'
             if not server.is_file():
                 raise RuntimeError('official-package-layout-changed')
-            # Official packages name their private ELF loader under /opt.
-            # Resolve that loader inside the extraction; never install into host /opt.
+            # The official binary uses a relative ELF interpreter, resolved from
+            # the package root (the same working directory as its launcher).
+            launch_directory = server.parent.parent
             elf = subprocess.check_output(['readelf', '-l', str(server)], text=True)
             match = re.search(r'Requesting program interpreter: ([^\]]+)', elf)
-            command = [str(server)]
             if match:
-                interpreter = match.group(1)
-                loader = work / 'package' / interpreter.lstrip('/')
-                if loader.is_file():
-                    libraries = os.pathsep.join([str(loader.parent), str(server.parent)])
-                    command = [str(loader), '--library-path', libraries, str(server)]
-                elif not Path(interpreter).is_file():
-                    raise RuntimeError('missing-ELF-loader: ' + interpreter)
-                report['elf_interpreter'] = interpreter
+                interpreter = Path(match.group(1))
+                if interpreter.is_absolute() or not (launch_directory / interpreter).is_file():
+                    raise RuntimeError('unexpected-ELF-loader: ' + str(interpreter))
+                report['elf_interpreter'] = str(interpreter)
+            command = [str(server)]
             data = work / 'programdata'
             (data / 'config').mkdir(parents=True)
             (data / 'config/system.xml').write_text('''<?xml version="1.0" encoding="utf-8"?>
@@ -71,7 +68,7 @@ def main():
                 log = work / ('server-' + str(cycle) + '.log')
                 with log.open('wb') as output:
                     process = subprocess.Popen(command + ['-programdata', str(data)],
-                                               cwd=server.parent, stdout=output, stderr=subprocess.STDOUT,
+                                               cwd=launch_directory, stdout=output, stderr=subprocess.STDOUT,
                                                start_new_session=True)
                     try:
                         deadline = time.monotonic() + 90
