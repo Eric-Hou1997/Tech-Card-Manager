@@ -209,3 +209,36 @@ fn reveal(path: &std::path::Path) -> Result<()> {
     }
     Ok(())
 }
+
+#[tauri::command]
+pub fn ui_state(state: State<'_, Desktop>) -> Result<product_core::ui::UiState> {
+    state.store.ui_state()
+}
+#[tauri::command]
+pub fn save_ui_state(
+    id: String,
+    value: product_core::ui::UiState,
+    state: State<'_, Desktop>,
+) -> Result<product_core::ui::UiReceipt> {
+    state.store.save_ui_state(&id, value)
+}
+#[tauri::command]
+pub fn browse(
+    space: Space,
+    view: product_core::ui::LibraryView,
+    state: State<'_, Desktop>,
+) -> Result<CatalogPage> {
+    state.store.browse(space, view)
+}
+
+#[tauri::command]
+pub fn tv_catalog(
+    view: product_core::ui::LibraryView,
+    state: State<'_, Desktop>,
+) -> Result<product_core::tv::TvPage> {
+    Ok(product_core::tv::page(&state.store.all_items()?, &view))
+}
+#[tauri::command]
+pub fn tv_members(id: String, state: State<'_, Desktop>) -> Result<Vec<String>> {
+    product_core::tv::members(&state.store.all_items()?, &id)
+}

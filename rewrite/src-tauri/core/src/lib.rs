@@ -23,3 +23,11 @@ pub(crate) fn collect_specs(out: &mut Specs, key: &str, values: Vec<String>) {
 }
 
 pub mod emby_environment;
+
+pub mod ui;
+
+pub mod tv;
+
+pub mod lifecycle;
+
+pub mod startup_file;

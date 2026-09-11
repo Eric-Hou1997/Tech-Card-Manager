@@ -829,6 +829,50 @@ impl Integration {
     }
 }
 
+pub fn bundled_card_languages() -> Result<Vec<u8>> {
+    let mut languages = serde_json::Map::new();
+    for (locale, source) in [
+        (
+            "fr-FR",
+            include_str!("../../../../language-packs/fr-FR/r1/translations.json"),
+        ),
+        (
+            "ru-RU",
+            include_str!("../../../../language-packs/ru-RU/r1/translations.json"),
+        ),
+        (
+            "ja-JP",
+            include_str!("../../../../language-packs/ja-JP/r1/translations.json"),
+        ),
+        (
+            "es-ES",
+            include_str!("../../../../language-packs/es-ES/r1/translations.json"),
+        ),
+        (
+            "th-TH",
+            include_str!("../../../../language-packs/th-TH/r1/translations.json"),
+        ),
+    ] {
+        let value: serde_json::Value = serde_json::from_str(source)?;
+        let messages = value["web-card"]
+            .as_object()
+            .ok_or_else(|| AppError::new("language-pack", "Missing card presentation messages"))?;
+        let mut output = serde_json::Map::new();
+        for (english, translation) in messages {
+            let mut hash = 14695981039346656037u64;
+            for byte in english.trim().as_bytes() {
+                hash ^= *byte as u64;
+                hash = hash.wrapping_mul(1099511628211);
+            }
+            output.insert(format!("legacy.{hash:016x}"), translation.clone());
+        }
+        languages.insert(locale.into(), serde_json::Value::Object(output));
+    }
+    Ok(serde_json::to_vec(
+        &serde_json::json!({"schema":1,"catalog_app_version":"v4.1.0","languages":languages}),
+    )?)
+}
+
 #[cfg(test)]
 mod recovery_tests {
     use super::*;
@@ -928,48 +972,4 @@ mod recovery_tests {
         assert!(integration.apply(&plan.id, &plan.fingerprint).is_err());
         assert!(!integration.web.join(JS).exists());
     }
-}
-
-pub fn bundled_card_languages() -> Result<Vec<u8>> {
-    let mut languages = serde_json::Map::new();
-    for (locale, source) in [
-        (
-            "fr-FR",
-            include_str!("../../../../language-packs/fr-FR/r1/translations.json"),
-        ),
-        (
-            "ru-RU",
-            include_str!("../../../../language-packs/ru-RU/r1/translations.json"),
-        ),
-        (
-            "ja-JP",
-            include_str!("../../../../language-packs/ja-JP/r1/translations.json"),
-        ),
-        (
-            "es-ES",
-            include_str!("../../../../language-packs/es-ES/r1/translations.json"),
-        ),
-        (
-            "th-TH",
-            include_str!("../../../../language-packs/th-TH/r1/translations.json"),
-        ),
-    ] {
-        let value: serde_json::Value = serde_json::from_str(source)?;
-        let messages = value["web-card"]
-            .as_object()
-            .ok_or_else(|| AppError::new("language-pack", "Missing card presentation messages"))?;
-        let mut output = serde_json::Map::new();
-        for (english, translation) in messages {
-            let mut hash = 14695981039346656037u64;
-            for byte in english.trim().as_bytes() {
-                hash ^= *byte as u64;
-                hash = hash.wrapping_mul(1099511628211);
-            }
-            output.insert(format!("legacy.{hash:016x}"), translation.clone());
-        }
-        languages.insert(locale.into(), serde_json::Value::Object(output));
-    }
-    Ok(serde_json::to_vec(
-        &serde_json::json!({"schema":1,"catalog_app_version":"v4.1.0","languages":languages}),
-    )?)
 }

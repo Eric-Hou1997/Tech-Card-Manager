@@ -2,6 +2,7 @@
 mod credentials;
 mod desktop;
 mod emby;
+mod lifecycle;
 mod migration;
 mod update;
 use product_core::services::CredentialStore;
@@ -139,8 +140,23 @@ fn main() {
             }
         }))
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec!["--background"]),
+        ))
+        .on_window_event(|window, event| {
+            if window.label() == "main" {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    lifecycle::close_requested(window.app_handle());
+                }
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             runtime_probe,
+            lifecycle::lifecycle_status,
+            lifecycle::lifecycle_apply,
+            lifecycle::background_window,
             frontend_ready,
             directory_probe,
             storage_probe,
@@ -163,6 +179,11 @@ fn main() {
             desktop::task_history,
             desktop::task_result,
             desktop::catalog,
+            desktop::ui_state,
+            desktop::save_ui_state,
+            desktop::browse,
+            desktop::tv_catalog,
+            desktop::tv_members,
             desktop::inspector,
             emby::emby_select,
             emby::emby_discover,
@@ -180,6 +201,8 @@ fn main() {
         ])
         .setup(|app| {
             app.manage(desktop::Desktop::start(app.handle())?);
+            app.manage(lifecycle::Lifecycle::default());
+            lifecycle::initialize(app.handle());
             app.manage(update::Updates::default());
             app.manage(emby::EmbyDesktop::new(
                 app.path().app_data_dir()?.join("emby-backups"),
@@ -206,13 +229,34 @@ fn main() {
             if let Some(icon) = app.default_window_icon() {
                 tray = tray.icon(icon.clone());
             }
-            tray.build(app)?;
+            match tray.build(app) {
+                Ok(_) => app
+                    .state::<lifecycle::Lifecycle>()
+                    .tray
+                    .store(true, std::sync::atomic::Ordering::SeqCst),
+                Err(error) => eprintln!("tray-unavailable: {error}"),
+            }
+            lifecycle::first_window(app.handle())?;
             report_event("native-setup-complete")?;
             Ok(())
         })
         .build(tauri::generate_context!())
         .expect("validation application setup failed");
     app.run(|handle, event| {
+        if let tauri::RunEvent::ExitRequested { api, .. } = &event {
+            if !handle
+                .state::<lifecycle::Lifecycle>()
+                .allow_exit
+                .load(std::sync::atomic::Ordering::SeqCst)
+            {
+                api.prevent_exit();
+                lifecycle::request_exit(handle);
+            }
+        }
+        #[cfg(target_os = "macos")]
+        if let tauri::RunEvent::Reopen { .. } = &event {
+            restore(handle);
+        }
         if matches!(event, tauri::RunEvent::Exit) {
             if let Err(error) = handle.state::<emby::EmbyDesktop>().shutdown() {
                 eprintln!("Emby shutdown failed: {error}");
@@ -228,5 +272,8 @@ fn main() {
 fn prepare_update_exit(app: &tauri::AppHandle) -> product_core::Result<()> {
     app.state::<emby::EmbyDesktop>().shutdown()?;
     app.state::<desktop::Desktop>().shutdown();
+    app.state::<lifecycle::Lifecycle>()
+        .allow_exit
+        .store(true, std::sync::atomic::Ordering::SeqCst);
     Ok(())
 }

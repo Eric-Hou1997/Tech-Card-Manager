@@ -2,6 +2,7 @@
 import { ref, onMounted, nextTick } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import LibraryPanel from './LibraryPanel.vue';
+import LifecyclePanel from './LifecyclePanel.vue';
 import UpdatePanel from './UpdatePanel.vue';
 import MigrationPanel from './MigrationPanel.vue';
 import EmbyPanel from './EmbyPanel.vue';
@@ -32,6 +33,7 @@ onMounted(async () => {
     <header><span class="mark">{{ product }}</span><div><h1>重写工作台</h1><p>读取流程迁移中 · NFO 始终只读</p></div></header>
     <p class="status" role="status">{{ status }}</p>
     <LibraryPanel />
+    <LifecyclePanel />
     <UpdatePanel />
     <MigrationPanel :product="product" />
     <EmbyPanel />

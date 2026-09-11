@@ -53,6 +53,7 @@ impl EmbyDesktop {
         if let Some(service) = session.service.as_mut() {
             service.stop()?;
         }
+        session.service = None;
         Ok(())
     }
 }

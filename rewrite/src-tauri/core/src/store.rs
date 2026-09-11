@@ -661,6 +661,260 @@ impl Store {
         }
         Ok(items)
     }
+    pub fn lifecycle_settings(&self) -> Result<crate::lifecycle::Settings> {
+        let value = self.preferences("lifecycle-settings")?;
+        if value.get("revision").is_none() {
+            return Ok(crate::lifecycle::Settings::default());
+        }
+        serde_json::from_value(value).map_err(Into::into)
+    }
+    pub fn prepare_lifecycle(
+        &self,
+        id: &str,
+        desired: crate::lifecycle::Settings,
+        native_before: bool,
+    ) -> Result<crate::lifecycle::SettingsOperation> {
+        valid_id(id)?;
+        let fingerprint = hash(&serde_json::to_vec(&desired)?);
+        let mut db = self.db()?;
+        self.writable()?;
+        let tx = db.transaction()?;
+        if let Some((old, body)) = tx
+            .query_row(
+                "SELECT fingerprint,result FROM operations WHERE id=?1",
+                [id],
+                |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
+            )
+            .optional()?
+        {
+            if old != fingerprint {
+                return Err(AppError::new(
+                    "operation-conflict",
+                    "Settings ID belongs to different input",
+                ));
+            }
+            if let OperationResult::Lifecycle(value) = serde_json::from_str(&body)? {
+                return Ok(value);
+            }
+            return Err(AppError::new(
+                "operation-conflict",
+                "Settings ID belongs to another action",
+            ));
+        }
+        if tx.query_row(
+            "SELECT EXISTS(SELECT 1 FROM tasks WHERE id=?1)",
+            [id],
+            |r| r.get::<_, bool>(0),
+        )? {
+            return Err(AppError::new(
+                "operation-conflict",
+                "Settings ID belongs to a task",
+            ));
+        }
+        let pending: Option<String> = tx
+            .query_row(
+                "SELECT body FROM preferences WHERE key='lifecycle-pending'",
+                [],
+                |r| r.get(0),
+            )
+            .optional()?;
+        if pending.is_some_and(|s| s != "null") {
+            return Err(AppError::new(
+                "settings-recovery-required",
+                "Reconcile the previous settings operation first",
+            ));
+        }
+        let old: Option<String> = tx
+            .query_row(
+                "SELECT body FROM preferences WHERE key='lifecycle-settings'",
+                [],
+                |r| r.get(0),
+            )
+            .optional()?;
+        let previous: crate::lifecycle::Settings = old
+            .map(|s| serde_json::from_str(&s))
+            .transpose()?
+            .unwrap_or_default();
+        if desired.revision != previous.revision {
+            return Err(AppError::new(
+                "settings-conflict",
+                "Settings changed; refresh before applying",
+            ));
+        }
+        let operation = crate::lifecycle::SettingsOperation {
+            id: id.into(),
+            phase: "planned".into(),
+            desired,
+            previous,
+            native_before,
+            error: None,
+        };
+        tx.execute(
+            "INSERT INTO operations(id,fingerprint,result) VALUES(?1,?2,?3)",
+            params![
+                id,
+                fingerprint,
+                serde_json::to_string(&OperationResult::Lifecycle(operation.clone()))?
+            ],
+        )?;
+        tx.execute("INSERT INTO preferences(key,body) VALUES('lifecycle-pending',?1) ON CONFLICT(key) DO UPDATE SET body=excluded.body",[serde_json::to_string(id)?])?;
+        tx.commit()?;
+        Ok(operation)
+    }
+    pub fn finish_lifecycle(
+        &self,
+        id: &str,
+        phase: &str,
+        error: Option<AppError>,
+    ) -> Result<crate::lifecycle::SettingsOperation> {
+        if !matches!(phase, "committed" | "failed" | "interrupted") {
+            return Err(AppError::new(
+                "settings-phase",
+                "Invalid settings completion phase",
+            ));
+        }
+        let mut db = self.db()?;
+        self.writable()?;
+        let tx = db.transaction()?;
+        let body: String =
+            tx.query_row("SELECT result FROM operations WHERE id=?1", [id], |r| {
+                r.get(0)
+            })?;
+        let OperationResult::Lifecycle(mut operation) = serde_json::from_str(&body)? else {
+            return Err(AppError::new(
+                "operation-conflict",
+                "Not a settings operation",
+            ));
+        };
+        if operation.phase != "planned" {
+            return Ok(operation);
+        }
+        if phase == "committed" {
+            operation.desired.revision =
+                operation.previous.revision.checked_add(1).ok_or_else(|| {
+                    AppError::new("settings-revision", "Settings revision exhausted")
+                })?;
+            tx.execute("INSERT INTO preferences(key,body) VALUES('lifecycle-settings',?1) ON CONFLICT(key) DO UPDATE SET body=excluded.body",[serde_json::to_string(&operation.desired)?])?;
+        }
+        operation.phase = phase.into();
+        operation.error = error;
+        tx.execute(
+            "UPDATE operations SET result=?2 WHERE id=?1",
+            params![
+                id,
+                serde_json::to_string(&OperationResult::Lifecycle(operation.clone()))?
+            ],
+        )?;
+        tx.execute(
+            "UPDATE preferences SET body='null' WHERE key='lifecycle-pending'",
+            [],
+        )?;
+        tx.commit()?;
+        Ok(operation)
+    }
+    pub fn ui_state(&self) -> Result<crate::ui::UiState> {
+        let value = self.preferences("library-view")?;
+        if value.get("revision").is_none() {
+            return Ok(crate::ui::UiState::default());
+        }
+        serde_json::from_value(value).map_err(Into::into)
+    }
+    pub fn save_ui_state(
+        &self,
+        id: &str,
+        mut state: crate::ui::UiState,
+    ) -> Result<crate::ui::UiReceipt> {
+        valid_id(id)?;
+        state.validate()?;
+        let fingerprint = hash(&serde_json::to_vec(&state)?);
+        let mut db = self.db()?;
+        self.writable()?;
+        let tx = db.transaction()?;
+        if let Some((old, body)) = tx
+            .query_row(
+                "SELECT fingerprint,result FROM operations WHERE id=?1",
+                [id],
+                |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
+            )
+            .optional()?
+        {
+            if old != fingerprint {
+                return Err(AppError::new(
+                    "operation-conflict",
+                    "View operation ID belongs to another change",
+                ));
+            }
+            if let OperationResult::Ui(value) = serde_json::from_str(&body)? {
+                return Ok(value);
+            }
+            return Err(AppError::new(
+                "operation-conflict",
+                "View operation ID belongs to another action",
+            ));
+        }
+        if tx.query_row(
+            "SELECT EXISTS(SELECT 1 FROM tasks WHERE id=?1)",
+            [id],
+            |r| r.get::<_, bool>(0),
+        )? {
+            return Err(AppError::new(
+                "operation-conflict",
+                "View operation ID belongs to a task",
+            ));
+        }
+        let old: Option<String> = tx
+            .query_row(
+                "SELECT body FROM preferences WHERE key='library-view'",
+                [],
+                |r| r.get(0),
+            )
+            .optional()?;
+        let previous: crate::ui::UiState = old
+            .map(|s| serde_json::from_str(&s))
+            .transpose()?
+            .unwrap_or_default();
+        if state.revision != previous.revision {
+            return Err(AppError::new(
+                "view-state-conflict",
+                "View state changed in another request",
+            ));
+        }
+        state.revision = state
+            .revision
+            .checked_add(1)
+            .ok_or_else(|| AppError::new("view-state-revision", "View revision exhausted"))?;
+        tx.execute("INSERT INTO preferences(key,body) VALUES('library-view',?1) ON CONFLICT(key) DO UPDATE SET body=excluded.body",[serde_json::to_string(&state)?])?;
+        tx.execute(
+            "INSERT INTO operations(id,fingerprint,result) VALUES(?1,?2,?3)",
+            params![
+                id,
+                fingerprint,
+                serde_json::to_string(&OperationResult::Ui(crate::ui::UiReceipt {
+                    revision: state.revision
+                }))?
+            ],
+        )?;
+        tx.commit()?;
+        Ok(crate::ui::UiReceipt {
+            revision: state.revision,
+        })
+    }
+    pub fn browse(&self, space: Space, view: crate::ui::LibraryView) -> Result<CatalogPage> {
+        let mut items: Vec<_> = self
+            .all_items()?
+            .into_iter()
+            .filter(|i| crate::ui::matches(i, &space, &view))
+            .collect();
+        crate::ui::sort(&mut items, &view);
+        Ok(CatalogPage {
+            total: items.len().try_into().unwrap_or(u32::MAX),
+            items: items
+                .into_iter()
+                .skip(view.offset as usize)
+                .take(100)
+                .collect(),
+        })
+    }
     pub fn query(&self, query: CatalogQuery) -> Result<CatalogPage> {
         let db = self.db()?;
         let mut stmt = db.prepare("SELECT body FROM items ORDER BY id")?;

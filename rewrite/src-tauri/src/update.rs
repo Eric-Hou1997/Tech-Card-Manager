@@ -264,6 +264,7 @@ fn installation_path(app: &tauri::AppHandle, channel: &str) -> Result<PathBuf> {
             .env()
             .appimage
             .clone()
+            .map(PathBuf::from)
             .ok_or_else(|| error("update-installation-path", "Missing AppImage path"));
     }
     let _ = (app, channel);
@@ -438,6 +439,9 @@ pub async fn update_install(id: String, app: tauri::AppHandle) -> Result<UpdateP
     }
     .await;
     if let Err(e) = result {
+        app.state::<crate::lifecycle::Lifecycle>()
+            .allow_exit
+            .store(false, Ordering::SeqCst);
         app.state::<Desktop>().store.unfreeze_after_update();
         progress.phase = if e.code == "update-cancelled" {
             "cancelled"
