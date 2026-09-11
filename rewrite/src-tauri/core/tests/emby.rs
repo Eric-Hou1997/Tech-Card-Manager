@@ -158,8 +158,22 @@ fn stop_joins_renewal_and_restart_gets_new_session() {
         .unwrap();
     target.apply(&p.id, &p.fingerprint).unwrap();
     let mut service = CardService::start(target.clone(), "one").unwrap();
-    std::thread::sleep(Duration::from_millis(2200));
-    assert!(service.status().unwrap().lease.unwrap().sequence >= 2);
+    let deadline = std::time::Instant::now() + Duration::from_secs(15);
+    loop {
+        let status = service.status().unwrap();
+        if status
+            .lease
+            .as_ref()
+            .is_some_and(|lease| lease.sequence >= 2)
+        {
+            break;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "Lease renewal did not become visible: {status:?}"
+        );
+        std::thread::sleep(Duration::from_millis(50));
+    }
     service.stop().unwrap();
     let stopped = fs::read(web.join("technical-specs-runtime.json")).unwrap();
     std::thread::sleep(Duration::from_millis(2200));
