@@ -24,7 +24,7 @@ try {
  const info=await api('System/Info/Public');report.version=info.Version;
  if(info.Version!=='4.9.5.0')throw Error('Unexpected Emby version');
  const configuration=await api('Startup/Configuration');await api('Startup/Configuration',{...configuration,UICulture:'en-US'});
- const password=randomUUID();await api('Startup/User',{Name:'TCM Acceptance',Password:password});
+ const password=process.env.TCM_ACCEPTANCE_PASSWORD||randomUUID();await api('Startup/User',{Name:'TCM Acceptance',Password:password});
  await api('Startup/RemoteAccess',{EnableAutomaticPortMapping:false});await api('Startup/Complete',{});
  const auth=await api('Users/AuthenticateByName',{Username:'TCM Acceptance',Pw:password});token=auth.AccessToken;
  const movieRoot=path.join(temporary,'movies'),movie=path.join(movieRoot,'TCM Acceptance (1967)');await mkdir(movie,{recursive:true});
