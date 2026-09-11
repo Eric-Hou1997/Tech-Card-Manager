@@ -355,3 +355,22 @@ fn operation_results_are_queryable_and_ids_cannot_cross_operation_kinds() {
         assert_eq!(task.state, TaskState::Paused);
     }
 }
+
+#[cfg(windows)]
+#[test]
+fn windows_verbatim_root_and_drive_relative_boundaries() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().canonicalize().unwrap();
+    assert_eq!(paths::checked(&root).unwrap(), root);
+    let file = root.join("中文.nfo");
+    fs::write(&file, "<movie/>").unwrap();
+    assert_eq!(paths::within(&root, &file).unwrap(), file);
+    assert_eq!(
+        paths::checked(Path::new(r"C:relative")).unwrap_err().code,
+        "invalid-path"
+    );
+    assert_eq!(
+        paths::checked(&root.join("..")).unwrap_err().code,
+        "ambiguous-path"
+    );
+}

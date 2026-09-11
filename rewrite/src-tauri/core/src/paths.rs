@@ -14,6 +14,10 @@ pub fn checked(path: &Path) -> Result<PathBuf> {
             );
         }
         walked.push(part);
+        // A Windows drive/UNC prefix is not a filesystem object until RootDir.
+        if matches!(part, Component::Prefix(_)) {
+            continue;
+        }
         let meta = std::fs::symlink_metadata(&walked)
             .map_err(|e| AppError::new("path-unavailable", e).at(walked.display()))?;
         if meta.file_type().is_symlink() {
