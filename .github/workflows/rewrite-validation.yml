@@ -3,6 +3,10 @@ on:
   workflow_dispatch:
   push:
     branches: [v5.0.0-rewrite]
+    paths-ignore:
+      - 'tools/rewrite/emby_cloud_smoke.py'
+      - '.github/workflows/emby-environment.yml'
+      - 'docs/rewrite/**'
   pull_request:
     branches: [v5.0.0-rewrite]
 env:
