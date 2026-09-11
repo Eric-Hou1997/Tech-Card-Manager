@@ -13,8 +13,21 @@ use tcm_core::{
 };
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args().skip(1).collect();
-    if args.len() != 3 {
-        return Err("usage: emby_acceptance WEB_ROOT PRIVATE_ROOT MOVIE_ROOT".into());
+    if args.len() != 4 {
+        return Err(
+            "usage: emby_acceptance WEB_ROOT PRIVATE_ROOT MOVIE_ROOT EMBY_DATA_ROOT".into(),
+        );
+    }
+    let discovered = tcm_core::emby_libraries::discover(Path::new(&args[3]), "4.9.5.0", &[])?;
+    let movie = Path::new(&args[2]).canonicalize()?;
+    if !discovered.iter().any(|root| {
+        root.spaces.contains(&Space::Movie)
+            && root
+                .local_path
+                .as_ref()
+                .is_some_and(|p| Path::new(p).canonicalize().is_ok_and(|p| p == movie))
+    }) {
+        return Err("Real Emby database did not expose the physical movie root".into());
     }
     let private = Path::new(&args[1]);
     std::fs::create_dir_all(private)?;
@@ -60,7 +73,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut service = CardService::start(integration.clone(), "ci-session")?;
     println!(
         "{}",
-        serde_json::json!({"phase":"running","items":index.items.len()})
+        serde_json::json!({"phase":"running","items":index.items.len(),"physical_root_discovery":true})
     );
     io::stdout().flush()?;
     for line in io::stdin().lock().lines() {

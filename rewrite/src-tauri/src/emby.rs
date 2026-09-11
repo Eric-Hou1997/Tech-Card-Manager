@@ -8,7 +8,7 @@ use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
 };
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 const CARD_JS: &[u8] = include_bytes!("../../web-card/technical-specs-card.js");
 #[derive(Default)]
@@ -345,6 +345,91 @@ pub async fn emby_data_directory(
         environment.data = Some(real.to_string_lossy().into());
         store.save_preference("emby-environment", &serde_json::to_value(&environment)?)?;
         Ok(Some(environment))
+    })
+    .await
+    .map_err(|e| AppError::new("emby-worker", e))?
+}
+
+#[tauri::command]
+pub fn emby_path_mappings(
+    state: State<'_, Desktop>,
+) -> Result<product_core::emby_libraries::MappingSettings> {
+    state.store.path_mappings()
+}
+#[tauri::command]
+pub async fn emby_save_mappings(
+    id: String,
+    value: product_core::emby_libraries::MappingSettings,
+    app: tauri::AppHandle,
+) -> Result<product_core::emby_libraries::MappingSettings> {
+    tauri::async_runtime::spawn_blocking(move || {
+        app.state::<Desktop>().store.set_path_mappings(&id, value)
+    })
+    .await
+    .map_err(|e| AppError::new("emby-worker", e))?
+}
+#[tauri::command]
+pub async fn emby_libraries(
+    app: tauri::AppHandle,
+) -> Result<Vec<product_core::emby_libraries::DiscoveredLibrary>> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let store = &app.state::<Desktop>().store;
+        let environment: product_core::emby_environment::Environment =
+            serde_json::from_value(store.preferences("emby-environment")?)?;
+        let data = environment.data.ok_or_else(|| {
+            AppError::new("emby-data-directory", "Select Emby data directory first")
+        })?;
+        product_core::emby_libraries::discover(
+            std::path::Path::new(&data),
+            environment.version.as_deref().unwrap_or(""),
+            &store.path_mappings()?.mappings,
+        )
+    })
+    .await
+    .map_err(|e| AppError::new("emby-worker", e))?
+}
+#[tauri::command]
+pub async fn emby_add_library(
+    id: String,
+    path: String,
+    space: Space,
+    app: tauri::AppHandle,
+) -> Result<Configuration> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let store = &app.state::<Desktop>().store;
+        match store.operation_result(&id) {
+            Ok(OperationResult::Configuration(value)) => return Ok(value),
+            Ok(_) => {
+                return Err(AppError::new(
+                    "operation-conflict",
+                    "ID belongs to another action",
+                ))
+            }
+            Err(e) if e.code == "operation-not-found" => {}
+            Err(e) => return Err(e),
+        }
+        let real = product_core::paths::checked(std::path::Path::new(&path))?;
+        let path = real
+            .to_str()
+            .ok_or_else(|| AppError::new("path-encoding", "Path must be Unicode"))?
+            .to_owned();
+        let mut configuration = store.configuration()?;
+        configuration.roots.push(LibraryRoot {
+            id: product_core::hash(
+                format!(
+                    "{}:{path}",
+                    if space == Space::Movie { "movie" } else { "tv" }
+                )
+                .as_bytes(),
+            ),
+            path,
+            space,
+        });
+        let value = store.configure(&id, configuration)?;
+        if let Err(error) = app.emit("configuration-changed", &value) {
+            eprintln!("configuration-event: {error}");
+        }
+        Ok(value)
     })
     .await
     .map_err(|e| AppError::new("emby-worker", e))?

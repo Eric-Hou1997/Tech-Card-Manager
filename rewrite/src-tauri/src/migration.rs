@@ -3,7 +3,7 @@ use product_core::{
     migration::{MigrationPlan, MigrationReceipt},
     *,
 };
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 #[tauri::command]
 pub async fn migration_plan(
@@ -49,9 +49,14 @@ pub async fn migration_apply(
     app: tauri::AppHandle,
 ) -> Result<MigrationReceipt> {
     tauri::async_runtime::spawn_blocking(move || {
-        app.state::<Desktop>()
+        let receipt = app
+            .state::<Desktop>()
             .store
-            .apply_migration(&id, &fingerprint)
+            .apply_migration(&id, &fingerprint)?;
+        if let Err(error) = app.emit("configuration-changed", &receipt.configuration) {
+            eprintln!("configuration-event: {error}");
+        }
+        Ok(receipt)
     })
     .await
     .map_err(|e| AppError::new("migration-worker", e))?

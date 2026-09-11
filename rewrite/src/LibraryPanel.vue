@@ -35,6 +35,7 @@ const error = ref('');
 const busy = ref(false);
 let unlisten: UnlistenFn | undefined;
 let failures: UnlistenFn | undefined;
+let configEvents:UnlistenFn|undefined;
 let disposed = false;
 let refreshToken = 0;
 let timer: ReturnType<typeof setTimeout> | undefined;
@@ -97,10 +98,12 @@ onMounted(async () => {
     if (disposed) off(); else unlisten = off;
     const offFailure = await listen<AppError>('worker-failed', e => report(e.payload));
     if (disposed) offFailure(); else failures = offFailure;
+    const offConfig=await listen<Configuration>('configuration-changed',e=>{if(!disposed){configuration.value=e.payload;detail.value=null;void refresh();}});
+    if(disposed)offConfig();else configEvents=offConfig;
     if (!disposed) await refresh();
   } catch (e) { if (!disposed) report(e); }
 });
-onUnmounted(() => { disposed = true; ++refreshToken; clearTimeout(timer); unlisten?.(); failures?.(); });
+onUnmounted(() => { disposed = true; ++refreshToken; clearTimeout(timer); unlisten?.(); failures?.(); configEvents?.(); });
 </script>
 <template>
   <section class="library-panel">

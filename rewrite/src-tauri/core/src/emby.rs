@@ -212,7 +212,7 @@ pub fn clean_index(input: &[u8]) -> Result<Vec<u8>> {
     validate_html(out.as_bytes())?;
     Ok(out.into_bytes())
 }
-fn patched(input: &[u8]) -> Result<Vec<u8>> {
+fn patched(input: &[u8], javascript: &[u8]) -> Result<Vec<u8>> {
     let clean = clean_index(input)?;
     let text = validate_html(&clean)?;
     let at = text
@@ -220,7 +220,8 @@ fn patched(input: &[u8]) -> Result<Vec<u8>> {
         .rfind("</body>")
         .ok_or_else(|| AppError::new("emby-invalid-index", "No closing body"))?;
     let nl = if text.contains("\r\n") { "\r\n" } else { "\n" };
-    let patch = format!("{BEGIN}{nl}<script src=\"{JS}?v=4.1.0\" defer></script>{nl}{END}");
+    let revision = hash(javascript);
+    let patch = format!("{BEGIN}{nl}<script src=\"{JS}?v={revision}\" defer></script>{nl}{END}");
     let mut out = text.to_owned();
     out.insert_str(at, &patch);
     Ok(out.into_bytes())
@@ -544,7 +545,7 @@ impl Integration {
             Some(if action == "remove" {
                 clean
             } else {
-                patched(&current)?
+                patched(&current, javascript)?
             }),
         );
         if action == "remove" {

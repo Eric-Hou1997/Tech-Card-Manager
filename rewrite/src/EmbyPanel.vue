@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
+import EmbyLibraries from './EmbyLibraries.vue';
 interface Status { target: string; installed: boolean; healthy: boolean; phase: string; issues: string[] }
 interface Plan { id: string; fingerprint: string; action: string; target: string; files: string[]; legacy_patch: boolean }
 interface Service { phase: string; error: { message: string } | null }
@@ -49,6 +50,7 @@ onUnmounted(()=>{alive=false;if(poll)clearInterval(poll);});
       <button :disabled="busy" @click="control(false)">停止并禁用卡片</button>
     </div>
   </template>
+  <EmbyLibraries />
   <article v-if="plan" class="maintenance" aria-labelledby="maintenance-title">
     <h3 id="maintenance-title">确认维护计划：{{ plan.action }}</h3>
     <p class="path">{{ plan.target }}</p>

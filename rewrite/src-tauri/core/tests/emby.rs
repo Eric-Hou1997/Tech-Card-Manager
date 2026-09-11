@@ -271,3 +271,30 @@ fn index_refresh_commits_only_changed_public_data_and_preserves_active_lease() {
         b"external"
     );
 }
+
+#[test]
+fn changed_card_asset_changes_browser_cache_identity_and_removal_restores_original() {
+    let (_temp, web, backup) = setup();
+    let integration = Integration::open(&web, &backup).unwrap();
+    let first = integration
+        .plan("first", "install", b"card-one", &index(), b"{}")
+        .unwrap();
+    integration.apply(&first.id, &first.fingerprint).unwrap();
+    let old = fs::read(web.join("index.html")).unwrap();
+    let next = integration
+        .plan("next", "update", b"card-two", &index(), b"{}")
+        .unwrap();
+    integration.apply(&next.id, &next.fingerprint).unwrap();
+    let new = fs::read(web.join("index.html")).unwrap();
+    assert_ne!(old, new);
+    assert_eq!(clean_index(&new).unwrap(), html());
+    assert_eq!(
+        fs::read(web.join("technical-specs-card.js")).unwrap(),
+        b"card-two"
+    );
+    let remove = integration
+        .plan("remove", "remove", b"card-two", &index(), b"{}")
+        .unwrap();
+    integration.apply(&remove.id, &remove.fingerprint).unwrap();
+    assert_eq!(fs::read(web.join("index.html")).unwrap(), html());
+}

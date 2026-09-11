@@ -132,7 +132,13 @@ pub async fn add_library_root(
         let state = app.state::<Desktop>();
         let mut config = state.store.configuration()?;
         config.roots.push(LibraryRoot {
-            id: product_core::hash(path.as_bytes()),
+            id: product_core::hash(
+                format!(
+                    "{}:{path}",
+                    if space == Space::Movie { "movie" } else { "tv" }
+                )
+                .as_bytes(),
+            ),
             space,
             path,
         });

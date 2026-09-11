@@ -133,9 +133,14 @@ fn walk(
                         return Err(error("migration-credential-boundary","Credential-bearing JSON needs native credential migration before import",&path));
                     }
                 }
-                Err(_) => warnings.push(format!(
-                    "Malformed JSON retained as original bytes: {relative}"
-                )),
+                Err(_) => {
+                    if malformed_secret_key(&bytes) {
+                        return Err(error("migration-credential-boundary", "Interrupted credential-bearing JSON requires credential recovery before import", &path));
+                    }
+                    warnings.push(format!(
+                        "Malformed JSON retained as original bytes: {relative}"
+                    ));
+                }
             }
         }
         out.push(LegacyFile {
@@ -147,20 +152,40 @@ fn walk(
     }
     Ok(())
 }
+fn secret_key(key: &str) -> bool {
+    let key = key.to_ascii_lowercase().replace(['-', '_'], "");
+    matches!(
+        key.as_str(),
+        "apikey"
+            | "accesstoken"
+            | "refreshtoken"
+            | "authtoken"
+            | "password"
+            | "secret"
+            | "authorization"
+    )
+}
+fn malformed_secret_key(bytes: &[u8]) -> bool {
+    // A truncated document can still contain complete credential keys. Decode
+    // quoted keys separately, including Unicode escapes, before archiving bytes.
+    let text = String::from_utf8_lossy(bytes);
+    let keys = regex::Regex::new(r#""(?:\\.|[^"\\])*"\s*:"#).expect("constant JSON key pattern");
+    let found = keys.find_iter(&text).any(|matched| {
+        let token = matched.as_str().trim_end_matches(':').trim_end();
+        serde_json::from_str::<String>(token).is_ok_and(|key| secret_key(&key))
+    });
+    found
+}
 fn secret_field(value: &Value) -> bool {
     match value {
         Value::Object(map) => map.iter().any(|(key, v)| {
-            let key = key.to_ascii_lowercase().replace(['-', '_'], "");
-            matches!(
-                key.as_str(),
-                "apikey" | "accesstoken" | "password" | "secret" | "authorization"
-            ) && v.as_str().is_some_and(|s| !s.is_empty())
-                || secret_field(v)
+            secret_key(key) && !v.is_null() && v.as_str() != Some("") || secret_field(v)
         }),
         Value::Array(values) => values.iter().any(secret_field),
         _ => false,
     }
 }
+
 pub fn prepare(
     id: &str,
     source: &Path,
@@ -221,6 +246,19 @@ pub fn prepare(
                         "tv" | "series" => Some(Space::Tv),
                         _ => None,
                     };
+                    if root
+                        .get("kind")
+                        .and_then(Value::as_str)
+                        .is_some_and(|kind| kind.eq_ignore_ascii_case("mixed"))
+                    {
+                        let enabled = root
+                            .get("enabled")
+                            .and_then(Value::as_bool)
+                            .unwrap_or(false);
+                        add_root(&mut roots, path, Some(Space::Movie), enabled);
+                        add_root(&mut roots, path, Some(Space::Tv), enabled);
+                        continue;
+                    }
                     add_root(
                         &mut roots,
                         path,
@@ -270,7 +308,7 @@ pub fn prepare(
     })
 }
 fn add_root(roots: &mut Vec<LegacyRoot>, path: &str, space: Option<Space>, enabled: bool) {
-    if roots.iter().any(|r| r.path == path) {
+    if roots.iter().any(|r| r.path == path && r.space == space) {
         return;
     }
     let state = if !enabled {
@@ -338,21 +376,35 @@ pub fn merged_configuration(
             continue;
         }
         let real = paths::checked(Path::new(&root.path))?;
-        if next.roots.iter().any(|r| Path::new(&r.path) == real) {
-            continue;
-        }
         if next
             .roots
             .iter()
-            .any(|r| real.starts_with(&r.path) || Path::new(&r.path).starts_with(&real))
+            .any(|r| Path::new(&r.path) == real && Some(&r.space) == root.space.as_ref())
         {
+            continue;
+        }
+        if next.roots.iter().any(|r| {
+            (real.starts_with(&r.path) || Path::new(&r.path).starts_with(&real))
+                && !(Path::new(&r.path) == real && Some(&r.space) != root.space.as_ref())
+        }) {
             let mut root = root.clone();
             root.state = "overlapping-root".into();
             pending.push(root);
             continue;
         }
         next.roots.push(LibraryRoot {
-            id: hash(real.to_string_lossy().as_bytes()),
+            id: hash(
+                format!(
+                    "{}:{}",
+                    if root.space == Some(Space::Movie) {
+                        "movie"
+                    } else {
+                        "tv"
+                    },
+                    real.to_string_lossy()
+                )
+                .as_bytes(),
+            ),
             space: root
                 .space
                 .clone()

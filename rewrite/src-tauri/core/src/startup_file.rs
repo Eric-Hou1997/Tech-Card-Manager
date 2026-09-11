@@ -14,22 +14,26 @@ pub struct StartupFile {
 fn failure(error: impl ToString) -> AppError {
     AppError::new("autostart-file", error)
 }
+// GLib checks argv[0] before expanding %% field escapes. Use the system env
+// executable to exec the literal application argument without invoking a shell.
 fn quoted(value: &str) -> Result<String> {
     if value.chars().any(|c| c == '\0' || c == '\n' || c == '\r') {
         return Err(failure(
             "Login path contains unsupported control characters",
         ));
     }
-    // Desktop Entry general escaping is applied before Exec argument quoting.
-    Ok(format!(
+    // First quote the Exec argument, then escape its backslashes for the
+    // desktop-entry value parser. These are two distinct decoding stages.
+    let argument = format!(
         "\"{}\"",
         value
-            .replace('\\', "\\\\\\\\")
-            .replace('"', "\\\"")
-            .replace('`', "\\`")
-            .replace('$', "\\$")
+            .replace('\\', r"\\")
+            .replace('"', r#"\""#)
+            .replace('`', r"\`")
+            .replace('$', r"\$")
             .replace('%', "%%")
-    ))
+    );
+    Ok(argument.replace('\\', r"\\"))
 }
 impl StartupFile {
     pub fn new(
@@ -54,7 +58,7 @@ impl StartupFile {
                 let mut value=plist::Dictionary::new();value.insert("Label".into(),identity.into());value.insert("ProgramArguments".into(),plist::Value::Array(vec![exe.into(),"--background".into()]));value.insert("RunAtLoad".into(),true.into());
                 let mut bytes=Vec::new();plist::Value::Dictionary(value).to_writer_xml(&mut bytes).map_err(failure)?;(format!("{identity}.plist"),bytes)
             },
-            "linux"=>(format!("{identity}.desktop"),format!("[Desktop Entry]\nType=Application\nVersion=1.0\nName={}\nExec={} --background\nTerminal=false\nStartupNotify=false\nX-TCM-ITM-Managed={identity}\n",display_name.replace('\\',"\\\\").replace(['\n','\r']," "),quoted(exe)?).into_bytes()),
+            "linux"=>(format!("{identity}.desktop"),format!("[Desktop Entry]\nType=Application\nVersion=1.0\nName={}\nExec=/usr/bin/env -- {} --background\nTerminal=false\nStartupNotify=false\nX-TCM-ITM-Managed={identity}\n",display_name.replace('\\',"\\\\").replace(['\n','\r']," "),quoted(exe)?).into_bytes()),
             _=>return Err(failure("Unsupported file-backed login platform")),
         };
         Ok(Self {

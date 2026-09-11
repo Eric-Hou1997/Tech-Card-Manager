@@ -377,3 +377,74 @@ fn windows_verbatim_root_and_drive_relative_boundaries() {
         "ambiguous-path"
     );
 }
+
+#[test]
+fn one_physical_root_keeps_movie_tv_scopes_and_errors_independent() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = temp.path().canonicalize().unwrap();
+    let media = base.join("mixed");
+    std::fs::create_dir(&media).unwrap();
+    std::fs::write(
+        media.join("movie.nfo"),
+        b"<movie><title>Movie only</title></movie>",
+    )
+    .unwrap();
+    std::fs::write(
+        media.join("tvshow.nfo"),
+        b"<tvshow><title>TV only</title></tvshow>",
+    )
+    .unwrap();
+    std::fs::write(media.join("broken.nfo"), b"<broken").unwrap();
+    let store = Store::open(&base.join("db.sqlite")).unwrap();
+    store
+        .configure(
+            "mixed",
+            Configuration {
+                roots: vec![
+                    LibraryRoot {
+                        id: "movie".into(),
+                        path: media.to_string_lossy().into(),
+                        space: Space::Movie,
+                    },
+                    LibraryRoot {
+                        id: "tv".into(),
+                        path: media.to_string_lossy().into(),
+                        space: Space::Tv,
+                    },
+                ],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    for (id, space) in [("movie", Space::Movie), ("tv", Space::Tv)] {
+        store
+            .submit(ScanRequest {
+                operation_id: format!("scan-{id}"),
+                space,
+                root_ids: vec![id.into()],
+            })
+            .unwrap();
+        store.run_next(|| false, |_| {}).unwrap();
+    }
+    let movie = store.query(query(Space::Movie)).unwrap();
+    let tv = store.query(query(Space::Tv)).unwrap();
+    assert_eq!(movie.total, 2);
+    assert_eq!(tv.total, 2);
+    assert!(movie.items.iter().any(|i| i.title == "Movie only"));
+    assert!(tv.items.iter().any(|i| i.title == "TV only"));
+    assert_ne!(
+        movie.items.iter().find(|i| i.error.is_some()).unwrap().id,
+        tv.items.iter().find(|i| i.error.is_some()).unwrap().id
+    );
+    std::fs::remove_file(media.join("broken.nfo")).unwrap();
+    store
+        .submit(ScanRequest {
+            operation_id: "refresh-movie".into(),
+            space: Space::Movie,
+            root_ids: vec!["movie".into()],
+        })
+        .unwrap();
+    store.run_next(|| false, |_| {}).unwrap();
+    assert_eq!(store.query(query(Space::Movie)).unwrap().total, 1);
+    assert_eq!(store.query(query(Space::Tv)).unwrap().total, 2);
+}

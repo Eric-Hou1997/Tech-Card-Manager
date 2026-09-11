@@ -8,8 +8,18 @@ use std::{
 pub struct Store {
     connection: Mutex<Connection>,
     worker: Mutex<()>,
-    _owner: std::fs::File,
+    _owner: DatabaseLease,
     maintenance: std::sync::atomic::AtomicBool,
+}
+// Explicit unlock prevents an unrelated concurrently spawned child from
+// retaining a fork-inherited lease until its exec closes inherited descriptors.
+struct DatabaseLease(std::fs::File);
+impl Drop for DatabaseLease {
+    fn drop(&mut self) {
+        if let Err(error) = self.0.unlock() {
+            eprintln!("database-unlock: {error}");
+        }
+    }
 }
 fn valid_id(id: &str) -> Result<()> {
     if id.is_empty() || id.len() > 96 || !id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
@@ -56,7 +66,7 @@ impl Store {
         let store = Self {
             connection: Mutex::new(connection),
             worker: Mutex::new(()),
-            _owner: owner,
+            _owner: DatabaseLease(owner),
             maintenance: std::sync::atomic::AtomicBool::new(false),
         };
         for mut task in store.tasks()? {
@@ -358,9 +368,14 @@ impl Store {
                         .at(real.display()),
                 );
             }
-            if roots.iter().any(|(id, p): &(String, std::path::PathBuf)| {
-                id == &root.id || real.starts_with(p) || p.starts_with(&real)
-            }) {
+            if roots
+                .iter()
+                .any(|(id, p, space): &(String, std::path::PathBuf, Space)| {
+                    id == &root.id
+                        || (real.starts_with(p) || p.starts_with(&real))
+                            && !(real == *p && root.space != *space)
+                })
+            {
                 return Err(AppError::new(
                     "overlapping-roots",
                     "Root IDs and physical roots must not overlap",
@@ -370,7 +385,7 @@ impl Store {
                 .to_str()
                 .ok_or_else(|| AppError::new("invalid-encoding", "Root path is not valid Unicode"))?
                 .into();
-            roots.push((root.id.clone(), real));
+            roots.push((root.id.clone(), real, root.space.clone()));
         }
         let mut db = self.db()?;
         self.writable()?;
@@ -444,7 +459,10 @@ impl Store {
             .collect::<std::result::Result<Vec<_>, _>>()?;
         drop(stmt);
         for root in old {
-            if !keep.contains(&root) {
+            if !keep.contains(&root)
+                || current.roots.iter().find(|r| r.id == root)
+                    != value.roots.iter().find(|r| r.id == root)
+            {
                 tx.execute("DELETE FROM items WHERE root_id=?1", [root])?;
             }
         }
@@ -661,6 +679,73 @@ impl Store {
         }
         Ok(items)
     }
+    pub fn path_mappings(&self) -> Result<crate::emby_libraries::MappingSettings> {
+        let value = self.preferences("emby-path-mappings")?;
+        if value.get("revision").is_none() {
+            return Ok(Default::default());
+        }
+        serde_json::from_value(value).map_err(Into::into)
+    }
+    pub fn set_path_mappings(
+        &self,
+        id: &str,
+        mut value: crate::emby_libraries::MappingSettings,
+    ) -> Result<crate::emby_libraries::MappingSettings> {
+        valid_id(id)?;
+        let fingerprint = hash(&serde_json::to_vec(&value)?);
+        if let Some(result) = self.operation(id, &fingerprint)? {
+            if let OperationResult::PathMappings(value) = serde_json::from_str(&result)? {
+                return Ok(value);
+            }
+            return Err(AppError::new(
+                "operation-conflict",
+                "ID belongs to another operation",
+            ));
+        }
+        if value.mappings.len() > 100 {
+            return Err(AppError::new("path-mapping", "Too many mappings"));
+        }
+        for mapping in &value.mappings {
+            crate::emby_libraries::mapped_path(&mapping.server_prefix, &value.mappings)?;
+        }
+        let mut db = self.db()?;
+        self.writable()?;
+        let tx = db.transaction()?;
+        if tx.query_row("SELECT EXISTS(SELECT 1 FROM operations WHERE id=?1 UNION ALL SELECT 1 FROM tasks WHERE id=?1)",[id],|r|r.get::<_,bool>(0))?{return Err(AppError::new("operation-conflict","ID is already in use"));}
+        let previous: Option<String> = tx
+            .query_row(
+                "SELECT body FROM preferences WHERE key='emby-path-mappings'",
+                [],
+                |r| r.get(0),
+            )
+            .optional()?;
+        let previous: crate::emby_libraries::MappingSettings = previous
+            .map(|s| serde_json::from_str(&s))
+            .transpose()?
+            .unwrap_or_default();
+        if previous.revision != value.revision {
+            return Err(AppError::new(
+                "path-mapping-conflict",
+                "Mappings changed; reload before saving",
+            ));
+        }
+        value.revision = value
+            .revision
+            .checked_add(1)
+            .ok_or_else(|| AppError::new("revision-overflow", "Mapping revision exhausted"))?;
+        tx.execute("INSERT INTO preferences(key,body) VALUES('emby-path-mappings',?1) ON CONFLICT(key) DO UPDATE SET body=excluded.body",[serde_json::to_string(&value)?])?;
+        tx.execute(
+            "INSERT INTO operations(id,fingerprint,result) VALUES(?1,?2,?3)",
+            params![
+                id,
+                fingerprint,
+                serde_json::to_string(&OperationResult::PathMappings(value.clone()))?
+            ],
+        )?;
+        tx.commit()?;
+        Ok(value)
+    }
+
     pub fn lifecycle_settings(&self) -> Result<crate::lifecycle::Settings> {
         let value = self.preferences("lifecycle-settings")?;
         if value.get("revision").is_none() {
@@ -1037,13 +1122,19 @@ impl Store {
                             if item.parser_revision == library::PARSER_REVISION
                                 && item.source_hash == hash(&raw)
                                 && item.error.is_none()
-                                && item.root_id == root.id =>
+                                && item.root_id == root.id
+                                && item.space == root.space =>
                         {
                             item
                         }
                         _ => library::parse(root, &real, &raw)?,
                     };
-                    Ok(Some(item))
+                    let relevant = match item.kind.as_str() {
+                        "Movie" => root.space == Space::Movie,
+                        "Series" | "Season" | "Episode" => root.space == Space::Tv,
+                        _ => true,
+                    };
+                    Ok(relevant.then_some(item))
                 });
                 let item = match result {
                     Ok(Some(item)) => Some(item),
@@ -1052,6 +1143,7 @@ impl Store {
                         error.operation_id = Some(task.id.clone());
                         root_failed = true;
                         let mut item = library::empty(root, &path);
+                        item.id = hash(format!("error:{}:{}", root.id, item.path).as_bytes());
                         item.error = Some(error);
                         Some(item)
                     }

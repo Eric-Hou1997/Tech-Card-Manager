@@ -170,6 +170,7 @@ pub struct CatalogPage {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(tag = "kind", content = "result", rename_all = "kebab-case")]
 pub enum OperationResult {
+    PathMappings(crate::emby_libraries::MappingSettings),
     Lifecycle(crate::lifecycle::SettingsOperation),
     Ui(crate::ui::UiReceipt),
     Configuration(Configuration),
@@ -212,6 +213,9 @@ pub fn typescript() -> String {
         crate::lifecycle::CloseAction::decl(),
         crate::lifecycle::Settings::decl(),
         crate::lifecycle::SettingsOperation::decl(),
+        crate::emby_libraries::PathMapping::decl(),
+        crate::emby_libraries::MappingSettings::decl(),
+        crate::emby_libraries::DiscoveredLibrary::decl(),
         OperationResult::decl(),
     ];
     format!(

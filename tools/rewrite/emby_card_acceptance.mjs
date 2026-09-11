@@ -38,9 +38,11 @@ try {
  if(!item)throw Error('Emby did not index the real NFO and video');
  report.checks.push('emby-library-read-real-nfo-and-video');
  const indexBefore=hash(await readFile(path.join(web,'index.html')));
- rust=spawn(driver,[web,path.join(temporary,'tcm-private'),movieRoot],{stdio:['pipe','pipe','inherit']});
+ rust=spawn(driver,[web,path.join(temporary,'tcm-private'),movieRoot,path.join(temporary,'programdata')],{stdio:['pipe','pipe','inherit']});
  lines=createInterface({input:rust.stdout});lines.on('line',line=>{const receive=waiting.shift();if(receive)receive(line);else queued.push(line);});
  const ready=await nextLine();if(ready.phase!=='running'||ready.items!==1)throw Error('Rust business chain did not start');
+ if(!ready.physical_root_discovery)throw Error('Rust did not discover the real Emby physical root');
+ report.checks.push('readonly-real-emby-database-physical-root-discovery');
  for(const file of ['technical-specs-card.js','technical-specs-data.json','technical-specs-runtime.json']){
   const response=await fetch(base+'/web/'+file);if(!response.ok)throw Error('Emby did not serve '+file);
   const served=Buffer.from(await response.arrayBuffer());if(hash(served)!==hash(await readFile(path.join(web,file))))throw Error('Served bytes differ: '+file);
