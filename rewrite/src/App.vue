@@ -2,6 +2,7 @@
 import { ref, onMounted, nextTick } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import LibraryPanel from './LibraryPanel.vue';
+import MigrationPanel from './MigrationPanel.vue';
 import EmbyPanel from './EmbyPanel.vue';
 const product = 'TCM';
 const status = ref('正在连接桌面核心…');
@@ -30,6 +31,7 @@ onMounted(async () => {
     <header><span class="mark">{{ product }}</span><div><h1>重写工作台</h1><p>读取流程迁移中 · NFO 始终只读</p></div></header>
     <p class="status" role="status">{{ status }}</p>
     <LibraryPanel />
+    <MigrationPanel :product="product" />
     <EmbyPanel />
     <section><h2>平台能力</h2><p>目录检查只读；凭据测试使用独立的临时条目并清理。网络测试仅发出固定地址的读取请求。</p>
       <p v-if="busy" role="status">正在执行验证，请稍候…</p>

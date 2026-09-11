@@ -2,6 +2,7 @@ pub mod card_service;
 pub mod contracts;
 pub mod emby;
 pub mod library;
+pub mod migration;
 pub mod paths;
 pub mod services;
 pub mod store;

@@ -35,7 +35,7 @@ impl Store {
         let connection = Connection::open(path)?;
         connection.busy_timeout(std::time::Duration::from_secs(5))?;
         let version: u32 = connection.pragma_query_value(None, "user_version", |r| r.get(0))?;
-        if version > 1 {
+        if version > 2 {
             return Err(AppError::new(
                 "newer-database",
                 "Database belongs to a newer application; refusing downgrade",
@@ -49,7 +49,9 @@ impl Store {
           CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY, fingerprint TEXT NOT NULL, body TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS items (id TEXT PRIMARY KEY, root_id TEXT NOT NULL, seen_task TEXT NOT NULL, body TEXT NOT NULL);
           CREATE INDEX IF NOT EXISTS items_root ON items(root_id);
-          PRAGMA user_version=1; COMMIT;")?;
+          CREATE TABLE IF NOT EXISTS legacy_artifacts(import_id TEXT NOT NULL, path TEXT NOT NULL, category TEXT NOT NULL, sha256 TEXT NOT NULL, body BLOB NOT NULL, PRIMARY KEY(import_id,path));
+          CREATE TABLE IF NOT EXISTS preferences(key TEXT PRIMARY KEY, body TEXT NOT NULL);
+          PRAGMA user_version=2; COMMIT;")?;
         let store = Self {
             connection: Mutex::new(connection),
             worker: Mutex::new(()),
@@ -67,6 +69,157 @@ impl Store {
         self.connection
             .lock()
             .map_err(|_| AppError::new("state-unavailable", "State owner failed"))
+    }
+    pub fn prepare_migration(
+        &self,
+        id: &str,
+        source: &Path,
+        kind: &str,
+    ) -> Result<crate::migration::MigrationPlan> {
+        valid_id(id)?;
+        let source = paths::checked(source)?;
+        let identity = hash(
+            serde_json::to_vec(&("legacy-import", kind, source.to_string_lossy()))?.as_slice(),
+        );
+        if let Some(old) = self.operation(id, &identity)? {
+            return match serde_json::from_str::<OperationResult>(&old)? {
+                OperationResult::MigrationPlan(plan) => Ok(plan),
+                OperationResult::Migration(_) => Err(AppError::new(
+                    "migration-already-imported",
+                    "Query this operation for its completed receipt",
+                )),
+                _ => Err(AppError::new(
+                    "operation-conflict",
+                    "ID belongs to another operation",
+                )),
+            };
+        }
+        let plan = crate::migration::prepare(id, &source, kind, &self.configuration()?)?;
+        let db = self.db()?;
+        if db.query_row(
+            "SELECT EXISTS(SELECT 1 FROM tasks WHERE id=?1)",
+            [id],
+            |row| row.get::<_, bool>(0),
+        )? {
+            return Err(AppError::new("operation-conflict", "ID belongs to a task"));
+        }
+        let result = serde_json::to_string(&OperationResult::MigrationPlan(plan.clone()))?;
+        db.execute(
+            "INSERT INTO operations(id,fingerprint,result) VALUES(?1,?2,?3)",
+            params![id, identity, result],
+        )?;
+        Ok(plan)
+    }
+    pub fn apply_migration(
+        &self,
+        id: &str,
+        fingerprint: &str,
+    ) -> Result<crate::migration::MigrationReceipt> {
+        let mut db = self.db()?;
+        let tx = db.transaction()?;
+        let body: String =
+            tx.query_row("SELECT result FROM operations WHERE id=?1", [id], |row| {
+                row.get(0)
+            })?;
+        let plan = match serde_json::from_str::<OperationResult>(&body)? {
+            OperationResult::Migration(receipt) if receipt.fingerprint == fingerprint => {
+                return Ok(receipt)
+            }
+            OperationResult::MigrationPlan(plan) if plan.fingerprint == fingerprint => plan,
+            _ => {
+                return Err(AppError::new(
+                    "migration-plan-mismatch",
+                    "Reviewed migration does not match this operation",
+                ))
+            }
+        };
+        let current: Configuration = tx
+            .query_row("SELECT body FROM configuration WHERE id=1", [], |row| {
+                row.get::<_, String>(0)
+            })
+            .optional()?
+            .map(|s| serde_json::from_str(&s))
+            .transpose()?
+            .unwrap_or_default();
+        {
+            let mut statement = tx.prepare("SELECT body FROM tasks")?;
+            for body in statement.query_map([], |row| row.get::<_, String>(0))? {
+                let task: Task = serde_json::from_str(&body?)?;
+                if !task.state.terminal() {
+                    return Err(AppError::new(
+                        "active-task",
+                        "Finish or cancel tasks before importing legacy data",
+                    ));
+                }
+            }
+        }
+        let (configuration, pending_roots) =
+            crate::migration::merged_configuration(&plan, &current)?;
+        let mut preferences = std::collections::BTreeMap::new();
+        let mut total = 0u64;
+        for file in &plan.files {
+            let data = crate::migration::read_snapshot(Path::new(&plan.source), file)?;
+            if file.category == "configuration" {
+                if let Ok(value) = serde_json::from_slice::<serde_json::Value>(&data) {
+                    preferences.insert(file.relative.clone(), value);
+                }
+            }
+            tx.execute("INSERT INTO legacy_artifacts(import_id,path,category,sha256,body) VALUES(?1,?2,?3,?4,?5)",params![id,file.relative,file.category,file.hash,data])?;
+            total = total
+                .checked_add(file.bytes)
+                .ok_or_else(|| AppError::new("migration-size", "Import byte count overflow"))?;
+        }
+        let preference_key = format!("legacy:{}", plan.source_kind);
+        tx.execute("INSERT INTO preferences(key,body) VALUES(?1,?2) ON CONFLICT(key) DO UPDATE SET body=excluded.body",params![preference_key,serde_json::to_string(&crate::migration::normalized_preferences(&preferences))?])?;
+        tx.execute("INSERT INTO configuration(id,body) VALUES(1,?1) ON CONFLICT(id) DO UPDATE SET body=excluded.body",[serde_json::to_string(&configuration)?])?;
+        let receipt = crate::migration::MigrationReceipt {
+            id: id.into(),
+            source: plan.source,
+            fingerprint: plan.fingerprint,
+            imported_files: plan
+                .files
+                .len()
+                .try_into()
+                .map_err(|_| AppError::new("migration-size", "Too many files"))?,
+            imported_bytes: total.to_string(),
+            pending_roots,
+            phase: "imported-requires-adapter-validation".into(),
+            configuration,
+        };
+        tx.execute(
+            "UPDATE operations SET result=?2 WHERE id=?1",
+            params![
+                id,
+                serde_json::to_string(&OperationResult::Migration(receipt.clone()))?
+            ],
+        )?;
+        tx.commit()?;
+        Ok(receipt)
+    }
+    pub fn legacy_artifact(&self, id: &str, path: &str) -> Result<Vec<u8>> {
+        // Rust adapters only; never expose arbitrary cached/provider bytes through a generic IPC command.
+        let (expected, bytes): (String, Vec<u8>) = self.db()?.query_row(
+            "SELECT sha256,body FROM legacy_artifacts WHERE import_id=?1 AND path=?2",
+            params![id, path],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+        if hash(&bytes) != expected {
+            return Err(AppError::new(
+                "migration-archive-corrupt",
+                "Imported data failed its original hash check",
+            ));
+        }
+        Ok(bytes)
+    }
+    pub fn preferences(&self, key: &str) -> Result<serde_json::Value> {
+        let body: Option<String> = self
+            .db()?
+            .query_row("SELECT body FROM preferences WHERE key=?1", [key], |row| {
+                row.get(0)
+            })
+            .optional()?;
+        body.map(|s| serde_json::from_str(&s).map_err(Into::into))
+            .unwrap_or_else(|| Ok(serde_json::json!({})))
     }
     pub fn configuration(&self) -> Result<Configuration> {
         let body: Option<String> = self
@@ -86,6 +239,9 @@ impl Store {
             })
             .optional()?;
         if let Some(body) = body {
+            if let Ok(value) = serde_json::from_str::<OperationResult>(&body) {
+                return Ok(value);
+            }
             if let Ok(value) = serde_json::from_str::<Configuration>(&body) {
                 return Ok(OperationResult::Configuration(value));
             }

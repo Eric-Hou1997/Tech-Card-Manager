@@ -54,6 +54,7 @@ try {
  try{await page.waitForFunction(()=>window.__technicalSpecsDebug?.rendered===true,{},{timeout:60000});}
  catch(error){report.debug=await page.evaluate(()=>({url:location.pathname+location.hash,stage:window.__technicalSpecsDebug?.stage,reason:window.__technicalSpecsDebug?.retryReason,loaded:window.__technicalSpecsDebug?.loaded,body:document.body.innerText.slice(0,1200)}));throw error;}
  if(!(await page.getByText('TCM ACCEPTANCE CAMERA',{exact:false}).first().isVisible()))throw Error('Card value is not visible');
+ await page.getByText('TCM ACCEPTANCE CAMERA',{exact:false}).first().scrollIntoViewIfNeeded();
  await page.screenshot({path:path.join(reportDirectory,'card-rendered.png'),fullPage:true});report.checks.push('real-emby-item-page-rendered-card-value');
  await command('stop');await page.waitForFunction(()=>!document.body.innerText.includes('TCM ACCEPTANCE CAMERA'),{},{timeout:15000});
  report.checks.push('service-stop-removes-visible-card');await page.screenshot({path:path.join(reportDirectory,'card-stopped.png'),fullPage:true});

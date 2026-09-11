@@ -1,0 +1,16 @@
+{
+  "scope": "real-emby-rust-integration-and-web-client",
+  "checks": [
+    "emby-library-read-real-nfo-and-video",
+    "rust-index-assets-published-and-served-byte-identical",
+    "real-emby-item-page-rendered-card-value",
+    "service-stop-removes-visible-card",
+    "service-restart-renders-card",
+    "uninstall-restores-html-and-preserves-nfo-bytes-and-mtime"
+  ],
+  "status": "passed",
+  "version": "4.9.5.0",
+  "source_commit": "49db938a2b166d53d362f9ae4f99f350863b3a4c",
+  "run": "https://github.com/Eric-Hou1997/Tech-Card-Manager/actions/runs/34564875724",
+  "architecture": "amd64"
+}

@@ -1,0 +1,74 @@
+name: Emby desktop platform combinations
+on:
+  workflow_dispatch:
+  push:
+    branches: [v5.0.0-rewrite]
+    paths:
+      - '.github/workflows/emby-desktop-platforms.yml'
+      - 'tools/rewrite/emby_other_platforms.py'
+permissions:
+  contents: read
+concurrency:
+  group: emby-desktop-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  server:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2022
+            target: x86_64-pc-windows-msvc
+            package: embyserver-win-x64-4.9.5.0.7z
+            sha256: 6883356517a42316ef5b270081f81d8de4151fec384fbe1ec1b31d2cf77688f6
+            suffix: .exe
+          - runner: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            package: embyserver-win-x64-4.9.5.0.7z
+            sha256: 6883356517a42316ef5b270081f81d8de4151fec384fbe1ec1b31d2cf77688f6
+            suffix: .exe
+          - runner: macos-15
+            target: aarch64-apple-darwin
+            package: embyserver-osx-arm64-4.9.5.0.zip
+            sha256: 65ba970a0037edeefbbba957c65a0acabdb129e543589beb85408b98c03573aa
+            suffix: ''
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: '1.98.1'
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rewrite/src-tauri
+      - name: Build native Rust business driver
+        run: cargo build --locked --manifest-path rewrite/src-tauri/Cargo.toml -p tcm-core --example emby_acceptance --target ${{ matrix.target }}
+      - name: Install browser dependency
+        working-directory: rewrite
+        run: |
+          npm ci
+          npx playwright install chromium
+      - name: Install video fixture tool on macOS
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg
+      - name: Install video fixture tool on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) { choco install ffmpeg -y --no-progress }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Download official pinned Emby package
+        shell: bash
+        run: curl --fail --location --retry 3 --max-time 180 "https://github.com/MediaBrowser/Emby.Releases/releases/download/4.9.5.0/${{ matrix.package }}" --output emby-package
+      - name: Real Emby installation combination and card lifecycle
+        run: python tools/rewrite/emby_other_platforms.py --package emby-package --sha256 ${{ matrix.sha256 }} --driver rewrite/src-tauri/target/${{ matrix.target }}/debug/examples/emby_acceptance${{ matrix.suffix }} --reports build/rewrite/emby-desktop
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: TCM-Emby-desktop-${{ matrix.target }}
+          path: build/rewrite/emby-desktop/
+          retention-days: 3
