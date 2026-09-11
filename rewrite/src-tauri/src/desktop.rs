@@ -24,37 +24,52 @@ impl Desktop {
         std::fs::create_dir_all(&path).map_err(|e| AppError::new("data-directory", e))?;
         let store = Arc::new(Store::open(&path.join("workspace.sqlite"))?);
         let stop = Arc::new(AtomicBool::new(false));
-        let worker_store = store.clone();
-        let worker_stop = stop.clone();
-        let handle = app.clone();
-        let worker = std::thread::Builder::new()
-            .name("library-worker".into())
-            .spawn(move || {
-                while !worker_stop.load(Ordering::SeqCst) {
-                    match worker_store.run_next(
-                        || worker_stop.load(Ordering::SeqCst),
-                        |task| {
-                            if let Err(e) = handle.emit("task-changed", task) {
-                                eprintln!("task-event: {e}");
-                            }
-                        },
-                    ) {
-                        Ok(Some(_)) => {}
-                        Ok(None) => std::thread::sleep(Duration::from_millis(100)),
-                        Err(error) => {
-                            let _ = handle.emit("worker-failed", &error);
-                            eprintln!("library-worker: {error}");
-                            break;
-                        }
-                    }
-                }
-            })
-            .map_err(|e| AppError::new("worker-start", e))?;
-        Ok(Self {
+        let desktop = Self {
             store,
             stop,
-            worker: Mutex::new(Some(worker)),
-        })
+            worker: Mutex::new(None),
+        };
+        desktop.resume(app)?;
+        Ok(desktop)
+    }
+    pub fn resume(&self, app: &tauri::AppHandle) -> Result<()> {
+        let mut worker = self
+            .worker
+            .lock()
+            .map_err(|e| AppError::new("worker-state", e))?;
+        if worker.is_some() {
+            return Ok(());
+        }
+        self.stop.store(false, Ordering::SeqCst);
+        let worker_store = self.store.clone();
+        let worker_stop = self.stop.clone();
+        let handle = app.clone();
+        *worker = Some(
+            std::thread::Builder::new()
+                .name("library-worker".into())
+                .spawn(move || {
+                    while !worker_stop.load(Ordering::SeqCst) {
+                        match worker_store.run_next(
+                            || worker_stop.load(Ordering::SeqCst),
+                            |task| {
+                                if let Err(e) = handle.emit("task-changed", task) {
+                                    eprintln!("task-event: {e}");
+                                }
+                            },
+                        ) {
+                            Ok(Some(_)) => {}
+                            Ok(None) => std::thread::sleep(Duration::from_millis(100)),
+                            Err(error) => {
+                                let _ = handle.emit("worker-failed", &error);
+                                eprintln!("library-worker: {error}");
+                                break;
+                            }
+                        }
+                    }
+                })
+                .map_err(|e| AppError::new("worker-start", e))?,
+        );
+        Ok(())
     }
     pub fn shutdown(&self) {
         self.stop.store(true, Ordering::SeqCst);

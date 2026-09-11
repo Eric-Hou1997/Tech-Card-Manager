@@ -171,6 +171,7 @@ pub struct CatalogPage {
 #[serde(tag = "kind", content = "result", rename_all = "kebab-case")]
 pub enum OperationResult {
     Configuration(Configuration),
+    Update(crate::update::UpdateProgress),
     MigrationPlan(crate::migration::MigrationPlan),
     Migration(crate::migration::MigrationReceipt),
     Task(Task),
@@ -196,6 +197,10 @@ pub fn typescript() -> String {
         crate::migration::LegacyRoot::decl(),
         crate::migration::MigrationPlan::decl(),
         crate::migration::MigrationReceipt::decl(),
+        crate::update::InstallationIdentity::decl(),
+        crate::update::UpdateArtifact::decl(),
+        crate::update::UpdateCatalog::decl(),
+        crate::update::UpdateProgress::decl(),
         OperationResult::decl(),
     ];
     format!(

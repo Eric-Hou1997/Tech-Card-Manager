@@ -62,6 +62,16 @@ try {
   return box.width>0 && box.height>0 && box.top>=0 && box.bottom<=innerHeight;
  },{}, {timeout:15000});
  await page.screenshot({path:path.join(reportDirectory,'card-rendered.png'),fullPage:true});report.checks.push('real-emby-item-page-rendered-card-value');
+ const localeTitles={'zh-CN':'技术规格','zh-Hant':'技術規格','en-US':'Technical Specs'};
+ for(const locale of ['fr-FR','ru-RU','ja-JP','es-ES','th-TH']) {
+  const messages=JSON.parse(await readFile(new URL(`../../language-packs/${locale}/r1/translations.json`,import.meta.url),'utf8'));
+  localeTitles[locale]=messages['web-card']['Technical Specs'];
+ }
+ for(const [locale,title] of Object.entries(localeTitles)) {
+  await page.evaluate(locale=>{document.documentElement.lang=locale;},locale);
+  await page.waitForFunction(title=>Array.from(document.querySelectorAll("[data-tech-spec-card='1']")).some(card=>card.textContent.includes(title)&&card.textContent.includes('TCM ACCEPTANCE CAMERA')),title,{timeout:20000});
+ }
+ report.checks.push('eight-card-locales-change-without-changing-spec-values');
  await command('stop');await page.waitForFunction(()=>!document.body.innerText.includes('TCM ACCEPTANCE CAMERA'),{},{timeout:15000});
  report.checks.push('service-stop-removes-visible-card');await page.screenshot({path:path.join(reportDirectory,'card-stopped.png'),fullPage:true});
  await command('start');await page.waitForFunction(()=>document.body.innerText.includes('TCM ACCEPTANCE CAMERA'),{},{timeout:20000});report.checks.push('service-restart-renders-card');

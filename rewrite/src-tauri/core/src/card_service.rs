@@ -23,6 +23,20 @@ pub struct CardService {
 }
 impl CardService {
     pub fn start(integration: Arc<Integration>, session: &str) -> Result<Self> {
+        Self::start_inner(integration, session, None)
+    }
+    pub fn start_with_store(
+        integration: Arc<Integration>,
+        session: &str,
+        store: Arc<crate::store::Store>,
+    ) -> Result<Self> {
+        Self::start_inner(integration, session, Some(store))
+    }
+    fn start_inner(
+        integration: Arc<Integration>,
+        session: &str,
+        source: Option<Arc<crate::store::Store>>,
+    ) -> Result<Self> {
         let lease = integration.begin_session(session)?;
         let state = Arc::new(Mutex::new(ServiceStatus {
             phase: "running".into(),
@@ -53,6 +67,15 @@ impl CardService {
                                 health.issues.join(", "),
                             ));
                         }
+                        if let Some(store) = &source {
+                            if store.tasks()?.iter().all(|task| task.state.terminal()) {
+                                let index = crate::emby::public_index(
+                                    &store.all_items()?,
+                                    crate::emby::timestamp(),
+                                );
+                                target.publish_index(&index)?;
+                            }
+                        }
                         target.renew_session(&current.session_id, current.sequence + 1, true)
                     });
                     match result {
@@ -65,7 +88,15 @@ impl CardService {
                     }
                 }
             })
-            .map_err(|e| AppError::new("emby-worker-start", e))?;
+            .map_err(|e| {
+                if let Ok(state) = state.lock() {
+                    if let Some(lease) = &state.lease {
+                        let _ =
+                            integration.renew_session(&lease.session_id, lease.sequence + 1, false);
+                    }
+                }
+                AppError::new("emby-worker-start", e)
+            })?;
         Ok(Self {
             integration,
             state,

@@ -1,0 +1,29 @@
+{
+  "run_id": 34567673854,
+  "source_commit": "a435dcc",
+  "url": "https://github.com/Eric-Hou1997/Tech-Card-Manager/actions/runs/34567673854",
+  "target": "aarch64-pc-windows-msvc",
+  "server": {
+    "os": "Windows",
+    "host_arch": "ARM64",
+    "server_arch": "x64",
+    "version": "4.9.5.0",
+    "status": "passed",
+    "server_relative_path": "system\\EmbyServer.exe",
+    "card_chain": "passed",
+    "restart_and_cleanup": "passed"
+  },
+  "card": {
+    "scope": "real-emby-rust-integration-and-web-client",
+    "checks": [
+      "emby-library-read-real-nfo-and-video",
+      "rust-index-assets-published-and-served-byte-identical",
+      "real-emby-item-page-rendered-card-value",
+      "service-stop-removes-visible-card",
+      "service-restart-renders-card",
+      "uninstall-restores-html-and-preserves-nfo-bytes-and-mtime"
+    ],
+    "status": "passed",
+    "version": "4.9.5.0"
+  }
+}

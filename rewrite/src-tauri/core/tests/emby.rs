@@ -171,3 +171,103 @@ fn stop_joins_renewal_and_restart_gets_new_session() {
     assert_eq!(restarted.status().unwrap().lease.unwrap().session_id, "two");
     restarted.stop().unwrap();
 }
+
+#[test]
+fn explicit_legacy_adoption_requires_baseline_and_preserves_unrelated_assets() {
+    let (_temp, web, backup) = setup();
+    let patched=String::from_utf8(html()).unwrap().replace("</body>","<!-- IMDbTechManager WebPatch BEGIN --><script src=\"technical-specs-card.js?v=4.1.0\"></script><!-- IMDbTechManager WebPatch END --></body>");
+    fs::write(web.join("index.html"), patched).unwrap();
+    fs::write(web.join("technical-specs-card.js"), b"baseline-js").unwrap();
+    fs::write(
+        web.join("technical-specs-data.json"),
+        serde_json::to_vec(&index()).unwrap(),
+    )
+    .unwrap();
+    fs::write(web.join("external.js"), b"external").unwrap();
+    let integration = Integration::open(&web, &backup).unwrap();
+    assert!(integration
+        .plan("bad", "adopt", b"different-js", &index(), b"{}")
+        .is_err());
+    let plan = integration
+        .plan(
+            "adopt",
+            "adopt",
+            b"baseline-js",
+            &index(),
+            &bundled_card_languages().unwrap(),
+        )
+        .unwrap();
+    assert!(plan.legacy_patch);
+    assert!(
+        integration
+            .apply(&plan.id, &plan.fingerprint)
+            .unwrap()
+            .healthy
+    );
+    assert!(integration.begin_session("new-manager").unwrap().enabled);
+    assert_eq!(fs::read(web.join("external.js")).unwrap(), b"external");
+}
+#[test]
+fn card_language_publication_contains_all_five_presentation_packs() {
+    let data: serde_json::Value =
+        serde_json::from_slice(&bundled_card_languages().unwrap()).unwrap();
+    assert_eq!(data["schema"], 1);
+    assert_eq!(data["languages"].as_object().unwrap().len(), 5);
+    for locale in ["fr-FR", "ru-RU", "ja-JP", "es-ES", "th-TH"] {
+        let messages = data["languages"][locale].as_object().unwrap();
+        assert_eq!(messages.len(), 12);
+        assert!(messages
+            .iter()
+            .all(|(key, value)| key.starts_with("legacy.")
+                && value.as_str().is_some_and(|s| !s.is_empty())));
+    }
+}
+#[test]
+fn index_refresh_commits_only_changed_public_data_and_preserves_active_lease() {
+    let (_temp, web, backup) = setup();
+    let integration = Integration::open(&web, &backup).unwrap();
+    let plan = integration
+        .plan("install", "install", b"js", &index(), b"{}")
+        .unwrap();
+    integration.apply(&plan.id, &plan.fingerprint).unwrap();
+    let lease = integration.begin_session("live").unwrap();
+    let lease_bytes = fs::read(web.join("technical-specs-runtime.json")).unwrap();
+    let initial = fs::metadata(web.join("technical-specs-data.json"))
+        .unwrap()
+        .modified()
+        .unwrap();
+    assert!(!integration.publish_index(&index()).unwrap());
+    assert_eq!(
+        fs::metadata(web.join("technical-specs-data.json"))
+            .unwrap()
+            .modified()
+            .unwrap(),
+        initial
+    );
+    let mut updated = index();
+    updated.items.insert(
+        "tt0061452".into(),
+        [("Camera".into(), vec!["New camera".into()])].into(),
+    );
+    updated
+        .item_types
+        .insert("tt0061452".into(), "Movie".into());
+    assert!(integration.publish_index(&updated).unwrap());
+    assert!(integration.status().unwrap().healthy);
+    let published: PublicIndex =
+        serde_json::from_slice(&fs::read(web.join("technical-specs-data.json")).unwrap()).unwrap();
+    assert_eq!(published.items, updated.items);
+    assert_eq!(
+        fs::read(web.join("technical-specs-runtime.json")).unwrap(),
+        lease_bytes
+    );
+    integration
+        .renew_session("live", lease.sequence + 1, false)
+        .unwrap();
+    fs::write(web.join("technical-specs-data.json"), b"external").unwrap();
+    assert!(integration.publish_index(&index()).is_err());
+    assert_eq!(
+        fs::read(web.join("technical-specs-data.json")).unwrap(),
+        b"external"
+    );
+}

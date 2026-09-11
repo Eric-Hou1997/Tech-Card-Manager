@@ -49,7 +49,13 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         &private.join("backups"),
     )?);
     let js = include_bytes!("../../../web-card/technical-specs-card.js");
-    let plan = integration.plan("install", "install", js, &index, b"{}")?;
+    let plan = integration.plan(
+        "install",
+        "install",
+        js,
+        &index,
+        &emby::bundled_card_languages()?,
+    )?;
     integration.apply(&plan.id, &plan.fingerprint)?;
     let mut service = CardService::start(integration.clone(), "ci-session")?;
     println!(
@@ -68,7 +74,13 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             }
             "remove" => {
                 service.stop()?;
-                let p = integration.plan("remove", "remove", js, &index, b"{}")?;
+                let p = integration.plan(
+                    "remove",
+                    "remove",
+                    js,
+                    &index,
+                    &emby::bundled_card_languages()?,
+                )?;
                 integration.apply(&p.id, &p.fingerprint)?;
                 println!("{}", serde_json::json!({"phase":"removed"}));
                 io::stdout().flush()?;

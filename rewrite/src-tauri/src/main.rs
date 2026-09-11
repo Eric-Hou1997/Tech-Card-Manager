@@ -3,6 +3,7 @@ mod credentials;
 mod desktop;
 mod emby;
 mod migration;
+mod update;
 use product_core::services::CredentialStore;
 use serde_json::{json, Value};
 use std::{
@@ -149,6 +150,11 @@ fn main() {
             migration::migration_plan,
             migration::migration_apply,
             migration::migration_result,
+            update::update_identity,
+            update::update_status,
+            update::update_check,
+            update::update_install,
+            update::update_cancel,
             desktop::configuration,
             desktop::operation_result,
             desktop::add_library_root,
@@ -159,6 +165,11 @@ fn main() {
             desktop::catalog,
             desktop::inspector,
             emby::emby_select,
+            emby::emby_discover,
+            emby::emby_environment,
+            emby::emby_connect,
+            emby::emby_check_server,
+            emby::emby_data_directory,
             emby::emby_status,
             emby::emby_plan,
             emby::emby_apply,
@@ -169,9 +180,12 @@ fn main() {
         ])
         .setup(|app| {
             app.manage(desktop::Desktop::start(app.handle())?);
+            app.manage(update::Updates::default());
             app.manage(emby::EmbyDesktop::new(
                 app.path().app_data_dir()?.join("emby-backups"),
             ));
+            app.state::<emby::EmbyDesktop>()
+                .restore(&app.state::<desktop::Desktop>().store)?;
             let show = MenuItem::with_id(app, "show", "显示窗口 / Show", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "退出 / Quit", true, Some("CmdOrCtrl+Q"))?;
             // macOS menu bars require top-level submenus. A flat tray menu
@@ -209,4 +223,10 @@ fn main() {
             }
         }
     });
+}
+
+fn prepare_update_exit(app: &tauri::AppHandle) -> product_core::Result<()> {
+    app.state::<emby::EmbyDesktop>().shutdown()?;
+    app.state::<desktop::Desktop>().shutdown();
+    Ok(())
 }

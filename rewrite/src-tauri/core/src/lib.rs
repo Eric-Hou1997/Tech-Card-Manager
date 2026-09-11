@@ -1,11 +1,13 @@
 pub mod card_service;
 pub mod contracts;
 pub mod emby;
+pub mod install;
 pub mod library;
 pub mod migration;
 pub mod paths;
 pub mod services;
 pub mod store;
+pub mod update;
 pub use contracts::*;
 use sha2::{Digest, Sha256};
 pub fn hash(bytes: &[u8]) -> String {
@@ -19,3 +21,5 @@ pub(crate) fn ownership_key(value: &str) -> String {
 pub(crate) fn collect_specs(out: &mut Specs, key: &str, values: Vec<String>) {
     out.insert(key.into(), values);
 }
+
+pub mod emby_environment;

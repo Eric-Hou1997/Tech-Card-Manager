@@ -129,6 +129,10 @@
                 "Printed Film Format": "放映格式"
             })
         }),
+        "zh-Hant": Object.freeze({
+            title: "技術規格", empty: "暫無技術規格資料",
+            fields: Object.freeze({"Runtime":"正片時長","Sound mix":"聲音制式","Color":"色彩類型","Aspect ratio":"畫幅比例","Camera":"攝影器材","Laboratory":"沖印流程","Film Length":"膠片長度","Negative Format":"底片格式","Cinematographic Process":"攝影工藝","Printed Film Format":"放映格式"})
+        }),
         "en-US": Object.freeze({
             title: "Technical Specs",
             empty: "No Technical Specs data",
@@ -259,6 +263,7 @@
             const language = String(candidate || "").trim().toLowerCase();
             if (!language) continue;
             if (language === "en" || language.startsWith("en-")) return "en-US";
+            if (["zh-hant", "zh-tw", "zh-hk", "zh-mo"].some(code => language === code || language.startsWith(code + "-"))) return "zh-Hant";
             if (language === "zh" || language.startsWith("zh-")) return "zh-CN";
             const external = EXTERNAL_LOCALE_CODES[language.split("-")[0]];
             if (external) return external;
@@ -2211,14 +2216,18 @@
      * debouncing forever. History hooks catch SPA route changes immediately.
      */
     observer = new MutationObserver(records => {
-        if (records.some(mutationTouchesRenderSurface)) {
+        if (records.some(record => record.type === "attributes" && (record.target === document.documentElement || record.target === document.body))) {
+            scheduleRender("locale-change", 0);
+        } else if (records.some(mutationTouchesRenderSurface)) {
             scheduleRender("relevant-mutation");
         }
     });
 
     observer.observe(document.documentElement, {
         subtree: true,
-        childList: true
+        childList: true,
+        attributes: true,
+        attributeFilter: ["lang", "data-culture"]
     });
 
     installHistoryHooks();

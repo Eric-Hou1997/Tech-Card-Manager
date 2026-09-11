@@ -9,6 +9,7 @@ pub struct Store {
     connection: Mutex<Connection>,
     worker: Mutex<()>,
     _owner: std::fs::File,
+    maintenance: std::sync::atomic::AtomicBool,
 }
 fn valid_id(id: &str) -> Result<()> {
     if id.is_empty() || id.len() > 96 || !id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
@@ -56,6 +57,7 @@ impl Store {
             connection: Mutex::new(connection),
             worker: Mutex::new(()),
             _owner: owner,
+            maintenance: std::sync::atomic::AtomicBool::new(false),
         };
         for mut task in store.tasks()? {
             if matches!(task.state, TaskState::Running) {
@@ -96,6 +98,7 @@ impl Store {
         }
         let plan = crate::migration::prepare(id, &source, kind, &self.configuration()?)?;
         let db = self.db()?;
+        self.writable()?;
         if db.query_row(
             "SELECT EXISTS(SELECT 1 FROM tasks WHERE id=?1)",
             [id],
@@ -116,6 +119,7 @@ impl Store {
         fingerprint: &str,
     ) -> Result<crate::migration::MigrationReceipt> {
         let mut db = self.db()?;
+        self.writable()?;
         let tx = db.transaction()?;
         let body: String =
             tx.query_row("SELECT result FROM operations WHERE id=?1", [id], |row| {
@@ -221,6 +225,84 @@ impl Store {
         body.map(|s| serde_json::from_str(&s).map_err(Into::into))
             .unwrap_or_else(|| Ok(serde_json::json!({})))
     }
+    pub fn save_preference(&self, key: &str, value: &serde_json::Value) -> Result<()> {
+        let db = self.db()?;
+        self.writable()?;
+        db.execute("INSERT INTO preferences(key,body) VALUES(?1,?2) ON CONFLICT(key) DO UPDATE SET body=excluded.body",params![key,serde_json::to_string(value)?])?;
+        Ok(())
+    }
+    pub fn update_progress(&self, progress: &crate::update::UpdateProgress) -> Result<()> {
+        valid_id(&progress.operation_id)?;
+        let mut db = self.db()?;
+        let tx = db.transaction()?;
+        let fingerprint = hash(b"application-update-v1");
+        let old: Option<String> = tx
+            .query_row(
+                "SELECT fingerprint FROM operations WHERE id=?1",
+                [&progress.operation_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if old.as_ref().is_some_and(|old| old != &fingerprint)
+            || tx.query_row(
+                "SELECT EXISTS(SELECT 1 FROM tasks WHERE id=?1)",
+                [&progress.operation_id],
+                |row| row.get::<_, bool>(0),
+            )?
+        {
+            return Err(AppError::new(
+                "operation-conflict",
+                "Update ID belongs to another operation",
+            ));
+        }
+        tx.execute("INSERT INTO operations(id,fingerprint,result) VALUES(?1,?2,?3) ON CONFLICT(id) DO UPDATE SET result=excluded.result",params![progress.operation_id,fingerprint,serde_json::to_string(&OperationResult::Update(progress.clone()))?])?;
+        tx.execute("INSERT INTO preferences(key,body) VALUES('update-state',?1) ON CONFLICT(key) DO UPDATE SET body=excluded.body",[serde_json::to_string(progress)?])?;
+        tx.commit()?;
+        Ok(())
+    }
+    pub fn snapshot_database(&self, path: &Path) -> Result<()> {
+        if path.exists() {
+            return Err(AppError::new(
+                "update-backup-exists",
+                "Database backup must be immutable",
+            ));
+        }
+        let path = path
+            .to_str()
+            .ok_or_else(|| AppError::new("update-backup-path", "Backup path must be Unicode"))?;
+        self.db()?.execute("VACUUM main INTO ?1", [path])?;
+        Ok(())
+    }
+    pub fn freeze_for_update(&self) -> Result<()> {
+        let db = self.db()?;
+        let mut statement = db.prepare("SELECT body FROM tasks")?;
+        for body in statement.query_map([], |row| row.get::<_, String>(0))? {
+            let task: Task = serde_json::from_str(&body?)?;
+            if !task.state.terminal() {
+                return Err(AppError::new(
+                    "active-task",
+                    "Finish or cancel tasks before installing the update",
+                ));
+            }
+        }
+        self.maintenance
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+        Ok(())
+    }
+    pub fn unfreeze_after_update(&self) {
+        self.maintenance
+            .store(false, std::sync::atomic::Ordering::SeqCst);
+    }
+    fn writable(&self) -> Result<()> {
+        if self.maintenance.load(std::sync::atomic::Ordering::SeqCst) {
+            Err(AppError::new(
+                "update-in-progress",
+                "Application state is frozen for installation",
+            ))
+        } else {
+            Ok(())
+        }
+    }
     pub fn configuration(&self) -> Result<Configuration> {
         let body: Option<String> = self
             .db()?
@@ -291,6 +373,7 @@ impl Store {
             roots.push((root.id.clone(), real));
         }
         let mut db = self.db()?;
+        self.writable()?;
         let tx = db.transaction()?;
         if let Some((old, result)) = tx
             .query_row(
@@ -443,6 +526,7 @@ impl Store {
             failure: None,
         };
         let db = self.db()?;
+        self.writable()?;
         let latest: String =
             db.query_row("SELECT body FROM configuration WHERE id=1", [], |r| {
                 r.get(0)
@@ -513,6 +597,7 @@ impl Store {
         let id = &request.task_id;
         let state = request.state;
         let mut db = self.db()?;
+        self.writable()?;
         let tx = db.transaction()?;
         if let Some((old, result)) = tx
             .query_row(

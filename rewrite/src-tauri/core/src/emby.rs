@@ -399,6 +399,65 @@ impl Integration {
             issues,
         })
     }
+    pub fn publish_index(&self, index: &PublicIndex) -> Result<bool> {
+        if !self.status()?.healthy {
+            return Err(AppError::new(
+                "emby-repair-required",
+                "Repair resources before publishing new data",
+            ));
+        }
+        let mut owner = self.ownership()?;
+        let target = self.target(DATA)?;
+        let before = bytes(&target)?
+            .ok_or_else(|| AppError::new("emby-data-missing", "Public data is missing"))?;
+        if owner.assets.get(DATA) != Some(&hash(&before)) {
+            return Err(conflict(&target));
+        }
+        let previous: PublicIndex = serde_json::from_slice(&before)?;
+        if previous.items == index.items && previous.item_types == index.item_types {
+            return Ok(false);
+        }
+        if index.version != 7 {
+            return Err(AppError::new(
+                "emby-index-schema",
+                "Unsupported public data schema",
+            ));
+        }
+        let after = serde_json::to_vec(index)?;
+        owner.assets.insert(DATA.into(), hash(&after));
+        let previous_owner = bytes(&self.backup.join("ownership.json"))?
+            .ok_or_else(|| AppError::new("emby-ownership-missing", "Missing resource owner"))?;
+        let next_owner = serde_json::to_vec(&owner)?;
+        let fingerprint = hash(&serde_json::to_vec(&(
+            hash(&before),
+            hash(&after),
+            hash(&previous_owner),
+        ))?);
+        let plan = MaintenancePlan {
+            id: format!("index-{fingerprint}"),
+            action: "publish-index".into(),
+            target: self.web.to_string_lossy().into(),
+            files: vec![DATA.into(), "ownership.json".into()],
+            legacy_patch: false,
+            fingerprint,
+            changes: vec![
+                Change {
+                    name: DATA.into(),
+                    before: Some(self.blob(&before)?),
+                    after: Some(self.blob(&after)?),
+                },
+                Change {
+                    name: "ownership.json".into(),
+                    before: Some(self.blob(&previous_owner)?),
+                    after: Some(self.blob(&next_owner)?),
+                },
+            ],
+            phase: "planned".into(),
+        };
+        self.save_plan(&plan)?;
+        self.apply(&plan.id, &plan.fingerprint)?;
+        Ok(true)
+    }
     pub fn plan(
         &self,
         id: &str,
@@ -409,7 +468,7 @@ impl Integration {
     ) -> Result<MaintenancePlan> {
         if id.is_empty()
             || id.len() > 200
-            || !matches!(action, "install" | "update" | "repair" | "remove")
+            || !matches!(action, "install" | "update" | "repair" | "remove" | "adopt")
         {
             return Err(AppError::new(
                 "emby-invalid-operation",
@@ -438,6 +497,48 @@ impl Integration {
         let mut owner = self.ownership()?;
         let legacy = owner.assets.is_empty() && current != clean;
         let mut candidates: BTreeMap<String, Option<Vec<u8>>> = BTreeMap::new();
+        if action == "adopt" {
+            let old_script = digest(&self.web.join(JS))?;
+            let recognized = old_script.as_ref().is_some_and(|digest| {
+                digest == &hash(javascript)
+                    || digest == "16ef77094694ddb0bf98f077747992587fa3ab6050c094b45226595b4e564fae"
+            });
+            if !legacy || !recognized {
+                return Err(AppError::new("emby-legacy-unrecognized", "Legacy migration requires a recognized marker and the exact baseline card script"));
+            }
+            owner.assets.insert(JS.into(), old_script.unwrap());
+            // Explicit legacy migration recognizes the baseline script plus its
+            // schema-bound companion data. Every original byte enters the journal.
+            if let Some(data) = bytes(&self.web.join(DATA))? {
+                let index: PublicIndex = serde_json::from_slice(&data)?;
+                if index.version != 7 {
+                    return Err(AppError::new(
+                        "emby-legacy-schema",
+                        "Unsupported old public index schema",
+                    ));
+                }
+                owner.assets.insert(DATA.into(), hash(&data));
+            }
+            if let Some(data) = bytes(&self.web.join(LANG))? {
+                let value: serde_json::Value = serde_json::from_slice(&data)?;
+                if value["schema"] != 1 || !value["languages"].is_object() {
+                    return Err(AppError::new(
+                        "emby-legacy-schema",
+                        "Unsupported old card language schema",
+                    ));
+                }
+                owner.assets.insert(LANG.into(), hash(&data));
+            }
+            if let Some(data) = bytes(&self.web.join(RUNTIME))? {
+                let lease: Lease = serde_json::from_slice(&data)?;
+                let expiry = chrono::DateTime::parse_from_rfc3339(&lease.expires_at)
+                    .map_err(|e| AppError::new("emby-legacy-lease", e))?;
+                if lease.version != 1 || (lease.enabled && expiry > chrono::Utc::now()) {
+                    return Err(AppError::new("emby-stop-required", "Stop the previous manager and wait for its lease to expire before migration"));
+                }
+                candidates.insert(RUNTIME.into(), None);
+            }
+        }
         candidates.insert(
             "index.html".into(),
             Some(if action == "remove" {
@@ -827,4 +928,48 @@ mod recovery_tests {
         assert!(integration.apply(&plan.id, &plan.fingerprint).is_err());
         assert!(!integration.web.join(JS).exists());
     }
+}
+
+pub fn bundled_card_languages() -> Result<Vec<u8>> {
+    let mut languages = serde_json::Map::new();
+    for (locale, source) in [
+        (
+            "fr-FR",
+            include_str!("../../../../language-packs/fr-FR/r1/translations.json"),
+        ),
+        (
+            "ru-RU",
+            include_str!("../../../../language-packs/ru-RU/r1/translations.json"),
+        ),
+        (
+            "ja-JP",
+            include_str!("../../../../language-packs/ja-JP/r1/translations.json"),
+        ),
+        (
+            "es-ES",
+            include_str!("../../../../language-packs/es-ES/r1/translations.json"),
+        ),
+        (
+            "th-TH",
+            include_str!("../../../../language-packs/th-TH/r1/translations.json"),
+        ),
+    ] {
+        let value: serde_json::Value = serde_json::from_str(source)?;
+        let messages = value["web-card"]
+            .as_object()
+            .ok_or_else(|| AppError::new("language-pack", "Missing card presentation messages"))?;
+        let mut output = serde_json::Map::new();
+        for (english, translation) in messages {
+            let mut hash = 14695981039346656037u64;
+            for byte in english.trim().as_bytes() {
+                hash ^= *byte as u64;
+                hash = hash.wrapping_mul(1099511628211);
+            }
+            output.insert(format!("legacy.{hash:016x}"), translation.clone());
+        }
+        languages.insert(locale.into(), serde_json::Value::Object(output));
+    }
+    Ok(serde_json::to_vec(
+        &serde_json::json!({"schema":1,"catalog_app_version":"v4.1.0","languages":languages}),
+    )?)
 }
