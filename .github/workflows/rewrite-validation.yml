@@ -7,6 +7,8 @@ on:
       - 'tools/rewrite/emby_cloud_smoke.py'
       - '.github/workflows/emby-environment.yml'
       - 'docs/rewrite/**'
+      - 'tools/rewrite/linux_package_acceptance.py'
+      - '.github/workflows/linux-package-acceptance.yml'
   pull_request:
     branches: [v5.0.0-rewrite]
 env:
