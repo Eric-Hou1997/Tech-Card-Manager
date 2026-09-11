@@ -1,10 +1,12 @@
-name: Isolated Emby environment (not integration acceptance)
+name: Emby integration and real card rendering
 on:
   push:
     branches: [v5.0.0-rewrite]
     paths:
       - '.github/workflows/emby-environment.yml'
       - 'tools/rewrite/emby_cloud_smoke.py'
+      - 'tools/rewrite/emby_card_acceptance.mjs'
+      - 'rewrite/**'
   workflow_dispatch:
 permissions:
   contents: read
@@ -24,9 +26,27 @@ jobs:
             architecture: arm64
             sha256: b3018884d85dcb09f6bf0d29f1296af277c5e2c99b5359b81d3a1e9a872045b7
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: '1.98.1'
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rewrite/src-tauri
+      - name: Build actual Rust integration driver
+        run: cargo build --locked --manifest-path rewrite/src-tauri/Cargo.toml -p tcm-core --example emby_acceptance
+      - name: Install browser and sample-video tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          cd rewrite
+          npm ci
+          npx playwright install --with-deps chromium
       - name: Download pinned official Emby server
         env:
           EMBY_ARCH: ${{ matrix.architecture }}
@@ -39,11 +59,14 @@ jobs:
           EMBY_SHA256: ${{ matrix.sha256 }}
         run: |
           python3 tools/rewrite/emby_cloud_smoke.py --package "$RUNNER_TEMP/emby.deb" \
-            --sha256 "$EMBY_SHA256" --report build/rewrite/emby-environment.json
+            --sha256 "$EMBY_SHA256" --report build/rewrite/emby-environment.json \
+            --integration-driver rewrite/src-tauri/target/debug/examples/emby_acceptance
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: TCM-Emby-environment-${{ matrix.architecture }}
-          path: build/rewrite/emby-environment.json
+          path: |
+            build/rewrite/emby-environment.json
+            build/rewrite/emby-card/
           retention-days: 3
           if-no-files-found: warn

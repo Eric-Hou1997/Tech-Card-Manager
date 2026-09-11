@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod credentials;
 mod desktop;
+mod emby;
 use product_core::services::CredentialStore;
 use serde_json::{json, Value};
 use std::{
@@ -153,10 +154,20 @@ fn main() {
             desktop::task_result,
             desktop::catalog,
             desktop::inspector,
+            emby::emby_select,
+            emby::emby_status,
+            emby::emby_plan,
+            emby::emby_apply,
+            emby::emby_start,
+            emby::emby_stop,
+            emby::emby_service_status,
             desktop::reveal_item
         ])
         .setup(|app| {
             app.manage(desktop::Desktop::start(app.handle())?);
+            app.manage(emby::EmbyDesktop::new(
+                app.path().app_data_dir()?.join("emby-backups"),
+            ));
             let show = MenuItem::with_id(app, "show", "显示窗口 / Show", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "退出 / Quit", true, Some("CmdOrCtrl+Q"))?;
             // macOS menu bars require top-level submenus. A flat tray menu
@@ -185,6 +196,9 @@ fn main() {
         .expect("validation application setup failed");
     app.run(|handle, event| {
         if matches!(event, tauri::RunEvent::Exit) {
+            if let Err(error) = handle.state::<emby::EmbyDesktop>().shutdown() {
+                eprintln!("Emby shutdown failed: {error}");
+            }
             handle.state::<desktop::Desktop>().shutdown();
             if let Err(e) = report_event("process-exit") {
                 eprintln!("{e}");

@@ -4322,6 +4322,7 @@ dependencies = [
 name = "tcm-core"
 version = "4.1.0"
 dependencies = [
+ "chrono",
  "regex",
  "roxmltree",
  "rusqlite",

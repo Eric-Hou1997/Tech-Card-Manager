@@ -1,4 +1,6 @@
+pub mod card_service;
 pub mod contracts;
+pub mod emby;
 pub mod library;
 pub mod paths;
 pub mod services;

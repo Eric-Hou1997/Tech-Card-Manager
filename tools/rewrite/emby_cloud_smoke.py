@@ -27,6 +27,7 @@ def main():
     parser.add_argument('--package', type=Path, required=True)
     parser.add_argument('--sha256', required=True)
     parser.add_argument('--report', type=Path, required=True)
+    parser.add_argument('--integration-driver', type=Path)
     args = parser.parse_args()
     report = {'scope': 'real-emby-environment-only', 'version': '4.9.5.0',
               'host_arch': os.uname().machine, 'checks': [],
@@ -90,6 +91,14 @@ def main():
                         status, html = request('/web/index.html')
                         if status != 200 or b'</html>' not in html.lower():
                             raise RuntimeError('web-client-not-served')
+                        if cycle == 0 and args.integration_driver:
+                            integration_reports = args.report.parent / 'emby-card'
+                            subprocess.run(['node', 'tools/rewrite/emby_card_acceptance.mjs',
+                                            str(server.parent / 'dashboard-ui'), str(work),
+                                            str(args.integration_driver.resolve()), str(integration_reports.resolve())],
+                                           check=True, timeout=240)
+                            report['tcm_integration'] = 'passed-linux-real-server'
+                            report['card_rendering'] = 'passed-chromium-real-emby-page'
                         report['checks'].append({'cycle': cycle + 1, 'api_version': info['Version'],
                                                  'web_html_sha256': hashlib.sha256(html).hexdigest()})
                     finally:

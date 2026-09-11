@@ -411,6 +411,15 @@ impl Store {
         tx.commit()?;
         Ok(task)
     }
+    pub fn all_items(&self) -> Result<Vec<MediaItem>> {
+        let db = self.db()?;
+        let mut statement = db.prepare("SELECT body FROM items ORDER BY id")?;
+        let mut items = Vec::new();
+        for body in statement.query_map([], |row| row.get::<_, String>(0))? {
+            items.push(serde_json::from_str(&body?)?);
+        }
+        Ok(items)
+    }
     pub fn query(&self, query: CatalogQuery) -> Result<CatalogPage> {
         let db = self.db()?;
         let mut stmt = db.prepare("SELECT body FROM items ORDER BY id")?;

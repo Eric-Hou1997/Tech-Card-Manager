@@ -19,3 +19,5 @@
 - [维护者模拟 NFO 库：101 份样本验收](08-sample-library.md)
 
 - [云端验收与本地交付进度](09-cloud-validation.md)
+
+- [第 9–12 步逐项实施与验收](10-completion-checklist.md)
