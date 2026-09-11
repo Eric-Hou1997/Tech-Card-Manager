@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "product": "TCM",
+  "timestamp": "2026-09-10T10:35:06.178606+00:00",
+  "branch": "v5.0.0-rewrite",
+  "status": "partial-implementation-not-step-5-to-8-acceptance",
+  "host": {
+    "macos": "26.6.2",
+    "arch": "arm64"
+  },
+  "source_sha256": {
+    ".github/workflows/rewrite-validation.yml": "7e3f0544ae5bf48983042f5eab2f14ad13ad3948889e86b83416c4e6595f09aa",
+    "rewrite/package-lock.json": "60789332e8ee181a5f1a18114c35824bc4ec00c88a09f0598fffb31f0a70c2ba",
+    "rewrite/src/App.vue": "00d1ba32a507395498ea704f62d4e8533eac920215931fef5604236627376d6a",
+    "rewrite/src/LibraryPanel.vue": "2aef3aaa5f93bb118a73d0c51e7835dd216d5a5cf305bf31c36b2c63aa2574e1",
+    "rewrite/src/contracts.ts": "9d05a7dc95931cc271fbdcd10d7f38af599f7c51a36637536482c65c429b10d1",
+    "rewrite/src/main.ts": "fc77d6694de55892ab09e6957b93c62c0c1b1e0d99803099f4d16755f2540810",
+    "rewrite/src-tauri/Cargo.lock": "1375594366f97ce8514cb41b9f4eb202161e9894a7777f070e1112341fe59d4f",
+    "rewrite/src-tauri/Cargo.toml": "29b4b7010f5e503a8829eb00468cca38f8869eceb6d8745e164f983a7efc111b",
+    "rewrite/src-tauri/core/Cargo.toml": "49ff63b706510ed79244a0439e1e8ac7f55a9d5ee93258491d44f281278de827",
+    "rewrite/src-tauri/core/examples/export_types.rs": "76a9e075438d9ce0e3cee61317744f9bdd8815999c862565ad85b135631e9ae2",
+    "rewrite/src-tauri/core/src/contracts.rs": "b3a2749bf74cd3d5813c960b40a1c481ff32952f77bb9e94039a4c22cb9b9647",
+    "rewrite/src-tauri/core/src/lib.rs": "e7fc3dab5686b0d804c082e606737d37854a1537693464eab59a9bb6211d83fb",
+    "rewrite/src-tauri/core/src/library.rs": "d7fe7a21eba8a5a433bf924baaebe4fbcaa82ea8186af68e0318cef5161926ff",
+    "rewrite/src-tauri/core/src/paths.rs": "cc23ae3f89bac7b456b2f1c698e5a446b1f679ce3ac8a1c74d7982454261b988",
+    "rewrite/src-tauri/core/src/services.rs": "8cf797eae791ee496f87492f8597b1054a0ead08a8b1530e266fe2afe7bbfcca",
+    "rewrite/src-tauri/core/src/store.rs": "8264775f70d889e936a519d9fbc45a98b5964f1c45ca5303b10cf38f6d2ce06d",
+    "rewrite/src-tauri/core/tests/reading.rs": "873f68e7d920f6e04a23fb9c67145f82a533c79ccc8c480df1df882efa660458",
+    "rewrite/src-tauri/src/credentials.rs": "619cb5feacc03db76062cb5ef1315a6c2af863d0bab23cd1f44caf06f79fa47a",
+    "rewrite/src-tauri/src/desktop.rs": "1c8f9d79d5f5d23ef57c136795c420d8bae100a9e658f1bbe213f106b3a19ec0",
+    "rewrite/src-tauri/src/main.rs": "5548e516d378b8c42973fa665fb5159b7d95af78c1e5e76199761f6c6b7ba88f",
+    "rewrite/src-tauri/tauri.conf.json": "c5bf1e43010360b9e6d4bfc3cfc01975bc5451d7995d3ac1012b690d43323fd4"
+  },
+  "checks": [
+    {
+      "kind": "executed-core-behavior",
+      "command": "cargo test --locked -p tcm-core",
+      "passed": 14,
+      "failed": 0,
+      "test_names": [
+        "future_database_is_not_downgraded",
+        "invalid_scope_and_optimistic_configuration_revision",
+        "operation_results_are_queryable_and_ids_cannot_cross_operation_kinds",
+        "shutdown_is_recoverable_and_history_persists",
+        "operation_replay_and_changed_input_conflict",
+        "database_has_one_live_owner",
+        "symlink_is_rejected_instead_of_scanning_external_root",
+        "malformed_and_dtd_never_repair_source",
+        "cancel_during_progress_is_not_overwritten_by_worker",
+        "pause_resume_and_replayed_pause_do_not_pause_again",
+        "offline_root_preserves_index_and_failure_is_locatable",
+        "resumed_scan_removes_files_deleted_while_paused",
+        "readonly_nfo_identity_scope_and_ownership",
+        "long_unicode_paths_and_incremental_content_change"
+      ]
+    },
+    {
+      "kind": "lint",
+      "command": "cargo clippy --workspace --all-targets --all-features --locked -- -D warnings",
+      "status": "passed"
+    },
+    {
+      "kind": "format",
+      "command": "cargo fmt --all --check",
+      "status": "passed"
+    },
+    {
+      "kind": "generated-types",
+      "command": "cargo run --locked -q -p tcm-core --example export_types -- --check ../src/contracts.ts",
+      "status": "passed"
+    },
+    {
+      "kind": "frontend",
+      "command": "npm run build",
+      "status": "passed",
+      "scope": "vue-tsc and Vite, also run by Tauri beforeBuildCommand"
+    },
+    {
+      "kind": "native-package",
+      "command": "npm run tauri build -- --target aarch64-apple-darwin --bundles dmg -- --locked",
+      "status": "passed",
+      "evidence": "phase58-native-smoke.json"
+    }
+  ],
+  "native_ui": {
+    "status": "observed-on-earlier-build-in-this-turn",
+    "fixture_scope": "isolated repository NFO copies only, not a real user library",
+    "checks": [
+      "native root picker",
+      "explicit root checkbox before scan",
+      "duplicate IMDb kept as separate media entries",
+      "malformed XML located and scan failed with 3 items / 1 error",
+      "application exit",
+      "only-errors filter",
+      "invalid XML Inspector full path",
+      "Finder selected malformed NFO"
+    ],
+    "limitations": [
+      "Final parser-cache revision rebuild has automated lifecycle smoke only",
+      "No all-files pre-GUI nanosecond mtime capture",
+      "No real media library acceptance"
+    ]
+  },
+  "target_status": {
+    "macos-arm64": "partial-local-evidence",
+    "windows-x64": "unverified",
+    "windows-arm64": "unverified",
+    "linux-x64": "unverified",
+    "linux-arm64": "unverified"
+  },
+  "limitations": [
+    "Not all legacy behavior migrated",
+    "Old production runtime retained",
+    "No Windows/Linux real execution or package acceptance",
+    "No GitHub Actions execution",
+    "No OTA, signing, notarization or production deployment",
+    "No end-to-end AI requests or durable monetary ledger"
+  ]
+}

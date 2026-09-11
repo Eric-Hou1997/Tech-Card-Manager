@@ -1,0 +1,741 @@
+{
+  "schema": 1,
+  "targets": [
+    "macos-arm64",
+    "windows-x64",
+    "windows-arm64",
+    "linux-x64",
+    "linux-arm64"
+  ],
+  "status": "partial-migration-steps-5-to-8-real-platform-and-semantic-acceptance-pending",
+  "features": [
+    {
+      "id": "TCM-WEBPATCH",
+      "title": "Emby 安装、修复、移除与回滚",
+      "contract": "验证准确目标和归属；提供维护计划、确认与最小提权；外部可信备份、候选校验、事务替换与后置验证。",
+      "negative_paths": "中途失败、并发修改、备份缺失、未知标记、权限拒绝、重复维护和日志恢复。",
+      "planned_destination": "application/emby-maintenance / maintenance",
+      "entrypoints": [
+        "TCM-E-f18ca3d807de",
+        "TCM-E-7c84c670aa8a",
+        "TCM-E-2c0c1c354e17",
+        "TCM-E-99a6f4b01fe1",
+        "TCM-E-af0a85b06138",
+        "TCM-E-fd3f6c933cd3",
+        "TCM-E-81781c2dbd20",
+        "TCM-E-45c48fb26224",
+        "TCM-E-7ae7a9c6d833",
+        "TCM-E-ddb3f640f689",
+        "TCM-E-69f5af0b3a71",
+        "TCM-E-ea4ce85f0069",
+        "TCM-E-5a84127ebaa3",
+        "TCM-E-b747cd82f420",
+        "TCM-E-0b65cd898dad",
+        "TCM-E-29624eef46e4",
+        "TCM-E-93d096f1a515"
+      ],
+      "baseline_test_candidates": [
+        "windows/tests/baseline_contract.py",
+        "windows/tests/readonly_patch_contract.py"
+      ],
+      "test_mapping_status": "candidate-references-not-proof",
+      "new_implementation": "not-implemented",
+      "platforms": {
+        "macos-arm64": "not-implemented",
+        "windows-x64": "not-implemented",
+        "windows-arm64": "not-implemented",
+        "linux-x64": "not-implemented",
+        "linux-arm64": "not-implemented"
+      }
+    },
+    {
+      "id": "TCM-LEGACY",
+      "title": "历史组件识别与迁移",
+      "contract": "只凭路径/命令行/manifest/标记等证据识别历史组件；列明操作、确认后重验目标；保护未知归属。",
+      "negative_paths": "PID复用、同名进程、未知patch、部分迁移失败、取消和回滚。",
+      "planned_destination": "application/legacy / migration",
+      "entrypoints": [
+        "TCM-E-2b43df45539f",
+        "TCM-E-95ac05eb259f",
+        "TCM-E-484bb5c8b9d1",
+        "TCM-E-a2c3b19f1f70",
+        "TCM-E-f6955a6ad6d8",
+        "TCM-E-7471d464d734",
+        "TCM-E-0f67d2e50a0e",
+        "TCM-E-d81f551ae158",
+        "TCM-E-6e6c28dc4dbf",
+        "TCM-E-cdd812eee333"
+      ],
+      "baseline_test_candidates": [],
+      "test_mapping_status": "candidate-references-not-proof",
+      "new_implementation": "not-implemented",
+      "platforms": {
+        "macos-arm64": "not-implemented",
+        "windows-x64": "not-implemented",
+        "windows-arm64": "not-implemented",
+        "linux-x64": "not-implemented",
+        "linux-arm64": "not-implemented"
+      }
+    },
+    {
+      "id": "TCM-CARD",
+      "title": "Web Card 数据、渲染与失效",
+      "contract": "只发布允许字段；路由、条目类型和可见详情一致；多语言/布局正确；管理端退出后卡片租约按契约失效。",
+      "negative_paths": "旧脚本卸载、路由变化、后台页面、公开数据不得含本地路径、服务停止/崩溃/离线。",
+      "planned_destination": "domain/card / Emby adapter",
+      "entrypoints": [
+        "TCM-E-0590acd35b0d",
+        "TCM-E-f7e2ea435d8a",
+        "TCM-E-f2827cd0e59d",
+        "TCM-E-eb22b81040cf",
+        "TCM-E-1cd59d50d154",
+        "TCM-E-a0fea5602e9c",
+        "TCM-E-9b71fb0868ab",
+        "TCM-E-8a210e36bad6",
+        "TCM-E-a4192fdab3eb",
+        "TCM-E-a3f9de553715",
+        "TCM-E-d73910c72244",
+        "TCM-E-28176bccfebb"
+      ],
+      "baseline_test_candidates": [
+        "windows/tests/card_geometry_exit_regression.py",
+        "windows/tests/card_ownership_regression.py",
+        "windows/tests/card_render_regression.py",
+        "windows/tests/i18n_runtime_regression.js",
+        "windows/tests/language_pack_release_contract.py",
+        "windows/tests/release_metadata_update_contract.py",
+        "windows/tests/service_card_regression.py",
+        "windows/tests/windows_native_card_dom_regression.py"
+      ],
+      "test_mapping_status": "candidate-references-not-proof",
+      "new_implementation": "not-implemented",
+      "platforms": {
+        "macos-arm64": "not-implemented",
+        "windows-x64": "not-implemented",
+        "windows-arm64": "not-implemented",
+        "linux-x64": "not-implemented",
+        "linux-arm64": "not-implemented"
+      }
+    },
+    {
+      "id": "TCM-SERVICE",
+      "title": "服务状态和资源所有权",
+      "contract": "请求、运行、磁盘就绪、服务可用、客户端加载和渲染状态区分；启动和停止幂等；失败不得伪报成功。",
+      "negative_paths": "初始租约写入失败、停止写入失败可重试、重复启动、退出时同步清理。",
+      "planned_destination": "application/service / console",
+      "entrypoints": [
+        "TCM-E-7fc967378c1a",
+        "TCM-E-6546937c02a5",
+        "TCM-E-bede697df28f",
+        "TCM-E-7b98589c349d",
+        "TCM-E-3209c51bc1f9",
+        "TCM-E-d0d23c42af9d",
+        "TCM-E-46459809de2c",
+        "TCM-E-41811a03cca3",
+        "TCM-E-4df34bea2a2f",
+        "TCM-E-57ef5ebf3bcb",
+        "TCM-E-de7a1e4e3283",
+        "TCM-E-e2c96c08ad22",
+        "TCM-E-378e78be9bf6",
+        "TCM-E-00f82de7b101",
+        "TCM-E-303798bca581",
+        "TCM-E-655b178e0e52",
+        "TCM-E-56e9d09a5036",
+        "TCM-E-3ea1e84ef7b8",
+        "TCM-E-f1e90055b100",
+        "TCM-E-a12397349bc9",
+        "TCM-E-880224997e11",
+        "TCM-E-a19d094bbb23"
+      ],
+      "baseline_test_candidates": [
+        "windows/service_controller_windows_test.go",
+        "windows/tests/service_card_regression.py"
+      ],
+      "test_mapping_status": "candidate-references-not-proof",
+      "new_implementation": "not-implemented",
+      "platforms": {
+        "macos-arm64": "not-implemented",
+        "windows-x64": "not-implemented",
+        "windows-arm64": "not-implemented",
+        "linux-x64": "not-implemented",
+        "linux-arm64": "not-implemented"
+      }
+    },
+    {
+      "id": "TCM-READONLY",
+      "title": "只读 NFO 解析和归属展示",
+      "contract": "读取 Movie/Series/Season/Episode；直接 section 解析与去重；仅展示 manifest 归属；保持原始 NFO 字节和 mtime。",
+      "negative_paths": "坏XML、缺IMDb、同IMDb多条目、重复标签、无归属元数据、共享盘暂时不可读。",
+      "planned_destination": "domain/nfo-reader / inspector",
+      "entrypoints": [
+        "TCM-E-bc75efda196f",
+        "TCM-E-a966997f7ae5",
+        "TCM-E-50afdecdbbec",
+        "TCM-E-b6e423c6d756",
+        "TCM-E-9c63f2569977",
+        "TCM-E-3eec3d0105cb",
+        "TCM-E-6c7ed6cc1866"
+      ],
+      "baseline_test_candidates": [
+        "windows/tests/readonly_patch_contract.py"
+      ],
+      "test_mapping_status": "executed-slice-only-full-group-pending",
+      "new_implementation": "partial",
+      "platforms": {
+        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
+        "windows-x64": "unverified",
+        "windows-arm64": "unverified",
+        "linux-x64": "unverified",
+        "linux-arm64": "unverified"
+      },
+      "implementation_slices": [
+        {
+          "sources": [
+            "rewrite/src-tauri/core/src/library.rs",
+            "rewrite/src-tauri/core/src/paths.rs"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/reading.rs"
+          ],
+          "scope": "Readonly NFO contents and mtime tested on isolated fixtures; real library pending",
+          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+        }
+      ],
+      "supplemental_evidence": [
+        {
+          "path": "docs/rewrite/evidence/simulated-nfo-acceptance.json",
+          "scope": "101 maintainer simulated NFO samples; listed read/pure-policy/copy-only slices; full feature acceptance remains pending"
+        }
+      ]
+    },
+    {
+      "id": "TCM-PROTOCOL",
+      "title": "持久化和接口字段",
+      "contract": "保持字段类型、缺省值、枚举和版本迁移语义；模型在 Rust 为权威并生成 TypeScript；字段不能随语言改变。",
+      "negative_paths": "旧配置缺失字段、未知枚举、版本升级、历史状态兼容；序列化字段不是独立用户功能。",
+      "planned_destination": "contracts / persistence",
+      "entrypoints": [
+        "TCM-E-a3fc0e65afe4",
+        "TCM-E-c19f5eb83d71",
+        "TCM-E-81d699d5f432",
+        "TCM-E-d2bc229440ee",
+        "TCM-E-5d1754c3231d",
+        "TCM-E-9a3933900ca1",
+        "TCM-E-6d922ade1dcc",
+        "TCM-E-a6858d1c453c",
+        "TCM-E-91f8f3b71ef8",
+        "TCM-E-6238db613a64",
+        "TCM-E-a681e1e09803",
+        "TCM-E-372e20b218fc",
+        "TCM-E-c00ee82bd553",
+        "TCM-E-99ce692bd2d6",
+        "TCM-E-969d57ff15f9",
+        "TCM-E-fe5949e547cc",
+        "TCM-E-154caee6796f",
+        "TCM-E-fc3af69a5a34",
+        "TCM-E-554c755b0795",
+        "TCM-E-ed25c5ba85a9",
+        "TCM-E-54cdff4b7c1c",
+        "TCM-E-34442724634c",
+        "TCM-E-85e5691fd5d7",
+        "TCM-E-3480cf530e87",
+        "TCM-E-dbe725646f12",
+        "TCM-E-9875fdfbb225",
+        "TCM-E-1864a220fb65",
+        "TCM-E-93cf258a4207",
+        "TCM-E-3e26ed396c60",
+        "TCM-E-173caa63231e",
+        "TCM-E-d2e3303b6cd7",
+        "TCM-E-c4c9af305529",
+        "TCM-E-8a7f534b81b7",
+        "TCM-E-62b99cf2efdc",
+        "TCM-E-11584e3f8e90",
+        "TCM-E-3daad310e75c",
+        "TCM-E-0d25470fa486",
+        "TCM-E-cd724b812a14",
+        "TCM-E-27484c3f0ec9",
+        "TCM-E-3ff53e6cb260",
+        "TCM-E-603b7da781d0",
+        "TCM-E-9b157a5c1cfe",
+        "TCM-E-6b5b81082e57",
+        "TCM-E-d7b923718f3d",
+        "TCM-E-b2307b6aa1be",
+        "TCM-E-c720c950ab84",
+        "TCM-E-65789d6c8727",
+        "TCM-E-f87f170fae35",
+        "TCM-E-e405e3b0d1b5",
+        "TCM-E-7f35cd0256b3",
+        "TCM-E-02e8787d04a0",
+        "TCM-E-67a92683aa13",
+        "TCM-E-17ead366e139",
+        "TCM-E-38f0cbcc393a",
+        "TCM-E-2c2509a7314a",
+        "TCM-E-0cf5ed8f36a2",
+        "TCM-E-4caeeec19e35",
+        "TCM-E-6e5ed967d81b",
+        "TCM-E-6af483b2df38",
+        "TCM-E-5a28c81fc61d",
+        "TCM-E-b3b324384218",
+        "TCM-E-32dd2f3f3ded",
+        "TCM-E-2c6832c9db72",
+        "TCM-E-503e58c62c66",
+        "TCM-E-d448e88feec4",
+        "TCM-E-a0ac99a333f3",
+        "TCM-E-1a0c9711c86a",
+        "TCM-E-09204e71b588",
+        "TCM-E-45186a7c8efe",
+        "TCM-E-bb35091ec86b",
+        "TCM-E-e81d3b983e73",
+        "TCM-E-8b8e19f1b316",
+        "TCM-E-8691bdedec1a",
+        "TCM-E-361d791d85ae",
+        "TCM-E-411c8f0c21eb",
+        "TCM-E-2e61c22d9732",
+        "TCM-E-e09d192d14cb",
+        "TCM-E-43a23f4e12c5",
+        "TCM-E-b966ee57d4f4",
+        "TCM-E-6a05bc7c0ba4"
+      ],
+      "baseline_test_candidates": [],
+      "test_mapping_status": "executed-slice-only-full-group-pending",
+      "new_implementation": "partial",
+      "platforms": {
+        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
+        "windows-x64": "unverified",
+        "windows-arm64": "unverified",
+        "linux-x64": "unverified",
+        "linux-arm64": "unverified"
+      },
+      "implementation_slices": [
+        {
+          "sources": [
+            "rewrite/src-tauri/core/src/contracts.rs",
+            "rewrite/src/contracts.ts"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/examples/export_types.rs"
+          ],
+          "scope": "Generated typed contracts for migrated read commands only",
+          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+        }
+      ]
+    },
+    {
+      "id": "TCM-DISPATCH",
+      "title": "操作分发和旧命令兼容",
+      "contract": "校验动作、参数、媒体根与运行状态；保留现有用户可观察操作；内部协议替换需要对应入口。",
+      "negative_paths": "未知动作、缺参数、重复请求、权限失败和任务冲突。",
+      "planned_destination": "application/commands",
+      "entrypoints": [
+        "TCM-E-f891b9a95696",
+        "TCM-E-d804b569eac3",
+        "TCM-E-c43cfd77e7a4",
+        "TCM-E-45e55226da26"
+      ],
+      "baseline_test_candidates": [],
+      "test_mapping_status": "candidate-references-not-proof",
+      "new_implementation": "not-implemented",
+      "platforms": {
+        "macos-arm64": "not-implemented",
+        "windows-x64": "not-implemented",
+        "windows-arm64": "not-implemented",
+        "linux-x64": "not-implemented",
+        "linux-arm64": "not-implemented"
+      }
+    },
+    {
+      "id": "TCM-LOCALE",
+      "title": "语言和语言包",
+      "contract": "选择语言；验证包完整性及版本绑定；界面与原生控件同步；任务固定启动语言；保持旧数据和机器字段。",
+      "negative_paths": "下载失败、包不匹配、任务中切换、不支持语言回退。",
+      "planned_destination": "locale registry / settings",
+      "entrypoints": [
+        "TCM-E-4d8ce889214c",
+        "TCM-E-19738f2753ad",
+        "TCM-E-8d3aa7fe8bfd",
+        "TCM-E-24da5565436b",
+        "TCM-E-0f9f2a74e7c5",
+        "TCM-E-88160a73eac7",
+        "TCM-E-f3a7cf2ae884",
+        "TCM-E-8a825a7270f6",
+        "TCM-E-d17adc52df15",
+        "TCM-E-741df56c4bbf",
+        "TCM-E-e00434335d21",
+        "TCM-E-57822d5e02c4"
+      ],
+      "baseline_test_candidates": [
+        "windows/language_packs_test.go",
+        "windows/tests/backend_localization_coverage.py",
+        "windows/tests/i18n_runtime_regression.js",
+        "windows/tests/language_pack_release_contract.py",
+        "windows/tests/web_language_picker_dom_regression.py"
+      ],
+      "test_mapping_status": "executed-slice-only-full-group-pending",
+      "new_implementation": "partial",
+      "platforms": {
+        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
+        "windows-x64": "unverified",
+        "windows-arm64": "unverified",
+        "linux-x64": "unverified",
+        "linux-arm64": "unverified"
+      },
+      "implementation_slices": [
+        {
+          "sources": [
+            "rewrite/src-tauri/core/src/services.rs",
+            "rewrite/src-tauri/core/src/contracts.rs"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/reading.rs"
+          ],
+          "scope": "Registry and task locale snapshot only; complete translations and packs pending",
+          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+        }
+      ]
+    },
+    {
+      "id": "TCM-UPDATE",
+      "title": "安装和更新",
+      "contract": "识别正确产品、系统、架构和包型；校验后更新；显示真实阶段；保留用户数据。",
+      "negative_paths": "断网、限流、资产错误、签名失败、取消、升级中断及回退。",
+      "planned_destination": "platform/update / settings",
+      "entrypoints": [
+        "TCM-E-7eede668f0e6",
+        "TCM-E-5978d0a901fa",
+        "TCM-E-3feba29bd6a0",
+        "TCM-E-ffb4341b1516",
+        "TCM-E-25da9ac8b771",
+        "TCM-E-3b06c385c6fb",
+        "TCM-E-7db88d2dfe70",
+        "TCM-E-5172b463e8d1",
+        "TCM-E-676d54e82e32",
+        "TCM-E-b03238f78933"
+      ],
+      "baseline_test_candidates": [
+        "windows/tests/multilingual_upgrade_regression.py",
+        "windows/tests/release_metadata_update_contract.py",
+        "windows/tests/upgrade_continuity_regression.py",
+        "windows/update_test.go"
+      ],
+      "test_mapping_status": "candidate-references-not-proof",
+      "new_implementation": "not-implemented",
+      "platforms": {
+        "macos-arm64": "not-implemented",
+        "windows-x64": "not-implemented",
+        "windows-arm64": "not-implemented",
+        "linux-x64": "not-implemented",
+        "linux-arm64": "not-implemented"
+      }
+    },
+    {
+      "id": "TCM-DIAGNOSTICS",
+      "title": "诊断、日志和路径定位",
+      "contract": "可导出诊断、打开日志/数据和受影响路径；错误包含可用的媒体身份、路径与任务。",
+      "negative_paths": "无权限、路径不存在、导出失败；不泄露凭据。",
+      "planned_destination": "application/diagnostics / diagnostics",
+      "entrypoints": [
+        "TCM-E-011020462a04",
+        "TCM-E-76e1c7ee435d",
+        "TCM-E-a0b370d6dcd6",
+        "TCM-E-dea3a7a6979f",
+        "TCM-E-58484773a549",
+        "TCM-E-b3c26cd2f857",
+        "TCM-E-ec4fe5d10a06",
+        "TCM-E-47cf9f9668cf",
+        "TCM-E-de339442c89d",
+        "TCM-E-50cc77e9d80e",
+        "TCM-E-83a1cb4c32a1",
+        "TCM-E-73eec2038326",
+        "TCM-E-641cef99e472",
+        "TCM-E-5ff623975ac0",
+        "TCM-E-0d008f194df1",
+        "TCM-E-c0e2938888b7",
+        "TCM-E-bc11e1fbd342",
+        "TCM-E-447990b74203",
+        "TCM-E-1e2f5178400c",
+        "TCM-E-882dd3413201",
+        "TCM-E-9996275dfc47",
+        "TCM-E-fb6b915019df",
+        "TCM-E-ec9c6e9ff55b",
+        "TCM-E-77ce3a6664f5"
+      ],
+      "baseline_test_candidates": [
+        "windows/tests/catalog_contract.py"
+      ],
+      "test_mapping_status": "candidate-references-not-proof",
+      "new_implementation": "not-implemented",
+      "platforms": {
+        "macos-arm64": "not-implemented",
+        "windows-x64": "not-implemented",
+        "windows-arm64": "not-implemented",
+        "linux-x64": "not-implemented",
+        "linux-arm64": "not-implemented"
+      }
+    },
+    {
+      "id": "TCM-LIFECYCLE",
+      "title": "单实例、窗口、托盘和退出",
+      "contract": "单实例；最小化和恢复；显式登录启动；退出清理资源；启动偏好独立于后台运行状态。",
+      "negative_paths": "重复启动/点击、关闭和退出区别、权限失败、进程残留、升级后启动项。",
+      "planned_destination": "platform/lifecycle / native UI",
+      "entrypoints": [
+        "TCM-E-ab5f82cdc326",
+        "TCM-E-c7979894215d",
+        "TCM-E-6e74c22cc76e",
+        "TCM-E-36202e4fed55",
+        "TCM-E-5871bc3eb3e7",
+        "TCM-E-6b5d9066b8b3",
+        "TCM-E-a9032a990015",
+        "TCM-E-a4e140e9285f",
+        "TCM-E-268bb58c632f",
+        "TCM-E-312f5b824e46",
+        "TCM-E-5db20d4c9c31"
+      ],
+      "baseline_test_candidates": [
+        "windows/service_controller_windows_test.go",
+        "windows/settings_windows_test.go",
+        "windows/tests/card_geometry_exit_regression.py",
+        "windows/tests/windows_contract.py",
+        "windows/tests/windows_native_card_dom_regression.py",
+        "windows/tray_windows_test.go"
+      ],
+      "test_mapping_status": "executed-slice-only-full-group-pending",
+      "new_implementation": "partial",
+      "platforms": {
+        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
+        "windows-x64": "unverified",
+        "windows-arm64": "unverified",
+        "linux-x64": "unverified",
+        "linux-arm64": "unverified"
+      },
+      "implementation_slices": [
+        {
+          "sources": [
+            "rewrite/src-tauri/src/desktop.rs"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/reading.rs"
+          ],
+          "scope": "Owned scan worker and shutdown; all platform lifecycle paths pending",
+          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+        }
+      ]
+    },
+    {
+      "id": "TCM-TASK",
+      "title": "任务状态与恢复",
+      "contract": "权威任务状态、阶段、范围、进度、历史；暂停/取消/恢复遵循旧行为；重复操作不产生重复副作用。",
+      "negative_paths": "中断、失败重试、任务冲突、退出、日志和状态持久化不一致。",
+      "planned_destination": "application/tasks / task center",
+      "entrypoints": [
+        "TCM-E-b23806b2bbda",
+        "TCM-E-185e0b20791b",
+        "TCM-E-3a443c453387",
+        "TCM-E-03cdb21d731f",
+        "TCM-E-73c36ea842fe",
+        "TCM-E-850c4f506551",
+        "TCM-E-2dbc5909ec67",
+        "TCM-E-b23517cdc681",
+        "TCM-E-b34ea016c6c6"
+      ],
+      "baseline_test_candidates": [],
+      "test_mapping_status": "executed-slice-only-full-group-pending",
+      "new_implementation": "partial",
+      "platforms": {
+        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
+        "windows-x64": "unverified",
+        "windows-arm64": "unverified",
+        "linux-x64": "unverified",
+        "linux-arm64": "unverified"
+      },
+      "implementation_slices": [
+        {
+          "sources": [
+            "rewrite/src-tauri/core/src/store.rs",
+            "rewrite/src-tauri/src/desktop.rs"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/reading.rs"
+          ],
+          "scope": "Durable scan tasks, operation IDs, progress, pause, resume and cancel; legacy jobs remain pending",
+          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+        }
+      ]
+    },
+    {
+      "id": "TCM-SCOPE",
+      "title": "媒体空间和操作范围",
+      "contract": "Movie/TV 独立根目录和状态；选择、全选/反选、季级选择及当前范围准确；全库从不默认。",
+      "negative_paths": "空目录、越界、符号链接、共享盘离线、目录重叠、路径大小写和不同媒体种类。",
+      "planned_destination": "domain/library / library setup",
+      "entrypoints": [
+        "TCM-E-892193e4f2a6",
+        "TCM-E-9d7908ecd633",
+        "TCM-E-372fe563c935",
+        "TCM-E-638eb50d57ba",
+        "TCM-E-9185b421a423",
+        "TCM-E-3865e493af5c",
+        "TCM-E-0b3b00238cf1",
+        "TCM-E-8fc2a72d1760",
+        "TCM-E-6948cc0750c5",
+        "TCM-E-ba167419f5f1",
+        "TCM-E-0c6c9c72a871",
+        "TCM-E-a0c7742873de",
+        "TCM-E-92aede59a09b",
+        "TCM-E-08dab27745bf",
+        "TCM-E-149c2098fefb",
+        "TCM-E-7c749e79e8fa",
+        "TCM-E-edc7ed3830c3",
+        "TCM-E-7a30ca4181b8",
+        "TCM-E-44039d9774b6",
+        "TCM-E-25832e9c6dff",
+        "TCM-E-0f08ad6ec64c",
+        "TCM-E-9fc802d0cd7e",
+        "TCM-E-643e3e729590",
+        "TCM-E-4cae5ffae7b0",
+        "TCM-E-771160393c1b",
+        "TCM-E-e4098b8808b5"
+      ],
+      "baseline_test_candidates": [],
+      "test_mapping_status": "executed-slice-only-full-group-pending",
+      "new_implementation": "partial",
+      "platforms": {
+        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
+        "windows-x64": "unverified",
+        "windows-arm64": "unverified",
+        "linux-x64": "unverified",
+        "linux-arm64": "unverified"
+      },
+      "implementation_slices": [
+        {
+          "sources": [
+            "rewrite/src-tauri/core/src/paths.rs",
+            "rewrite/src/LibraryPanel.vue"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/reading.rs"
+          ],
+          "scope": "Explicit roots and Movie/TV scope; full legacy scope UI pending",
+          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+        }
+      ],
+      "supplemental_evidence": [
+        {
+          "path": "docs/rewrite/evidence/simulated-nfo-acceptance.json",
+          "scope": "101 maintainer simulated NFO samples; listed read/pure-policy/copy-only slices; full feature acceptance remains pending"
+        }
+      ]
+    },
+    {
+      "id": "TCM-CATALOG",
+      "title": "索引、筛选和状态",
+      "contract": "索引权威数据；增量/重建范围准确；搜索过滤排序与选择状态保留；缓存容量、清理和错误状态可见。",
+      "negative_paths": "XML 异常、缓存过期、部分根离线、外部变更、冷启动、索引重建失败。",
+      "planned_destination": "application/catalog / library",
+      "entrypoints": [
+        "TCM-E-645ad4936d2e",
+        "TCM-E-4a6d2e7cbfe3",
+        "TCM-E-222954d680f0",
+        "TCM-E-a0a7bc1d2917",
+        "TCM-E-d5cca3939d60",
+        "TCM-E-f7481e507aeb",
+        "TCM-E-7ef19fdbd7e9",
+        "TCM-E-30253f3d9dd5",
+        "TCM-E-f67bce8d6c6e",
+        "TCM-E-0dc8278b9eeb",
+        "TCM-E-84ccae386f00"
+      ],
+      "baseline_test_candidates": [
+        "windows/tests/catalog_contract.py"
+      ],
+      "test_mapping_status": "executed-slice-only-full-group-pending",
+      "new_implementation": "partial",
+      "platforms": {
+        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
+        "windows-x64": "unverified",
+        "windows-arm64": "unverified",
+        "linux-x64": "unverified",
+        "linux-arm64": "unverified"
+      },
+      "implementation_slices": [
+        {
+          "sources": [
+            "rewrite/src-tauri/core/src/library.rs",
+            "rewrite/src-tauri/core/src/store.rs",
+            "rewrite/src/LibraryPanel.vue"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/reading.rs"
+          ],
+          "scope": "Read index, search, incremental scan and error location; full hierarchy and real library pending",
+          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+        }
+      ],
+      "supplemental_evidence": [
+        {
+          "path": "docs/rewrite/evidence/simulated-nfo-acceptance.json",
+          "scope": "101 maintainer simulated NFO samples; listed read/pure-policy/copy-only slices; full feature acceptance remains pending"
+        }
+      ]
+    },
+    {
+      "id": "TCM-LAYOUT",
+      "title": "界面布局与交互",
+      "contract": "保留列设置、排序、面板尺寸、上下文入口和响应式语义；可键盘操作；错误/空状态可见。",
+      "negative_paths": "窄窗口、缩放、长翻译、溢出、遮挡、布局持久化和重置。",
+      "planned_destination": "presentation/layout / manager",
+      "entrypoints": [
+        "TCM-E-92f471634120",
+        "TCM-E-ac162d5e852c",
+        "TCM-E-ad72736e9788",
+        "TCM-E-28cede620562"
+      ],
+      "baseline_test_candidates": [
+        "windows/settings_persistence_test.go",
+        "windows/settings_windows_test.go",
+        "windows/tests/card_render_regression.py",
+        "windows/tests/layout_stability_regression.py",
+        "windows/tests/portable_lifecycle_contract.py",
+        "windows/tests/responsive_layout_regression.js",
+        "windows/tests/scrollbar_visibility_contract.py"
+      ],
+      "test_mapping_status": "executed-slice-only-full-group-pending",
+      "new_implementation": "partial",
+      "platforms": {
+        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
+        "windows-x64": "unverified",
+        "windows-arm64": "unverified",
+        "linux-x64": "unverified",
+        "linux-arm64": "unverified"
+      },
+      "implementation_slices": [
+        {
+          "sources": [
+            "rewrite/src/LibraryPanel.vue"
+          ],
+          "tests": [],
+          "scope": "Read workspace only, incomplete product UI",
+          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+        }
+      ]
+    },
+    {
+      "id": "TCM-UNCLASSIFIED",
+      "title": "待逐项语义复核",
+      "contract": "源码已冻结并定位；仍需逐项检查调用方、用户入口和运行时语义，不能计为已验收。",
+      "negative_paths": "不得通过通用分组隐藏遗漏。",
+      "planned_destination": "pending-design",
+      "entrypoints": [],
+      "baseline_test_candidates": [],
+      "test_mapping_status": "candidate-references-not-proof",
+      "new_implementation": "not-implemented",
+      "platforms": {
+        "macos-arm64": "not-implemented",
+        "windows-x64": "not-implemented",
+        "windows-arm64": "not-implemented",
+        "linux-x64": "not-implemented",
+        "linux-arm64": "not-implemented"
+      }
+    }
+  ]
+}

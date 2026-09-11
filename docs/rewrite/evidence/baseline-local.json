@@ -1,0 +1,356 @@
+{
+  "schema": 1,
+  "product": "TCM",
+  "timestamp": "2026-09-10T08:03:52.096313+00:00",
+  "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "python": "3.9.6"
+  },
+  "baseline_commit": "c8ffaf7d0b67253a53162cb7bad3a4ad67fb9707",
+  "checks": [
+    {
+      "name": "backend_localization_coverage",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/backend_localization_coverage.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.04
+    },
+    {
+      "name": "baseline_contract",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/baseline_contract.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.02
+    },
+    {
+      "name": "card_geometry_exit_regression",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/card_geometry_exit_regression.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.03
+    },
+    {
+      "name": "card_ownership_regression",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/card_ownership_regression.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.02
+    },
+    {
+      "name": "card_render_regression",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/card_render_regression.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.02
+    },
+    {
+      "name": "catalog_contract",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/catalog_contract.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.02
+    },
+    {
+      "name": "language_pack_release_contract",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/language_pack_release_contract.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.27
+    },
+    {
+      "name": "layout_stability_regression",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/layout_stability_regression.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.03
+    },
+    {
+      "name": "lifecycle_regression",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/lifecycle_regression.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.03
+    },
+    {
+      "name": "multilingual_upgrade_regression",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/multilingual_upgrade_regression.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.02
+    },
+    {
+      "name": "portable_lifecycle_contract",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/portable_lifecycle_contract.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.02
+    },
+    {
+      "name": "product_lifecycle_contract",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/product_lifecycle_contract.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.03
+    },
+    {
+      "name": "readonly_patch_contract",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/readonly_patch_contract.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.02
+    },
+    {
+      "name": "release_metadata_update_contract",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/release_metadata_update_contract.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.02
+    },
+    {
+      "name": "schema21_direct_sections_contract",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/schema21_direct_sections_contract.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.03
+    },
+    {
+      "name": "scrollbar_visibility_contract",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/scrollbar_visibility_contract.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.02
+    },
+    {
+      "name": "service_card_regression",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/service_card_regression.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.02
+    },
+    {
+      "name": "setup_ui_contract",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/setup_ui_contract.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.02
+    },
+    {
+      "name": "uac_contract",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/uac_contract.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.02
+    },
+    {
+      "name": "uniqueness_contract",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/uniqueness_contract.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.03
+    },
+    {
+      "name": "upgrade_continuity_regression",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/upgrade_continuity_regression.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.02
+    },
+    {
+      "name": "web_language_picker_dom_regression",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/web_language_picker_dom_regression.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 10.13
+    },
+    {
+      "name": "windows_contract",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/windows_contract.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.03
+    },
+    {
+      "name": "windows_native_card_dom_regression",
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "${REPO}/windows/tests/windows_native_card_dom_regression.py"
+      ],
+      "kind": "legacy-contract-mixed-static-and-behavior",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.03
+    },
+    {
+      "name": "i18n_runtime_regression.js",
+      "command": [
+        "node",
+        "${REPO}/windows/tests/i18n_runtime_regression.js"
+      ],
+      "kind": "javascript-runtime-or-dom-as-reported",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.2
+    },
+    {
+      "name": "responsive_layout_regression.js",
+      "command": [
+        "node",
+        "${REPO}/windows/tests/responsive_layout_regression.js"
+      ],
+      "kind": "javascript-runtime-or-dom-as-reported",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.03
+    },
+    {
+      "name": "web-card-syntax",
+      "command": [
+        "node",
+        "--check",
+        "${REPO}/windows/engine/technical-specs-card.js"
+      ],
+      "kind": "syntax-only",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.03
+    },
+    {
+      "name": "windows-go-test-compile",
+      "command": [
+        "go",
+        "test",
+        "-c",
+        "-o",
+        "${TEMP}/tests.exe",
+        "."
+      ],
+      "kind": "cross-compile-only",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 4.19
+    },
+    {
+      "name": "windows-go-vet",
+      "command": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "kind": "cross-vet-only",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.0
+    },
+    {
+      "name": "windows-native-tests",
+      "status": "blocked",
+      "kind": "native-windows-tests",
+      "reason": "Requires actual Windows; no successful execution inferred from compilation"
+    },
+    {
+      "name": "original-powershell-behavior",
+      "status": "blocked",
+      "kind": "original-powershell-behavior",
+      "reason": "Requires actual Windows; no successful execution inferred from compilation"
+    }
+  ],
+  "legacy_runtime_unchanged": true,
+  "limitations": [
+    "No new Rust business core exists yet; differential new/old parity is pending.",
+    "A passed mixed contract may include source assertions. See each test; it is not full desktop acceptance.",
+    "TCM Windows PowerShell, Emby and service integration require the Windows gate."
+  ]
+}

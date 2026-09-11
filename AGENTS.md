@@ -2,6 +2,15 @@
 
 These instructions are part of the public repository. Apply them to every change in this repository, including changes made in a fork. A fork does not imply authority to publish an official upstream release.
 
+## Authorized rewrite branch scope
+
+- The maintainer authorized steps 1–12 of the Rust + Tauri 2 + TypeScript rewrite on `v5.0.0-rewrite`. Use Vue 3 + Vite for the isolated feasibility frontend. This section supersedes the old no-rewrite and platform/packaging restrictions ONLY for this branch's rewrite work.
+- Read `docs/rewrite/00-scope.md` and `docs/rewrite/scope.json`. Each product must launch on macOS ARM64 (DMG), Windows x64/ARM64 (NSIS Setup.exe), Linux x64/ARM64 (AppImage, DEB, RPM): 5 targets and 9 packages. No macOS Intel. These are acceptance targets, not verified support claims.
+- Keep the v4.1.0 implementation and official release inputs intact as the characterization baseline. New implementation belongs in `rewrite/`. Do not delete legacy behavior before parity evidence exists. Retire the old business engines only after migration gates pass.
+- User authorization includes isolated development/test bundles and dependency setup necessary for the authorized rewrite steps. Local packaging and delivery are authorized. The maintainer also authorized source synchronization to the existing public `v5.0.0-rewrite` branches and GitHub Actions cloud testing, including public test artifacts. Do not push main, create release tags, or publish a GitHub Release. Retiring legacy source or replacing main still requires the stated acceptance gates to pass. New OTA keys and unreviewed production media/Emby changes remain outside this scope.
+- Keep product responsibilities, NFO/Emby safety, localization, licensing, identity, source hygiene and formal release approval rules in force. Use separate validation app IDs and test data. Preserve current released-version facts in legacy code/docs; do not label unfinished code as a finished v5.0.0 product.
+- Record unavailable platforms and failed checks explicitly. Compiled tests are not executed tests; generated packages are not installed/accepted products.
+
 ## Maintainer shorthand
 
 - In maintainer conversations only, `card软件` means the Tech Card Manager product in this repository, and `tech软件` means the separate IMDb-Tech-Manager product.

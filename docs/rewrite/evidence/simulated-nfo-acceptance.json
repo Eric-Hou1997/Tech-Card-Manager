@@ -1,0 +1,109 @@
+{
+  "schema": 1,
+  "timestamp": "2026-09-10T10:50:24.924279+00:00",
+  "product": "TCM",
+  "sample_source": "maintainer-provided simulated NFO library",
+  "nfo_files": 101,
+  "nfo_bytes": 2359353,
+  "classification": {
+    "movie": 27,
+    "tvshow": 1,
+    "episodedetails": 73
+  },
+  "original_preservation": {
+    "checked_files": 102,
+    "changed_files": [],
+    "verified": [
+      "SHA-256",
+      "mtime_ns",
+      "file mode",
+      "file size",
+      "file inventory"
+    ],
+    "before_manifest_sha256": "07dfccb8452d1a350b4fb6d43c71e778e7e8589c7b958f14d254cfe8129bcb97",
+    "after_manifest_sha256": "07dfccb8452d1a350b4fb6d43c71e778e7e8589c7b958f14d254cfe8129bcb97"
+  },
+  "read_core": {
+    "command": "cargo run --locked -p tcm-core --example library_acceptance -- MOVIE_ROOT TV_ROOT",
+    "history_reopen": "passed",
+    "spaces": [
+      {
+        "space": "movie",
+        "items": 27,
+        "rounds": [
+          {
+            "state": "completed",
+            "processed": 27,
+            "errors": 0
+          },
+          {
+            "state": "completed",
+            "processed": 27,
+            "errors": 0
+          }
+        ],
+        "unchanged_refresh": "passed",
+        "inspector_and_path_search": "passed",
+        "elapsed_ms": 8575
+      },
+      {
+        "space": "tv",
+        "items": 74,
+        "rounds": [
+          {
+            "state": "completed",
+            "processed": 74,
+            "errors": 0
+          },
+          {
+            "state": "completed",
+            "processed": 74,
+            "errors": 0
+          }
+        ],
+        "unchanged_refresh": "passed",
+        "inspector_and_path_search": "passed",
+        "elapsed_ms": 519
+      }
+    ]
+  },
+  "native_ui": {
+    "binary_sha256": "2021fb3624871d9fc8f199214ae917b15f5adda3c9363fb340cae1795773f505",
+    "build": "existing isolated phase58 validation installation; current Rust core was independently executed by library_acceptance",
+    "observed": [
+      "Movie and TV roots selected through native dialog",
+      "new roots unchecked by default",
+      "Movie task completed: 27 items, 0 errors",
+      "TV task completed: 74 items, 0 errors",
+      "TV search 权力 returned 1 series: 2011 / tt0944947",
+      "Inspector showed tvshow.nfo full path, Technical Specs and tag ownership"
+    ],
+    "catalog_note": "Movie catalog also retained 3 earlier isolated fixtures; total 30, current sample task scope 27",
+    "remaining_validation_processes": 0,
+    "exit_method": "explicit in-app exit button; Command-Q did not exit"
+  },
+  "source_sha256": {
+    "rewrite/src-tauri/core/examples/library_acceptance.rs": "4725815e7051fe0a90a724f5649c714b536265a561524bda3923883af42b1de0",
+    "rewrite/src-tauri/core/src/library.rs": "d7fe7a21eba8a5a433bf924baaebe4fbcaa82ea8186af68e0318cef5161926ff",
+    "rewrite/src-tauri/core/src/store.rs": "8264775f70d889e936a519d9fbc45a98b5964f1c45ca5303b10cf38f6d2ce06d",
+    "rewrite/src-tauri/core/Cargo.toml": "49ff63b706510ed79244a0439e1e8ac7f55a9d5ee93258491d44f281278de827",
+    "rewrite/src-tauri/Cargo.lock": "1375594366f97ce8514cb41b9f4eb202161e9894a7777f070e1112341fe59d4f"
+  },
+  "limitations": [
+    "Simulated library, not full production library or network share acceptance",
+    "Not Windows/Linux execution",
+    "Does not complete TV hierarchy or full product migration",
+    "TCM legacy Windows-engine differential not executed on this host"
+  ],
+  "known_issues": [
+    {
+      "id": "REWRITE-UI-CMD-Q",
+      "status": "fixed-and-native-verified",
+      "scope": "existing validation app installation",
+      "reproduction": "On macOS press Command-Q in the validation window; process remains. Explicit Exit button exits successfully.",
+      "acceptance": "Bind native Quit accelerator; verify Command-Q emits exit and leaves no application process.",
+      "resolution_evidence": "quit-shortcut-fix.json",
+      "resolution": "Application menu now contains a top-level submenu; tray owns separate menu items. Actual Command-Q exits with no residual app process."
+    }
+  ]
+}

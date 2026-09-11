@@ -1,0 +1,129 @@
+{
+  "product": "TCM",
+  "generated": "2026-09-10T08:39:03.352507+00:00",
+  "packages": [
+    {
+      "target": "macos-arm64",
+      "rust_target": "aarch64-apple-darwin",
+      "format": "dmg",
+      "build": "passed",
+      "install": "passed-isolated-directory",
+      "ui": "passed-native-smoke",
+      "upgrade": "blocked-signature-and-channel-bridge",
+      "uninstall": "isolated-install-removal-passed; production-data-policy-unverified",
+      "business_parity": "not-implemented"
+    },
+    {
+      "target": "windows-x64",
+      "rust_target": "x86_64-pc-windows-msvc",
+      "format": "nsis",
+      "build": "blocked-no-executed-runner",
+      "install": "unverified",
+      "ui": "unverified",
+      "upgrade": "blocked-signature-and-channel-bridge",
+      "uninstall": "pending",
+      "business_parity": "not-implemented"
+    },
+    {
+      "target": "windows-arm64",
+      "rust_target": "aarch64-pc-windows-msvc",
+      "format": "nsis",
+      "build": "blocked-no-executed-runner",
+      "install": "unverified",
+      "ui": "unverified",
+      "upgrade": "blocked-signature-and-channel-bridge",
+      "uninstall": "pending",
+      "business_parity": "not-implemented"
+    },
+    {
+      "target": "linux-x64",
+      "rust_target": "x86_64-unknown-linux-gnu",
+      "format": "appimage",
+      "build": "blocked-no-executed-runner",
+      "install": "unverified",
+      "ui": "unverified",
+      "upgrade": "blocked-signature-and-channel-bridge",
+      "uninstall": "pending",
+      "business_parity": "not-implemented"
+    },
+    {
+      "target": "linux-x64",
+      "rust_target": "x86_64-unknown-linux-gnu",
+      "format": "deb",
+      "build": "blocked-no-executed-runner",
+      "install": "unverified",
+      "ui": "unverified",
+      "upgrade": "blocked-signature-and-channel-bridge",
+      "uninstall": "pending",
+      "business_parity": "not-implemented"
+    },
+    {
+      "target": "linux-x64",
+      "rust_target": "x86_64-unknown-linux-gnu",
+      "format": "rpm",
+      "build": "blocked-no-executed-runner",
+      "install": "unverified",
+      "ui": "unverified",
+      "upgrade": "blocked-signature-and-channel-bridge",
+      "uninstall": "pending",
+      "business_parity": "not-implemented"
+    },
+    {
+      "target": "linux-arm64",
+      "rust_target": "aarch64-unknown-linux-gnu",
+      "format": "appimage",
+      "build": "blocked-no-executed-runner",
+      "install": "unverified",
+      "ui": "unverified",
+      "upgrade": "blocked-signature-and-channel-bridge",
+      "uninstall": "pending",
+      "business_parity": "not-implemented"
+    },
+    {
+      "target": "linux-arm64",
+      "rust_target": "aarch64-unknown-linux-gnu",
+      "format": "deb",
+      "build": "blocked-no-executed-runner",
+      "install": "unverified",
+      "ui": "unverified",
+      "upgrade": "blocked-signature-and-channel-bridge",
+      "uninstall": "pending",
+      "business_parity": "not-implemented"
+    },
+    {
+      "target": "linux-arm64",
+      "rust_target": "aarch64-unknown-linux-gnu",
+      "format": "rpm",
+      "build": "blocked-no-executed-runner",
+      "install": "unverified",
+      "ui": "unverified",
+      "upgrade": "blocked-signature-and-channel-bridge",
+      "uninstall": "pending",
+      "business_parity": "not-implemented"
+    }
+  ],
+  "macos_probe": {
+    "host": "26.6.2",
+    "architecture": "arm64",
+    "frontend_ipc": "passed",
+    "visual": "native-AX-and-screenshot-observed",
+    "isolated_file_roundtrip_cleanup": "passed",
+    "native_credential_roundtrip_delete": "passed",
+    "directory": "picker-cancel-passed; read-unverified",
+    "second_launch": "exit-0-single-original-process",
+    "quit": "passed-exit-event-exit-0-and-no-remaining-process",
+    "network_http_status": 200,
+    "imdb_or_emby_business_verified": false,
+    "version": "4.1.0 validation metadata; not a product release",
+    "signing": "not Developer ID signed/not notarized/not OTA signed",
+    "final_artifact_evidence": "native-smoke.json",
+    "isolated_install_removal": "passed; production uninstall remains unverified"
+  },
+  "limitations": [
+    "Windows/Linux and macOS minimum OS not tested",
+    "No OTA plugin or production channel wired",
+    "No real Emby modification authorized or performed",
+    "No claim of full feature parity from probe UI",
+    "Final package hashes and automated smoke captured separately"
+  ]
+}

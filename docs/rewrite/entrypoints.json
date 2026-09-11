@@ -1,0 +1,2350 @@
+{
+  "schema": 1,
+  "product": "TCM",
+  "source_hashes": {
+    "windows/engine/technical-specs-card.js": "16ef77094694ddb0bf98f077747992587fa3ab6050c094b45226595b4e564fae",
+    "windows/engine/windows-engine.ps1": "30b55ab5cd107fef8747ffbd202e290c8738d0e644de6864e9b3adb0795a61f5",
+    "windows/language_packs.go": "6b6eceef55ab23238c9b339c65b10699f5ba45aa8afd31039f89c621c96da089",
+    "windows/localization.go": "f9510f43237c99cb0c31b7cb7743c9f3219a36c3ccc076728716013b7656c679",
+    "windows/main.go": "983a0a98189b98fdebb90df6d72183e71d505a1d687a0d19e62dcbd5a75b093f",
+    "windows/platform_windows.go": "046dc4b9546314ee23cc6a91957fb47d8211fa3ce92e5236a38eb98b3a2f9cfd",
+    "windows/service_controller.go": "f074a5665b9e9c3e675d3f7ce8c031a3a3559c0e2720037f50b7b96f09c0f5c2",
+    "windows/tools/make_icon_syso.py": "99b59db3cadf5ca5a2957c568512cdfb19c3abe65195a6d2e394891fa8cfe01f",
+    "windows/tray_windows.go": "6084009d26c17b62ae3d60779ed3a56058449e8e0dc49d01ffc56e5e445e8b21",
+    "windows/update.go": "4648a04aa3aa1dfdeacb3ceca0ebe4a6cc35ff186c334736b2bdfecc678b9cb4",
+    "windows/web/index.html": "d11b8e873b7c801fd057ac09fa808eb32cfa737eb73bf63855c01db8b1bc7078"
+  },
+  "entries": [
+    {
+      "id": "TCM-E-645ad4936d2e",
+      "kind": "engine-option",
+      "symbol": "IndexOnly",
+      "source": "windows/engine/windows-engine.ps1",
+      "line": 2,
+      "feature": "TCM-CATALOG",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-011020462a04",
+      "kind": "engine-option",
+      "symbol": "CheckOnly",
+      "source": "windows/engine/windows-engine.ps1",
+      "line": 3,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-4a6d2e7cbfe3",
+      "kind": "engine-option",
+      "symbol": "DiscoverOnly",
+      "source": "windows/engine/windows-engine.ps1",
+      "line": 4,
+      "feature": "TCM-CATALOG",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-f18ca3d807de",
+      "kind": "engine-option",
+      "symbol": "ManagedInstall",
+      "source": "windows/engine/windows-engine.ps1",
+      "line": 5,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-222954d680f0",
+      "kind": "engine-option",
+      "symbol": "RebuildIndexOnly",
+      "source": "windows/engine/windows-engine.ps1",
+      "line": 6,
+      "feature": "TCM-CATALOG",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-7c84c670aa8a",
+      "kind": "engine-option",
+      "symbol": "RepairWebOnly",
+      "source": "windows/engine/windows-engine.ps1",
+      "line": 7,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-2c0c1c354e17",
+      "kind": "engine-option",
+      "symbol": "DisableIntegration",
+      "source": "windows/engine/windows-engine.ps1",
+      "line": 8,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-892193e4f2a6",
+      "kind": "engine-option",
+      "symbol": "RootConfigPath",
+      "source": "windows/engine/windows-engine.ps1",
+      "line": 9,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-9d7908ecd633",
+      "kind": "engine-option",
+      "symbol": "OnlyRoot",
+      "source": "windows/engine/windows-engine.ps1",
+      "line": 10,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-99a6f4b01fe1",
+      "kind": "engine-option",
+      "symbol": "BackupRootPath",
+      "source": "windows/engine/windows-engine.ps1",
+      "line": 11,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-4d8ce889214c",
+      "kind": "engine-option",
+      "symbol": "OutputLanguage",
+      "source": "windows/engine/windows-engine.ps1",
+      "line": 13,
+      "feature": "TCM-LOCALE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a3fc0e65afe4",
+      "kind": "serialized-field",
+      "symbol": "asset",
+      "source": "windows/language_packs.go",
+      "line": 32,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-c19f5eb83d71",
+      "kind": "serialized-field",
+      "symbol": "sha256",
+      "source": "windows/language_packs.go",
+      "line": 33,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-7eede668f0e6",
+      "kind": "serialized-field",
+      "symbol": "app_version",
+      "source": "windows/language_packs.go",
+      "line": 41,
+      "feature": "TCM-UPDATE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-19738f2753ad",
+      "kind": "serialized-field",
+      "symbol": "languages",
+      "source": "windows/language_packs.go",
+      "line": 42,
+      "feature": "TCM-LOCALE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-81d699d5f432",
+      "kind": "serialized-field",
+      "symbol": "schema",
+      "source": "windows/language_packs.go",
+      "line": 46,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-d2bc229440ee",
+      "kind": "serialized-field",
+      "symbol": "product",
+      "source": "windows/language_packs.go",
+      "line": 47,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-8d3aa7fe8bfd",
+      "kind": "serialized-field",
+      "symbol": "locale",
+      "source": "windows/language_packs.go",
+      "line": 48,
+      "feature": "TCM-LOCALE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-5d1754c3231d",
+      "kind": "serialized-field",
+      "symbol": "revision",
+      "source": "windows/language_packs.go",
+      "line": 49,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-0590acd35b0d",
+      "kind": "serialized-field",
+      "symbol": "released_with",
+      "source": "windows/language_packs.go",
+      "line": 50,
+      "feature": "TCM-CARD",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-76e1c7ee435d",
+      "kind": "serialized-field",
+      "symbol": "catalog_schema",
+      "source": "windows/language_packs.go",
+      "line": 51,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-9a3933900ca1",
+      "kind": "serialized-field",
+      "symbol": "message_set_hash",
+      "source": "windows/language_packs.go",
+      "line": 52,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-6d922ade1dcc",
+      "kind": "serialized-field",
+      "symbol": "files",
+      "source": "windows/language_packs.go",
+      "line": 53,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-24da5565436b",
+      "kind": "serialized-field",
+      "symbol": "language",
+      "source": "windows/language_packs.go",
+      "line": 531,
+      "feature": "TCM-LOCALE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a6858d1c453c",
+      "kind": "serialized-field",
+      "symbol": "code",
+      "source": "windows/localization.go",
+      "line": 15,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-ab5f82cdc326",
+      "kind": "serialized-field",
+      "symbol": "native_name",
+      "source": "windows/localization.go",
+      "line": 16,
+      "feature": "TCM-LIFECYCLE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-91f8f3b71ef8",
+      "kind": "serialized-field",
+      "symbol": "english_name",
+      "source": "windows/localization.go",
+      "line": 17,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-0f9f2a74e7c5",
+      "kind": "serialized-field",
+      "symbol": "flag",
+      "source": "windows/localization.go",
+      "line": 18,
+      "feature": "TCM-LOCALE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-6238db613a64",
+      "kind": "serialized-field",
+      "symbol": "built_in",
+      "source": "windows/localization.go",
+      "line": 19,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-af0a85b06138",
+      "kind": "serialized-field",
+      "symbol": "installed",
+      "source": "windows/localization.go",
+      "line": 20,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a681e1e09803",
+      "kind": "serialized-field",
+      "symbol": "downloadable",
+      "source": "windows/localization.go",
+      "line": 21,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-372e20b218fc",
+      "kind": "serialized-field",
+      "symbol": "state",
+      "source": "windows/localization.go",
+      "line": 22,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-c00ee82bd553",
+      "kind": "serialized-field",
+      "symbol": "revision",
+      "source": "windows/localization.go",
+      "line": 23,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-f7e2ea435d8a",
+      "kind": "serialized-field",
+      "symbol": "released_with",
+      "source": "windows/localization.go",
+      "line": 24,
+      "feature": "TCM-CARD",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a0b370d6dcd6",
+      "kind": "serialized-field",
+      "symbol": "error",
+      "source": "windows/localization.go",
+      "line": 25,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-7fc967378c1a",
+      "kind": "serialized-field",
+      "symbol": "auto_start_configured",
+      "source": "windows/main.go",
+      "line": 36,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-372fe563c935",
+      "kind": "serialized-field",
+      "symbol": "library_roots",
+      "source": "windows/main.go",
+      "line": 40,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-99ce692bd2d6",
+      "kind": "serialized-field",
+      "symbol": "source",
+      "source": "windows/main.go",
+      "line": 47,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-969d57ff15f9",
+      "kind": "serialized-field",
+      "symbol": "enabled",
+      "source": "windows/main.go",
+      "line": 48,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-fe5949e547cc",
+      "kind": "serialized-field",
+      "symbol": "name",
+      "source": "windows/main.go",
+      "line": 52,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-154caee6796f",
+      "kind": "serialized-field",
+      "symbol": "kind",
+      "source": "windows/main.go",
+      "line": 54,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-fc3af69a5a34",
+      "kind": "serialized-field",
+      "symbol": "online",
+      "source": "windows/main.go",
+      "line": 55,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-554c755b0795",
+      "kind": "serialized-field",
+      "symbol": "state",
+      "source": "windows/main.go",
+      "line": 56,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-ed25c5ba85a9",
+      "kind": "serialized-field",
+      "symbol": "evidence",
+      "source": "windows/main.go",
+      "line": 57,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-dea3a7a6979f",
+      "kind": "serialized-field",
+      "symbol": "access_error",
+      "source": "windows/main.go",
+      "line": 58,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-c7979894215d",
+      "kind": "serialized-field",
+      "symbol": "exit_code",
+      "source": "windows/main.go",
+      "line": 66,
+      "feature": "TCM-LIFECYCLE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-54cdff4b7c1c",
+      "kind": "serialized-field",
+      "symbol": "message",
+      "source": "windows/main.go",
+      "line": 67,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-58484773a549",
+      "kind": "serialized-field",
+      "symbol": "log",
+      "source": "windows/main.go",
+      "line": 68,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-6e74c22cc76e",
+      "kind": "serialized-field",
+      "symbol": "blocks_exit",
+      "source": "windows/main.go",
+      "line": 69,
+      "feature": "TCM-LIFECYCLE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-34442724634c",
+      "kind": "serialized-field",
+      "symbol": "needs_admin",
+      "source": "windows/main.go",
+      "line": 70,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-bc75efda196f",
+      "kind": "serialized-field",
+      "symbol": "already_admin",
+      "source": "windows/main.go",
+      "line": 71,
+      "feature": "TCM-READONLY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-88160a73eac7",
+      "kind": "serialized-field",
+      "symbol": "language_pack_revision",
+      "source": "windows/main.go",
+      "line": 73,
+      "feature": "TCM-LOCALE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-f3a7cf2ae884",
+      "kind": "serialized-field",
+      "symbol": "language_catalog_hash",
+      "source": "windows/main.go",
+      "line": 74,
+      "feature": "TCM-LOCALE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-85e5691fd5d7",
+      "kind": "serialized-field",
+      "symbol": "running",
+      "source": "windows/main.go",
+      "line": 78,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-6546937c02a5",
+      "kind": "serialized-field",
+      "symbol": "started_at",
+      "source": "windows/main.go",
+      "line": 79,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-3480cf530e87",
+      "kind": "serialized-field",
+      "symbol": "ended_at",
+      "source": "windows/main.go",
+      "line": 80,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-dbe725646f12",
+      "kind": "serialized-field",
+      "symbol": "duration_ms",
+      "source": "windows/main.go",
+      "line": 81,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-9875fdfbb225",
+      "kind": "serialized-field",
+      "symbol": "stamp",
+      "source": "windows/main.go",
+      "line": 87,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-b3c26cd2f857",
+      "kind": "serialized-field",
+      "symbol": "error",
+      "source": "windows/main.go",
+      "line": 88,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-5978d0a901fa",
+      "kind": "serialized-field",
+      "symbol": "app_version",
+      "source": "windows/main.go",
+      "line": 92,
+      "feature": "TCM-UPDATE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-1864a220fb65",
+      "kind": "serialized-field",
+      "symbol": "platform",
+      "source": "windows/main.go",
+      "line": 93,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-93cf258a4207",
+      "kind": "serialized-field",
+      "symbol": "platform_label",
+      "source": "windows/main.go",
+      "line": 94,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-fd3f6c933cd3",
+      "kind": "serialized-field",
+      "symbol": "installed",
+      "source": "windows/main.go",
+      "line": 95,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-36202e4fed55",
+      "kind": "serialized-field",
+      "symbol": "agent_running",
+      "source": "windows/main.go",
+      "line": 96,
+      "feature": "TCM-LIFECYCLE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-bede697df28f",
+      "kind": "serialized-field",
+      "symbol": "auto_start",
+      "source": "windows/main.go",
+      "line": 97,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-7b98589c349d",
+      "kind": "serialized-field",
+      "symbol": "silent_start",
+      "source": "windows/main.go",
+      "line": 98,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-8a825a7270f6",
+      "kind": "serialized-field",
+      "symbol": "language",
+      "source": "windows/main.go",
+      "line": 99,
+      "feature": "TCM-LOCALE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-d17adc52df15",
+      "kind": "serialized-field",
+      "symbol": "languages",
+      "source": "windows/main.go",
+      "line": 100,
+      "feature": "TCM-LOCALE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-5871bc3eb3e7",
+      "kind": "serialized-field",
+      "symbol": "agent_pid",
+      "source": "windows/main.go",
+      "line": 101,
+      "feature": "TCM-LIFECYCLE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-3209c51bc1f9",
+      "kind": "serialized-field",
+      "symbol": "last_heartbeat",
+      "source": "windows/main.go",
+      "line": 102,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-3e26ed396c60",
+      "kind": "serialized-field",
+      "symbol": "last_cycle",
+      "source": "windows/main.go",
+      "line": 103,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-d0d23c42af9d",
+      "kind": "serialized-field",
+      "symbol": "interval_seconds",
+      "source": "windows/main.go",
+      "line": 104,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a966997f7ae5",
+      "kind": "serialized-field",
+      "symbol": "engine_ready",
+      "source": "windows/main.go",
+      "line": 105,
+      "feature": "TCM-READONLY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-173caa63231e",
+      "kind": "serialized-field",
+      "symbol": "python",
+      "source": "windows/main.go",
+      "line": 106,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-d2e3303b6cd7",
+      "kind": "serialized-field",
+      "symbol": "chrome",
+      "source": "windows/main.go",
+      "line": 107,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a0a7bc1d2917",
+      "kind": "serialized-field",
+      "symbol": "indexed_titles",
+      "source": "windows/main.go",
+      "line": 108,
+      "feature": "TCM-CATALOG",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-50afdecdbbec",
+      "kind": "serialized-field",
+      "symbol": "nfo_total",
+      "source": "windows/main.go",
+      "line": 109,
+      "feature": "TCM-READONLY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-d5cca3939d60",
+      "kind": "serialized-field",
+      "symbol": "cache_count",
+      "source": "windows/main.go",
+      "line": 110,
+      "feature": "TCM-CATALOG",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-b6e423c6d756",
+      "kind": "serialized-field",
+      "symbol": "xml_errors",
+      "source": "windows/main.go",
+      "line": 111,
+      "feature": "TCM-READONLY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-f2827cd0e59d",
+      "kind": "serialized-field",
+      "symbol": "xml_error_details",
+      "source": "windows/main.go",
+      "line": 112,
+      "feature": "TCM-CARD",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-81781c2dbd20",
+      "kind": "serialized-field",
+      "symbol": "web_patch",
+      "source": "windows/main.go",
+      "line": 113,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-3feba29bd6a0",
+      "kind": "serialized-field",
+      "symbol": "web_version",
+      "source": "windows/main.go",
+      "line": 114,
+      "feature": "TCM-UPDATE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-c4c9af305529",
+      "kind": "serialized-field",
+      "symbol": "libraries",
+      "source": "windows/main.go",
+      "line": 115,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-638eb50d57ba",
+      "kind": "serialized-field",
+      "symbol": "configured_roots",
+      "source": "windows/main.go",
+      "line": 116,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-9185b421a423",
+      "kind": "serialized-field",
+      "symbol": "roots_configured",
+      "source": "windows/main.go",
+      "line": 117,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-3865e493af5c",
+      "kind": "serialized-field",
+      "symbol": "discovered_roots",
+      "source": "windows/main.go",
+      "line": 118,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-8a7f534b81b7",
+      "kind": "serialized-field",
+      "symbol": "counts",
+      "source": "windows/main.go",
+      "line": 119,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-b23806b2bbda",
+      "kind": "serialized-field",
+      "symbol": "job",
+      "source": "windows/main.go",
+      "line": 120,
+      "feature": "TCM-TASK",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-62b99cf2efdc",
+      "kind": "serialized-field",
+      "symbol": "capabilities",
+      "source": "windows/main.go",
+      "line": 121,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-11584e3f8e90",
+      "kind": "serialized-field",
+      "symbol": "notes",
+      "source": "windows/main.go",
+      "line": 122,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-3daad310e75c",
+      "kind": "serialized-field",
+      "symbol": "paths",
+      "source": "windows/main.go",
+      "line": 123,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-2b43df45539f",
+      "kind": "serialized-field",
+      "symbol": "cleanup_removed",
+      "source": "windows/main.go",
+      "line": 124,
+      "feature": "TCM-LEGACY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-46459809de2c",
+      "kind": "serialized-field",
+      "symbol": "service",
+      "source": "windows/main.go",
+      "line": 125,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-0d25470fa486",
+      "kind": "serialized-field",
+      "symbol": "extra",
+      "source": "windows/main.go",
+      "line": 126,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-f891b9a95696",
+      "kind": "serialized-field",
+      "symbol": "action",
+      "source": "windows/main.go",
+      "line": 130,
+      "feature": "TCM-DISPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-cd724b812a14",
+      "kind": "serialized-field",
+      "symbol": "imdb",
+      "source": "windows/main.go",
+      "line": 131,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-27484c3f0ec9",
+      "kind": "serialized-field",
+      "symbol": "path",
+      "source": "windows/main.go",
+      "line": 132,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-6b5d9066b8b3",
+      "kind": "command",
+      "symbol": "--agent",
+      "source": "windows/main.go",
+      "line": 161,
+      "feature": "TCM-LIFECYCLE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a9032a990015",
+      "kind": "command",
+      "symbol": "--headless-action",
+      "source": "windows/main.go",
+      "line": 167,
+      "feature": "TCM-LIFECYCLE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-41811a03cca3",
+      "kind": "command",
+      "symbol": "--login-startup",
+      "source": "windows/main.go",
+      "line": 206,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-ffb4341b1516",
+      "kind": "serialized-field",
+      "symbol": "version",
+      "source": "windows/main.go",
+      "line": 241,
+      "feature": "TCM-UPDATE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-3ff53e6cb260",
+      "kind": "serialized-field",
+      "symbol": "itemTypes",
+      "source": "windows/main.go",
+      "line": 244,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-0b3b00238cf1",
+      "kind": "serialized-field",
+      "symbol": "libraryRoots",
+      "source": "windows/main.go",
+      "line": 251,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-f7481e507aeb",
+      "kind": "serialized-field",
+      "symbol": "scanStats",
+      "source": "windows/main.go",
+      "line": 252,
+      "feature": "TCM-CATALOG",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-92f471634120",
+      "kind": "http-route",
+      "symbol": "/",
+      "source": "windows/main.go",
+      "line": 296,
+      "feature": "TCM-LAYOUT",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-ec4fe5d10a06",
+      "kind": "http-route",
+      "symbol": "/assets/TCM_logo_letter_only.png",
+      "source": "windows/main.go",
+      "line": 297,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-47cf9f9668cf",
+      "kind": "http-route",
+      "symbol": "/assets/TCM_logo_tiny.png",
+      "source": "windows/main.go",
+      "line": 298,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-7ef19fdbd7e9",
+      "kind": "http-route",
+      "symbol": "/api/status",
+      "source": "windows/main.go",
+      "line": 299,
+      "feature": "TCM-CATALOG",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-de339442c89d",
+      "kind": "http-route",
+      "symbol": "/api/catalog",
+      "source": "windows/main.go",
+      "line": 300,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-d804b569eac3",
+      "kind": "http-route",
+      "symbol": "/api/action",
+      "source": "windows/main.go",
+      "line": 301,
+      "feature": "TCM-DISPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-ac162d5e852c",
+      "kind": "http-route",
+      "symbol": "/api/settings",
+      "source": "windows/main.go",
+      "line": 302,
+      "feature": "TCM-LAYOUT",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-185e0b20791b",
+      "kind": "http-route",
+      "symbol": "/api/job",
+      "source": "windows/main.go",
+      "line": 303,
+      "feature": "TCM-TASK",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-25da9ac8b771",
+      "kind": "http-route",
+      "symbol": "/api/update",
+      "source": "windows/main.go",
+      "line": 304,
+      "feature": "TCM-UPDATE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-741df56c4bbf",
+      "kind": "http-route",
+      "symbol": "/api/languages",
+      "source": "windows/main.go",
+      "line": 305,
+      "feature": "TCM-LOCALE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-4df34bea2a2f",
+      "kind": "http-route",
+      "symbol": "/api/heartbeat",
+      "source": "windows/main.go",
+      "line": 306,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-603b7da781d0",
+      "kind": "serialized-field",
+      "symbol": "generatedAt",
+      "source": "windows/main.go",
+      "line": 519,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-9b157a5c1cfe",
+      "kind": "serialized-field",
+      "symbol": "count",
+      "source": "windows/main.go",
+      "line": 520,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-6b5b81082e57",
+      "kind": "serialized-field",
+      "symbol": "items",
+      "source": "windows/main.go",
+      "line": 521,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-d7b923718f3d",
+      "kind": "serialized-field",
+      "symbol": "removed",
+      "source": "windows/main.go",
+      "line": 561,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-57ef5ebf3bcb",
+      "kind": "command",
+      "symbol": "service-start",
+      "source": "windows/main.go",
+      "line": 696,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-de7a1e4e3283",
+      "kind": "command",
+      "symbol": "service-stop",
+      "source": "windows/main.go",
+      "line": 710,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-95ac05eb259f",
+      "kind": "command",
+      "symbol": "legacy-cancel",
+      "source": "windows/main.go",
+      "line": 720,
+      "feature": "TCM-LEGACY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-50cc77e9d80e",
+      "kind": "command",
+      "symbol": "open-data",
+      "source": "windows/main.go",
+      "line": 734,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-83a1cb4c32a1",
+      "kind": "command",
+      "symbol": "open-logs",
+      "source": "windows/main.go",
+      "line": 741,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-73eec2038326",
+      "kind": "command",
+      "symbol": "open-path",
+      "source": "windows/main.go",
+      "line": 749,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-8fc2a72d1760",
+      "kind": "command",
+      "symbol": "choose-library-root",
+      "source": "windows/main.go",
+      "line": 766,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-641cef99e472",
+      "kind": "command",
+      "symbol": "export-diagnostics",
+      "source": "windows/main.go",
+      "line": 774,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-45c48fb26224",
+      "kind": "command",
+      "symbol": "install",
+      "source": "windows/main.go",
+      "line": 1076,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-484bb5c8b9d1",
+      "kind": "command",
+      "symbol": "migrate-legacy",
+      "source": "windows/main.go",
+      "line": 1078,
+      "feature": "TCM-LEGACY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-7ae7a9c6d833",
+      "kind": "command",
+      "symbol": "disable-integration",
+      "source": "windows/main.go",
+      "line": 1080,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-e2c96c08ad22",
+      "kind": "command",
+      "symbol": "start",
+      "source": "windows/main.go",
+      "line": 1082,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-378e78be9bf6",
+      "kind": "command",
+      "symbol": "stop",
+      "source": "windows/main.go",
+      "line": 1084,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a2c3b19f1f70",
+      "kind": "command",
+      "symbol": "cleanup-legacy",
+      "source": "windows/main.go",
+      "line": 1086,
+      "feature": "TCM-LEGACY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-3a443c453387",
+      "kind": "command",
+      "symbol": "auto",
+      "source": "windows/main.go",
+      "line": 1089,
+      "feature": "TCM-TASK",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-03cdb21d731f",
+      "kind": "command",
+      "symbol": "run",
+      "source": "windows/main.go",
+      "line": 1091,
+      "feature": "TCM-TASK",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-6948cc0750c5",
+      "kind": "command",
+      "symbol": "scan-root",
+      "source": "windows/main.go",
+      "line": 1091,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-ba167419f5f1",
+      "kind": "command",
+      "symbol": "scan-space",
+      "source": "windows/main.go",
+      "line": 1093,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-5ff623975ac0",
+      "kind": "command",
+      "symbol": "diagnose",
+      "source": "windows/main.go",
+      "line": 1109,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-0c6c9c72a871",
+      "kind": "command",
+      "symbol": "discover-roots",
+      "source": "windows/main.go",
+      "line": 1109,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-30253f3d9dd5",
+      "kind": "command",
+      "symbol": "rebuild-index",
+      "source": "windows/main.go",
+      "line": 1109,
+      "feature": "TCM-CATALOG",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-ddb3f640f689",
+      "kind": "command",
+      "symbol": "repair-web",
+      "source": "windows/main.go",
+      "line": 1109,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-b2307b6aa1be",
+      "kind": "serialized-field",
+      "symbol": "name",
+      "source": "windows/platform_windows.go",
+      "line": 175,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-c720c950ab84",
+      "kind": "serialized-field",
+      "symbol": "path",
+      "source": "windows/platform_windows.go",
+      "line": 176,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-65789d6c8727",
+      "kind": "serialized-field",
+      "symbol": "kind",
+      "source": "windows/platform_windows.go",
+      "line": 177,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a0c7742873de",
+      "kind": "serialized-field",
+      "symbol": "libraryRoots",
+      "source": "windows/platform_windows.go",
+      "line": 179,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-f87f170fae35",
+      "kind": "serialized-field",
+      "symbol": "ProcessId",
+      "source": "windows/platform_windows.go",
+      "line": 537,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-ad72736e9788",
+      "kind": "serialized-field",
+      "symbol": "ExecutablePath",
+      "source": "windows/platform_windows.go",
+      "line": 538,
+      "feature": "TCM-LAYOUT",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-e405e3b0d1b5",
+      "kind": "serialized-field",
+      "symbol": "CommandLine",
+      "source": "windows/platform_windows.go",
+      "line": 539,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-73c36ea842fe",
+      "kind": "command",
+      "symbol": "auto",
+      "source": "windows/platform_windows.go",
+      "line": 702,
+      "feature": "TCM-TASK",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-850c4f506551",
+      "kind": "command",
+      "symbol": "run",
+      "source": "windows/platform_windows.go",
+      "line": 702,
+      "feature": "TCM-TASK",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-69f5af0b3a71",
+      "kind": "command",
+      "symbol": "repair-web",
+      "source": "windows/platform_windows.go",
+      "line": 712,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-ea4ce85f0069",
+      "kind": "command",
+      "symbol": "disable-integration",
+      "source": "windows/platform_windows.go",
+      "line": 720,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-0d008f194df1",
+      "kind": "command",
+      "symbol": "diagnose",
+      "source": "windows/platform_windows.go",
+      "line": 728,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-f67bce8d6c6e",
+      "kind": "command",
+      "symbol": "rebuild-index",
+      "source": "windows/platform_windows.go",
+      "line": 736,
+      "feature": "TCM-CATALOG",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-92aede59a09b",
+      "kind": "command",
+      "symbol": "discover-roots",
+      "source": "windows/platform_windows.go",
+      "line": 744,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-0dc8278b9eeb",
+      "kind": "serialized-field",
+      "symbol": "indexedTitles",
+      "source": "windows/platform_windows.go",
+      "line": 836,
+      "feature": "TCM-CATALOG",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-c0e2938888b7",
+      "kind": "serialized-field",
+      "symbol": "catalogCount",
+      "source": "windows/platform_windows.go",
+      "line": 837,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-7f35cd0256b3",
+      "kind": "serialized-field",
+      "symbol": "libraries",
+      "source": "windows/platform_windows.go",
+      "line": 841,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-08dab27745bf",
+      "kind": "serialized-field",
+      "symbol": "onlineRootsScanned",
+      "source": "windows/platform_windows.go",
+      "line": 843,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-9c63f2569977",
+      "kind": "serialized-field",
+      "symbol": "nfoSeen",
+      "source": "windows/platform_windows.go",
+      "line": 844,
+      "feature": "TCM-READONLY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-3eec3d0105cb",
+      "kind": "serialized-field",
+      "symbol": "nfoReparsed",
+      "source": "windows/platform_windows.go",
+      "line": 845,
+      "feature": "TCM-READONLY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-eb22b81040cf",
+      "kind": "serialized-field",
+      "symbol": "technicalSpecsFound",
+      "source": "windows/platform_windows.go",
+      "line": 846,
+      "feature": "TCM-CARD",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-1cd59d50d154",
+      "kind": "serialized-field",
+      "symbol": "webEligibleSpecsFound",
+      "source": "windows/platform_windows.go",
+      "line": 847,
+      "feature": "TCM-CARD",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a0fea5602e9c",
+      "kind": "serialized-field",
+      "symbol": "episodeSpecsExcludedFromWeb",
+      "source": "windows/platform_windows.go",
+      "line": 848,
+      "feature": "TCM-CARD",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-6c7ed6cc1866",
+      "kind": "serialized-field",
+      "symbol": "xmlReadErrors",
+      "source": "windows/platform_windows.go",
+      "line": 849,
+      "feature": "TCM-READONLY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-84ccae386f00",
+      "kind": "serialized-field",
+      "symbol": "scanStats",
+      "source": "windows/platform_windows.go",
+      "line": 850,
+      "feature": "TCM-CATALOG",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-02e8787d04a0",
+      "kind": "serialized-field",
+      "symbol": "generatedAt",
+      "source": "windows/platform_windows.go",
+      "line": 882,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-67a92683aa13",
+      "kind": "serialized-field",
+      "symbol": "count",
+      "source": "windows/platform_windows.go",
+      "line": 883,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-bc11e1fbd342",
+      "kind": "serialized-field",
+      "symbol": "errors",
+      "source": "windows/platform_windows.go",
+      "line": 884,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-3b06c385c6fb",
+      "kind": "serialized-field",
+      "symbol": "version",
+      "source": "windows/platform_windows.go",
+      "line": 930,
+      "feature": "TCM-UPDATE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-17ead366e139",
+      "kind": "serialized-field",
+      "symbol": "items",
+      "source": "windows/platform_windows.go",
+      "line": 931,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-38f0cbcc393a",
+      "kind": "serialized-field",
+      "symbol": "itemTypes",
+      "source": "windows/platform_windows.go",
+      "line": 932,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-2c2509a7314a",
+      "kind": "serialized-field",
+      "symbol": "ok",
+      "source": "windows/platform_windows.go",
+      "line": 1440,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-0cf5ed8f36a2",
+      "kind": "serialized-field",
+      "symbol": "request_id",
+      "source": "windows/platform_windows.go",
+      "line": 1446,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-c43cfd77e7a4",
+      "kind": "serialized-field",
+      "symbol": "action",
+      "source": "windows/platform_windows.go",
+      "line": 1447,
+      "feature": "TCM-DISPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-4caeeec19e35",
+      "kind": "serialized-field",
+      "symbol": "allow",
+      "source": "windows/platform_windows.go",
+      "line": 1448,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-6e5ed967d81b",
+      "kind": "serialized-field",
+      "symbol": "message",
+      "source": "windows/platform_windows.go",
+      "line": 1449,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-6af483b2df38",
+      "kind": "serialized-field",
+      "symbol": "time",
+      "source": "windows/platform_windows.go",
+      "line": 1450,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-5a28c81fc61d",
+      "kind": "serialized-field",
+      "symbol": "required",
+      "source": "windows/service_controller.go",
+      "line": 33,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a4e140e9285f",
+      "kind": "serialized-field",
+      "symbol": "agent_running",
+      "source": "windows/service_controller.go",
+      "line": 34,
+      "feature": "TCM-LIFECYCLE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-00f82de7b101",
+      "kind": "serialized-field",
+      "symbol": "auto_start",
+      "source": "windows/service_controller.go",
+      "line": 35,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-2dbc5909ec67",
+      "kind": "serialized-field",
+      "symbol": "scheduled_task",
+      "source": "windows/service_controller.go",
+      "line": 36,
+      "feature": "TCM-TASK",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-b3b324384218",
+      "kind": "serialized-field",
+      "symbol": "artifacts",
+      "source": "windows/service_controller.go",
+      "line": 37,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-5a84127ebaa3",
+      "kind": "serialized-field",
+      "symbol": "web_patch",
+      "source": "windows/service_controller.go",
+      "line": 38,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-b747cd82f420",
+      "kind": "serialized-field",
+      "symbol": "unsafe_patch",
+      "source": "windows/service_controller.go",
+      "line": 39,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-32dd2f3f3ded",
+      "kind": "serialized-field",
+      "symbol": "items",
+      "source": "windows/service_controller.go",
+      "line": 40,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-2c6832c9db72",
+      "kind": "serialized-field",
+      "symbol": "processes",
+      "source": "windows/service_controller.go",
+      "line": 41,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-503e58c62c66",
+      "kind": "serialized-field",
+      "symbol": "pid",
+      "source": "windows/service_controller.go",
+      "line": 45,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-d448e88feec4",
+      "kind": "serialized-field",
+      "symbol": "path",
+      "source": "windows/service_controller.go",
+      "line": 46,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a0ac99a333f3",
+      "kind": "serialized-field",
+      "symbol": "-",
+      "source": "windows/service_controller.go",
+      "line": 47,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-1a0c9711c86a",
+      "kind": "serialized-field",
+      "symbol": "state",
+      "source": "windows/service_controller.go",
+      "line": 51,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-09204e71b588",
+      "kind": "serialized-field",
+      "symbol": "running",
+      "source": "windows/service_controller.go",
+      "line": 52,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-45186a7c8efe",
+      "kind": "serialized-field",
+      "symbol": "message",
+      "source": "windows/service_controller.go",
+      "line": 53,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-303798bca581",
+      "kind": "serialized-field",
+      "symbol": "last_started_at",
+      "source": "windows/service_controller.go",
+      "line": 54,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-f6955a6ad6d8",
+      "kind": "serialized-field",
+      "symbol": "legacy",
+      "source": "windows/service_controller.go",
+      "line": 55,
+      "feature": "TCM-LEGACY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-7471d464d734",
+      "kind": "serialized-field",
+      "symbol": "legacy_prompt_pending",
+      "source": "windows/service_controller.go",
+      "line": 56,
+      "feature": "TCM-LEGACY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-9b71fb0868ab",
+      "kind": "serialized-field",
+      "symbol": "card_lease_active",
+      "source": "windows/service_controller.go",
+      "line": 57,
+      "feature": "TCM-CARD",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-7db88d2dfe70",
+      "kind": "serialized-field",
+      "symbol": "version",
+      "source": "windows/service_controller.go",
+      "line": 61,
+      "feature": "TCM-UPDATE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-5172b463e8d1",
+      "kind": "serialized-field",
+      "symbol": "manager_version",
+      "source": "windows/service_controller.go",
+      "line": 62,
+      "feature": "TCM-UPDATE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-8a210e36bad6",
+      "kind": "serialized-field",
+      "symbol": "web_card_version",
+      "source": "windows/service_controller.go",
+      "line": 63,
+      "feature": "TCM-CARD",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-655b178e0e52",
+      "kind": "serialized-field",
+      "symbol": "session_id",
+      "source": "windows/service_controller.go",
+      "line": 64,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-56e9d09a5036",
+      "kind": "serialized-field",
+      "symbol": "sequence",
+      "source": "windows/service_controller.go",
+      "line": 65,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-bb35091ec86b",
+      "kind": "serialized-field",
+      "symbol": "enabled",
+      "source": "windows/service_controller.go",
+      "line": 66,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-676d54e82e32",
+      "kind": "serialized-field",
+      "symbol": "updated_at",
+      "source": "windows/service_controller.go",
+      "line": 67,
+      "feature": "TCM-UPDATE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-e81d3b983e73",
+      "kind": "serialized-field",
+      "symbol": "expires_at",
+      "source": "windows/service_controller.go",
+      "line": 68,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-0b65cd898dad",
+      "kind": "tray-action",
+      "symbol": "menuRestore",
+      "source": "windows/tray_windows.go",
+      "line": 59,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-268bb58c632f",
+      "kind": "tray-action",
+      "symbol": "menuExit",
+      "source": "windows/tray_windows.go",
+      "line": 60,
+      "feature": "TCM-LIFECYCLE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-8b8e19f1b316",
+      "kind": "serialized-field",
+      "symbol": "tag_name",
+      "source": "windows/update.go",
+      "line": 29,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-8691bdedec1a",
+      "kind": "serialized-field",
+      "symbol": "html_url",
+      "source": "windows/update.go",
+      "line": 30,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-361d791d85ae",
+      "kind": "serialized-field",
+      "symbol": "draft",
+      "source": "windows/update.go",
+      "line": 31,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a4192fdab3eb",
+      "kind": "serialized-field",
+      "symbol": "prerelease",
+      "source": "windows/update.go",
+      "line": 32,
+      "feature": "TCM-CARD",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-411c8f0c21eb",
+      "kind": "serialized-field",
+      "symbol": "published_at",
+      "source": "windows/update.go",
+      "line": 33,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-2e61c22d9732",
+      "kind": "serialized-field",
+      "symbol": "assets",
+      "source": "windows/update.go",
+      "line": 34,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-e09d192d14cb",
+      "kind": "serialized-field",
+      "symbol": "name",
+      "source": "windows/update.go",
+      "line": 38,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-43a23f4e12c5",
+      "kind": "serialized-field",
+      "symbol": "browser_download_url",
+      "source": "windows/update.go",
+      "line": 39,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-b03238f78933",
+      "kind": "serialized-field",
+      "symbol": "schema_version",
+      "source": "windows/update.go",
+      "line": 43,
+      "feature": "TCM-UPDATE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-b966ee57d4f4",
+      "kind": "serialized-field",
+      "symbol": "etag",
+      "source": "windows/update.go",
+      "line": 44,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-6a05bc7c0ba4",
+      "kind": "serialized-field",
+      "symbol": "checked_at",
+      "source": "windows/update.go",
+      "line": 45,
+      "feature": "TCM-PROTOCOL",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a3f9de553715",
+      "kind": "serialized-field",
+      "symbol": "release",
+      "source": "windows/update.go",
+      "line": 46,
+      "feature": "TCM-CARD",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-28cede620562",
+      "kind": "control",
+      "symbol": "openSettings",
+      "source": "windows/web/index.html",
+      "line": 54,
+      "feature": "TCM-LAYOUT",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-149c2098fefb",
+      "kind": "control",
+      "symbol": "refreshLibrary",
+      "source": "windows/web/index.html",
+      "line": 54,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-45e55226da26",
+      "kind": "control",
+      "symbol": "bannerAction",
+      "source": "windows/web/index.html",
+      "line": 56,
+      "feature": "TCM-DISPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-3ea1e84ef7b8",
+      "kind": "control",
+      "symbol": "serviceButton",
+      "source": "windows/web/index.html",
+      "line": 59,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-447990b74203",
+      "kind": "control",
+      "symbol": "catalogMovieTab",
+      "source": "windows/web/index.html",
+      "line": 64,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-1e2f5178400c",
+      "kind": "control",
+      "symbol": "catalogSearch",
+      "source": "windows/web/index.html",
+      "line": 64,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-d73910c72244",
+      "kind": "control",
+      "symbol": "catalogSpecFilter",
+      "source": "windows/web/index.html",
+      "line": 64,
+      "feature": "TCM-CARD",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-882dd3413201",
+      "kind": "control",
+      "symbol": "catalogTvTab",
+      "source": "windows/web/index.html",
+      "line": 64,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-f1e90055b100",
+      "kind": "control",
+      "symbol": "autoStart",
+      "source": "windows/web/index.html",
+      "line": 72,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-e00434335d21",
+      "kind": "control",
+      "symbol": "language",
+      "source": "windows/web/index.html",
+      "line": 72,
+      "feature": "TCM-LOCALE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-57822d5e02c4",
+      "kind": "control",
+      "symbol": "languageCurrent",
+      "source": "windows/web/index.html",
+      "line": 72,
+      "feature": "TCM-LOCALE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a12397349bc9",
+      "kind": "control",
+      "symbol": "silentStart",
+      "source": "windows/web/index.html",
+      "line": 72,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-7c749e79e8fa",
+      "kind": "control",
+      "symbol": "addLibraryRoot",
+      "source": "windows/web/index.html",
+      "line": 73,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-edc7ed3830c3",
+      "kind": "control",
+      "symbol": "chooseLibraryRoot",
+      "source": "windows/web/index.html",
+      "line": 73,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-7a30ca4181b8",
+      "kind": "control",
+      "symbol": "manualRootPath",
+      "source": "windows/web/index.html",
+      "line": 73,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-44039d9774b6",
+      "kind": "control",
+      "symbol": "saveLibraryRoots",
+      "source": "windows/web/index.html",
+      "line": 73,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-880224997e11",
+      "kind": "control",
+      "symbol": "interval",
+      "source": "windows/web/index.html",
+      "line": 74,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-29624eef46e4",
+      "kind": "control",
+      "symbol": "cancelCardInstall",
+      "source": "windows/web/index.html",
+      "line": 76,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-28176bccfebb",
+      "kind": "control",
+      "symbol": "checkCardUpdate",
+      "source": "windows/web/index.html",
+      "line": 76,
+      "feature": "TCM-CARD",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-93d096f1a515",
+      "kind": "control",
+      "symbol": "confirmCardInstall",
+      "source": "windows/web/index.html",
+      "line": 76,
+      "feature": "TCM-WEBPATCH",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-0f67d2e50a0e",
+      "kind": "control",
+      "symbol": "cancelLegacy",
+      "source": "windows/web/index.html",
+      "line": 80,
+      "feature": "TCM-LEGACY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-d81f551ae158",
+      "kind": "control",
+      "symbol": "confirmLegacy",
+      "source": "windows/web/index.html",
+      "line": 80,
+      "feature": "TCM-LEGACY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-b23517cdc681",
+      "kind": "delegated-control",
+      "symbol": "data-tv-auto",
+      "source": "windows/web/index.html",
+      "line": 172,
+      "feature": "TCM-TASK",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-25832e9c6dff",
+      "kind": "delegated-control",
+      "symbol": "data-tv-season",
+      "source": "windows/web/index.html",
+      "line": 172,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-312f5b824e46",
+      "kind": "delegated-control",
+      "symbol": "data-tv-show",
+      "source": "windows/web/index.html",
+      "line": 172,
+      "feature": "TCM-LIFECYCLE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-5db20d4c9c31",
+      "kind": "delegated-control",
+      "symbol": "data-close-modal",
+      "source": "windows/web/index.html",
+      "line": 191,
+      "feature": "TCM-LIFECYCLE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-0f08ad6ec64c",
+      "kind": "frontend-action",
+      "symbol": "scan-space",
+      "source": "windows/web/index.html",
+      "line": 191,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-9fc802d0cd7e",
+      "kind": "delegated-control",
+      "symbol": "data-root-remove",
+      "source": "windows/web/index.html",
+      "line": 192,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-643e3e729590",
+      "kind": "delegated-control",
+      "symbol": "data-root-toggle",
+      "source": "windows/web/index.html",
+      "line": 192,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-4cae5ffae7b0",
+      "kind": "delegated-control",
+      "symbol": "data-scan-root",
+      "source": "windows/web/index.html",
+      "line": 192,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-771160393c1b",
+      "kind": "frontend-action",
+      "symbol": "scan-root",
+      "source": "windows/web/index.html",
+      "line": 192,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-9996275dfc47",
+      "kind": "delegated-control",
+      "symbol": "data-catalog-key",
+      "source": "windows/web/index.html",
+      "line": 194,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-fb6b915019df",
+      "kind": "delegated-control",
+      "symbol": "data-catalog-open",
+      "source": "windows/web/index.html",
+      "line": 194,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-ec9c6e9ff55b",
+      "kind": "delegated-control",
+      "symbol": "data-copy-path",
+      "source": "windows/web/index.html",
+      "line": 194,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-77ce3a6664f5",
+      "kind": "frontend-action",
+      "symbol": "open-path",
+      "source": "windows/web/index.html",
+      "line": 194,
+      "feature": "TCM-DIAGNOSTICS",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-e4098b8808b5",
+      "kind": "frontend-action",
+      "symbol": "choose-library-root",
+      "source": "windows/web/index.html",
+      "line": 196,
+      "feature": "TCM-SCOPE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-b34ea016c6c6",
+      "kind": "frontend-action",
+      "symbol": "run",
+      "source": "windows/web/index.html",
+      "line": 196,
+      "feature": "TCM-TASK",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-a19d094bbb23",
+      "kind": "frontend-action",
+      "symbol": "service-start",
+      "source": "windows/web/index.html",
+      "line": 196,
+      "feature": "TCM-SERVICE",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-6e6c28dc4dbf",
+      "kind": "frontend-action",
+      "symbol": "legacy-cancel",
+      "source": "windows/web/index.html",
+      "line": 197,
+      "feature": "TCM-LEGACY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    },
+    {
+      "id": "TCM-E-cdd812eee333",
+      "kind": "frontend-action",
+      "symbol": "migrate-legacy",
+      "source": "windows/web/index.html",
+      "line": 197,
+      "feature": "TCM-LEGACY",
+      "mapping_status": "source-mapped-runtime-unverified"
+    }
+  ]
+}
