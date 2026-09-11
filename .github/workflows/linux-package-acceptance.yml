@@ -1,0 +1,71 @@
+name: Linux package-manager acceptance (not a release)
+on:
+  push:
+    branches: [v5.0.0-rewrite]
+    paths:
+      - '.github/workflows/linux-package-acceptance.yml'
+      - 'tools/rewrite/linux_package_acceptance.py'
+  workflow_dispatch:
+    inputs:
+      source_run:
+        description: Successful rewrite build run in this repository
+        required: true
+        default: '34557054059'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: linux-packages-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { runner: ubuntu-22.04, target: x86_64-unknown-linux-gnu, arch: x86_64 }
+          - { runner: ubuntu-22.04-arm, target: aarch64-unknown-linux-gnu, arch: aarch64 }
+        distro:
+          - { image: 'ubuntu:22.04', kind: deb }
+          - { image: 'ubuntu:24.04', kind: deb }
+          - { image: 'debian:12', kind: deb }
+          - { image: 'debian:13', kind: deb }
+          - { image: 'fedora:43', kind: rpm }
+          - { image: 'fedora:44', kind: rpm }
+    runs-on: ${{ matrix.platform.runner }}
+    container:
+      image: ${{ matrix.distro.image }}
+      options: --security-opt seccomp=unconfined
+    timeout-minutes: 20
+    env:
+      SOURCE_RUN: ${{ inputs.source_run || '34557054059' }}
+      PYTHONUTF8: '1'
+      WEBKIT_DISABLE_DMABUF_RENDERER: '1'
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package manager and virtual desktop tools
+        shell: bash
+        run: |
+          if command -v apt-get >/dev/null; then
+            apt-get update
+            apt-get install -y python3 xvfb xauth dbus-x11 util-linux passwd ca-certificates
+          else
+            dnf install -y python3 xorg-x11-server-Xvfb xorg-x11-xauth dbus-daemon util-linux shadow-utils
+          fi
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ env.SOURCE_RUN }}
+          name: TCM-validation-${{ matrix.platform.target }}
+          path: build/rewrite/package-input
+      - name: Install, ordinary-user startup, reinstall and uninstall
+        shell: bash
+        run: python3 tools/rewrite/linux_package_acceptance.py --kind ${{ matrix.distro.kind }} --arch ${{ matrix.platform.arch }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: TCM-package-${{ strategy.job-index }}
+          path: build/rewrite/linux-package-acceptance.json
+          retention-days: 3
+          if-no-files-found: warn
