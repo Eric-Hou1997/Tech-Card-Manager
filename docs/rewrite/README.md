@@ -17,3 +17,5 @@
 - [第 5–8 步实现、验证和剩余工作](07-implementation.md)
 
 - [维护者模拟 NFO 库：101 份样本验收](08-sample-library.md)
+
+- [云端验收与本地交付进度](09-cloud-validation.md)

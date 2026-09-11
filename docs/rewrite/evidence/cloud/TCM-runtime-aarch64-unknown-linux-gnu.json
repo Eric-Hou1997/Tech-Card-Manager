@@ -1,0 +1,54 @@
+{
+  "product": "TCM",
+  "target": "aarch64-unknown-linux-gnu",
+  "package": "TCM Validation_4.1.0_aarch64.AppImage",
+  "sha256": "a99820090d94b97c4c92172b7b308f7449950a64c3b8bb6ddd4e3af6e3497f9c",
+  "status": "passed",
+  "limitations": [
+    "OTA and data migration unverified",
+    "Full visual and system behavior unverified",
+    "DEB/RPM installation unverified",
+    "Same-version reinstall is not upgrade acceptance"
+  ],
+  "cycle_1": [
+    {
+      "arch": "aarch64",
+      "event": "native-setup-complete",
+      "os": "linux",
+      "product": "TCM"
+    },
+    {
+      "arch": "aarch64",
+      "event": "frontend-mounted-ipc-roundtrip",
+      "os": "linux",
+      "product": "TCM"
+    },
+    {
+      "arch": "aarch64",
+      "event": "process-exit",
+      "os": "linux",
+      "product": "TCM"
+    }
+  ],
+  "cycle_2": [
+    {
+      "arch": "aarch64",
+      "event": "native-setup-complete",
+      "os": "linux",
+      "product": "TCM"
+    },
+    {
+      "arch": "aarch64",
+      "event": "frontend-mounted-ipc-roundtrip",
+      "os": "linux",
+      "product": "TCM"
+    },
+    {
+      "arch": "aarch64",
+      "event": "process-exit",
+      "os": "linux",
+      "product": "TCM"
+    }
+  ],
+  "installation": "AppImage-extract-and-run-on-Xvfb; package-manager-install-unverified"
+}

@@ -1,5 +1,7 @@
 # 前置调查与已知问题
 
+> 本页保留前期阶段的执行记录；后续云端环境与验收进展见 [云端记录](09-cloud-validation.md)。
+
 ## OTA 格式桥接（阻塞）
 
 原 ITM 的 macos/update.go 对 .zip.sig 做 base64 解码并要求 64 字节 Ed25519 签名，公钥要求 32 字节，直接对归档字节验签。Tauri updater 使用 minisign_verify 的 PublicKey/Signature 格式，不能直接把原 .sig 当作新的 Tauri 签名。

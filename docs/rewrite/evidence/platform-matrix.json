@@ -1,105 +1,111 @@
 {
   "product": "TCM",
-  "generated": "2026-09-10T08:39:03.352507+00:00",
+  "generated": "2026-09-11T03:40:28.637952+00:00",
   "packages": [
     {
       "target": "macos-arm64",
       "rust_target": "aarch64-apple-darwin",
       "format": "dmg",
-      "build": "passed",
-      "install": "passed-isolated-directory",
-      "ui": "passed-native-smoke",
+      "build": "passed-cloud-native-target",
+      "install": "passed-isolated-directory-on-macOS-15",
+      "ui": "passed-native-window-ipc; full-UX-unverified",
       "upgrade": "blocked-signature-and-channel-bridge",
-      "uninstall": "isolated-install-removal-passed; production-data-policy-unverified",
-      "business_parity": "not-implemented"
+      "uninstall": "temporary-install-removal-passed",
+      "business_parity": "incomplete-see-feature-ledger"
     },
     {
       "target": "windows-x64",
       "rust_target": "x86_64-pc-windows-msvc",
       "format": "nsis",
-      "build": "blocked-no-executed-runner",
-      "install": "unverified",
-      "ui": "unverified",
+      "build": "passed-cloud-native-target",
+      "install": "passed-CI-current-user-NSIS",
+      "ui": "passed-native-window-ipc-two-cycles; full-UX-unverified",
       "upgrade": "blocked-signature-and-channel-bridge",
-      "uninstall": "pending",
-      "business_parity": "not-implemented"
+      "uninstall": "passed-executable-removal; production-data-policy-unverified",
+      "business_parity": "incomplete-see-feature-ledger",
+      "reinstall": "passed-same-version; not-OTA-upgrade"
     },
     {
       "target": "windows-arm64",
       "rust_target": "aarch64-pc-windows-msvc",
       "format": "nsis",
-      "build": "blocked-no-executed-runner",
-      "install": "unverified",
-      "ui": "unverified",
+      "build": "passed-cloud-native-target",
+      "install": "passed-CI-current-user-NSIS",
+      "ui": "passed-native-window-ipc-two-cycles; full-UX-unverified",
       "upgrade": "blocked-signature-and-channel-bridge",
-      "uninstall": "pending",
-      "business_parity": "not-implemented"
+      "uninstall": "passed-executable-removal; production-data-policy-unverified",
+      "business_parity": "incomplete-see-feature-ledger",
+      "reinstall": "passed-same-version; not-OTA-upgrade"
     },
     {
       "target": "linux-x64",
       "rust_target": "x86_64-unknown-linux-gnu",
       "format": "appimage",
-      "build": "blocked-no-executed-runner",
-      "install": "unverified",
-      "ui": "unverified",
+      "build": "passed-cloud-native-target",
+      "install": "extract-and-run; desktop-integration-unverified",
+      "ui": "passed-Xvfb-native-window-ipc-two-cycles",
       "upgrade": "blocked-signature-and-channel-bridge",
-      "uninstall": "pending",
-      "business_parity": "not-implemented"
+      "uninstall": "temporary-extraction-only",
+      "business_parity": "incomplete-see-feature-ledger"
     },
     {
       "target": "linux-x64",
       "rust_target": "x86_64-unknown-linux-gnu",
       "format": "deb",
-      "build": "blocked-no-executed-runner",
-      "install": "unverified",
-      "ui": "unverified",
+      "build": "passed-cloud-native-target",
+      "install": "passed-native-architecture-container-package-manager",
+      "ui": "passed-ordinary-user-Xvfb-window-ipc-two-cycles",
       "upgrade": "blocked-signature-and-channel-bridge",
-      "uninstall": "pending",
-      "business_parity": "not-implemented"
+      "uninstall": "passed-binary-removal-and-package-database",
+      "business_parity": "incomplete-see-feature-ledger",
+      "reinstall": "passed-same-version; not-version-upgrade"
     },
     {
       "target": "linux-x64",
       "rust_target": "x86_64-unknown-linux-gnu",
       "format": "rpm",
-      "build": "blocked-no-executed-runner",
-      "install": "unverified",
-      "ui": "unverified",
+      "build": "passed-cloud-native-target",
+      "install": "passed-native-architecture-container-package-manager",
+      "ui": "passed-ordinary-user-Xvfb-window-ipc-two-cycles",
       "upgrade": "blocked-signature-and-channel-bridge",
-      "uninstall": "pending",
-      "business_parity": "not-implemented"
+      "uninstall": "passed-binary-removal-and-package-database",
+      "business_parity": "incomplete-see-feature-ledger",
+      "reinstall": "passed-same-version; not-version-upgrade"
     },
     {
       "target": "linux-arm64",
       "rust_target": "aarch64-unknown-linux-gnu",
       "format": "appimage",
-      "build": "blocked-no-executed-runner",
-      "install": "unverified",
-      "ui": "unverified",
+      "build": "passed-cloud-native-target",
+      "install": "extract-and-run; desktop-integration-unverified",
+      "ui": "passed-Xvfb-native-window-ipc-two-cycles",
       "upgrade": "blocked-signature-and-channel-bridge",
-      "uninstall": "pending",
-      "business_parity": "not-implemented"
+      "uninstall": "temporary-extraction-only",
+      "business_parity": "incomplete-see-feature-ledger"
     },
     {
       "target": "linux-arm64",
       "rust_target": "aarch64-unknown-linux-gnu",
       "format": "deb",
-      "build": "blocked-no-executed-runner",
-      "install": "unverified",
-      "ui": "unverified",
+      "build": "passed-cloud-native-target",
+      "install": "passed-native-architecture-container-package-manager",
+      "ui": "passed-ordinary-user-Xvfb-window-ipc-two-cycles",
       "upgrade": "blocked-signature-and-channel-bridge",
-      "uninstall": "pending",
-      "business_parity": "not-implemented"
+      "uninstall": "passed-binary-removal-and-package-database",
+      "business_parity": "incomplete-see-feature-ledger",
+      "reinstall": "passed-same-version; not-version-upgrade"
     },
     {
       "target": "linux-arm64",
       "rust_target": "aarch64-unknown-linux-gnu",
       "format": "rpm",
-      "build": "blocked-no-executed-runner",
-      "install": "unverified",
-      "ui": "unverified",
+      "build": "passed-cloud-native-target",
+      "install": "passed-native-architecture-container-package-manager",
+      "ui": "passed-ordinary-user-Xvfb-window-ipc-two-cycles",
       "upgrade": "blocked-signature-and-channel-bridge",
-      "uninstall": "pending",
-      "business_parity": "not-implemented"
+      "uninstall": "passed-binary-removal-and-package-database",
+      "business_parity": "incomplete-see-feature-ledger",
+      "reinstall": "passed-same-version; not-version-upgrade"
     }
   ],
   "macos_probe": {
@@ -125,5 +131,6 @@
     "No real Emby modification authorized or performed",
     "No claim of full feature parity from probe UI",
     "Final package hashes and automated smoke captured separately"
-  ]
+  ],
+  "cloud_evidence": "cloud-validation.json"
 }

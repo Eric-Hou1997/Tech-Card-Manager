@@ -1,0 +1,24 @@
+{
+  "scope": "real-emby-environment-only",
+  "version": "4.9.5.0",
+  "host_arch": "aarch64",
+  "checks": [
+    {
+      "cycle": 1,
+      "api_version": "4.9.5.0",
+      "web_html_sha256": "9b90eee9b3277780e4d1d2fdf8ef8467ad8af2b1aa123da6de6fbf3e380e1c7c"
+    },
+    {
+      "cycle": 2,
+      "api_version": "4.9.5.0",
+      "web_html_sha256": "9b90eee9b3277780e4d1d2fdf8ef8467ad8af2b1aa123da6de6fbf3e380e1c7c"
+    }
+  ],
+  "tcm_integration": "unverified",
+  "card_rendering": "unverified",
+  "package_sha256": "b3018884d85dcb09f6bf0d29f1296af277c5e2c99b5359b81d3a1e9a872045b7",
+  "elf_interpreter": "lib/ld-linux-aarch64.so.1",
+  "shutdown": "two-cycles-port-closed",
+  "temporary_data": "removed",
+  "status": "passed"
+}

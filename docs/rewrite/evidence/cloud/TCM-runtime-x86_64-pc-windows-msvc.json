@@ -1,0 +1,54 @@
+{
+  "product": "TCM",
+  "target": "x86_64-pc-windows-msvc",
+  "package": "TCM Validation_4.1.0_x64-setup.exe",
+  "sha256": "89b763c28dc717ced64a737429db0375e4d4af3e968d0de155886e567f85dd36",
+  "status": "passed",
+  "limitations": [
+    "OTA and data migration unverified",
+    "Full visual and system behavior unverified",
+    "DEB/RPM installation unverified",
+    "Same-version reinstall is not upgrade acceptance"
+  ],
+  "cycle_1": [
+    {
+      "arch": "x86_64",
+      "event": "native-setup-complete",
+      "os": "windows",
+      "product": "TCM"
+    },
+    {
+      "arch": "x86_64",
+      "event": "frontend-mounted-ipc-roundtrip",
+      "os": "windows",
+      "product": "TCM"
+    },
+    {
+      "arch": "x86_64",
+      "event": "process-exit",
+      "os": "windows",
+      "product": "TCM"
+    }
+  ],
+  "cycle_2": [
+    {
+      "arch": "x86_64",
+      "event": "native-setup-complete",
+      "os": "windows",
+      "product": "TCM"
+    },
+    {
+      "arch": "x86_64",
+      "event": "frontend-mounted-ipc-roundtrip",
+      "os": "windows",
+      "product": "TCM"
+    },
+    {
+      "arch": "x86_64",
+      "event": "process-exit",
+      "os": "windows",
+      "product": "TCM"
+    }
+  ],
+  "installation": "NSIS-silent-install-reinstall-uninstall"
+}

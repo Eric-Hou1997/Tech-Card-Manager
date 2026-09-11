@@ -1,0 +1,59 @@
+{
+  "product": "TCM",
+  "kind": "deb",
+  "arch": "x86_64",
+  "package": "TCM Validation_4.1.0_amd64.deb",
+  "sha256": "7b91a583337a9e4daa96558e7afed98fd9185d03402a34e2803435f476a57848",
+  "distribution": "PRETTY_NAME=\"Ubuntu 24.04.4 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.4 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+  "source_run": "34557054059",
+  "status": "passed",
+  "limitations": [
+    "Container userland with host kernel",
+    "Xvfb desktop only",
+    "Same-version reinstall is not OTA or version-upgrade acceptance",
+    "Full desktop UX and data migration unverified"
+  ],
+  "cycles": [
+    [
+      {
+        "arch": "x86_64",
+        "event": "native-setup-complete",
+        "os": "linux",
+        "product": "TCM"
+      },
+      {
+        "arch": "x86_64",
+        "event": "frontend-mounted-ipc-roundtrip",
+        "os": "linux",
+        "product": "TCM"
+      },
+      {
+        "arch": "x86_64",
+        "event": "process-exit",
+        "os": "linux",
+        "product": "TCM"
+      }
+    ],
+    [
+      {
+        "arch": "x86_64",
+        "event": "native-setup-complete",
+        "os": "linux",
+        "product": "TCM"
+      },
+      {
+        "arch": "x86_64",
+        "event": "frontend-mounted-ipc-roundtrip",
+        "os": "linux",
+        "product": "TCM"
+      },
+      {
+        "arch": "x86_64",
+        "event": "process-exit",
+        "os": "linux",
+        "product": "TCM"
+      }
+    ]
+  ],
+  "uninstall": "executable-removed-and-package-database-checked"
+}

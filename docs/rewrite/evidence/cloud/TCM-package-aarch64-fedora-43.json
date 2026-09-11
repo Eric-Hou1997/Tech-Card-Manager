@@ -1,0 +1,59 @@
+{
+  "product": "TCM",
+  "kind": "rpm",
+  "arch": "aarch64",
+  "package": "TCM Validation-4.1.0-1.aarch64.rpm",
+  "sha256": "591bb472e6e4bf85680ec4b225257ed576cf1931d8fa12b2c47f530b584ae08f",
+  "distribution": "NAME=\"Fedora Linux\"\nVERSION=\"43 (Container Image)\"\nRELEASE_TYPE=stable\nID=fedora\nVERSION_ID=43\nVERSION_CODENAME=\"\"\nPRETTY_NAME=\"Fedora Linux 43 (Container Image)\"\nANSI_COLOR=\"0;38;2;60;110;180\"\nLOGO=fedora-logo-icon\nCPE_NAME=\"cpe:/o:fedoraproject:fedora:43\"\nDEFAULT_HOSTNAME=\"fedora\"\nHOME_URL=\"https://fedoraproject.org/\"\nDOCUMENTATION_URL=\"https://docs.fedoraproject.org/en-US/fedora/f43/\"\nSUPPORT_URL=\"https://ask.fedoraproject.org/\"\nBUG_REPORT_URL=\"https://bugzilla.redhat.com/\"\nREDHAT_BUGZILLA_PRODUCT=\"Fedora\"\nREDHAT_BUGZILLA_PRODUCT_VERSION=43\nREDHAT_SUPPORT_PRODUCT=\"Fedora\"\nREDHAT_SUPPORT_PRODUCT_VERSION=43\nSUPPORT_END=2026-12-02\nVARIANT=\"Container Image\"\nVARIANT_ID=container\n",
+  "source_run": "34557054059",
+  "status": "passed",
+  "limitations": [
+    "Container userland with host kernel",
+    "Xvfb desktop only",
+    "Same-version reinstall is not OTA or version-upgrade acceptance",
+    "Full desktop UX and data migration unverified"
+  ],
+  "cycles": [
+    [
+      {
+        "arch": "aarch64",
+        "event": "native-setup-complete",
+        "os": "linux",
+        "product": "TCM"
+      },
+      {
+        "arch": "aarch64",
+        "event": "frontend-mounted-ipc-roundtrip",
+        "os": "linux",
+        "product": "TCM"
+      },
+      {
+        "arch": "aarch64",
+        "event": "process-exit",
+        "os": "linux",
+        "product": "TCM"
+      }
+    ],
+    [
+      {
+        "arch": "aarch64",
+        "event": "native-setup-complete",
+        "os": "linux",
+        "product": "TCM"
+      },
+      {
+        "arch": "aarch64",
+        "event": "frontend-mounted-ipc-roundtrip",
+        "os": "linux",
+        "product": "TCM"
+      },
+      {
+        "arch": "aarch64",
+        "event": "process-exit",
+        "os": "linux",
+        "product": "TCM"
+      }
+    ]
+  ],
+  "uninstall": "executable-removed-and-package-database-checked"
+}

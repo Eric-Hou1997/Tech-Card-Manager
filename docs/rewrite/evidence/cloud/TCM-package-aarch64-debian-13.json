@@ -1,0 +1,59 @@
+{
+  "product": "TCM",
+  "kind": "deb",
+  "arch": "aarch64",
+  "package": "TCM Validation_4.1.0_arm64.deb",
+  "sha256": "0d688b1810b687d9a54064ef37bdd3d5d8fca306f1236d795b0b0a7d1d72cd6b",
+  "distribution": "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"13\"\nVERSION=\"13 (trixie)\"\nVERSION_CODENAME=trixie\nDEBIAN_VERSION_FULL=13.6\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"\n",
+  "source_run": "34557054059",
+  "status": "passed",
+  "limitations": [
+    "Container userland with host kernel",
+    "Xvfb desktop only",
+    "Same-version reinstall is not OTA or version-upgrade acceptance",
+    "Full desktop UX and data migration unverified"
+  ],
+  "cycles": [
+    [
+      {
+        "arch": "aarch64",
+        "event": "native-setup-complete",
+        "os": "linux",
+        "product": "TCM"
+      },
+      {
+        "arch": "aarch64",
+        "event": "frontend-mounted-ipc-roundtrip",
+        "os": "linux",
+        "product": "TCM"
+      },
+      {
+        "arch": "aarch64",
+        "event": "process-exit",
+        "os": "linux",
+        "product": "TCM"
+      }
+    ],
+    [
+      {
+        "arch": "aarch64",
+        "event": "native-setup-complete",
+        "os": "linux",
+        "product": "TCM"
+      },
+      {
+        "arch": "aarch64",
+        "event": "frontend-mounted-ipc-roundtrip",
+        "os": "linux",
+        "product": "TCM"
+      },
+      {
+        "arch": "aarch64",
+        "event": "process-exit",
+        "os": "linux",
+        "product": "TCM"
+      }
+    ]
+  ],
+  "uninstall": "executable-removed-and-package-database-checked"
+}

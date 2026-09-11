@@ -1,0 +1,69 @@
+{
+  "product": "TCM",
+  "timestamp": "2026-09-11T03:11:21.451368+00:00",
+  "host": {
+    "macos": "15.7.9",
+    "arch": "arm64"
+  },
+  "artifact": {
+    "path": "rewrite/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/TCM Validation_4.1.0_aarch64.dmg",
+    "sha256": "989c21f580d85615818cb5c90aca9a4ac1e196f68525b190686e4b78fcc3c661",
+    "bytes": 10978971
+  },
+  "source_sha256": {
+    "rewrite/package-lock.json": "60789332e8ee181a5f1a18114c35824bc4ec00c88a09f0598fffb31f0a70c2ba",
+    "rewrite/src-tauri/Cargo.lock": "1375594366f97ce8514cb41b9f4eb202161e9894a7777f070e1112341fe59d4f",
+    "rewrite/src-tauri/Cargo.toml": "29b4b7010f5e503a8829eb00468cca38f8869eceb6d8745e164f983a7efc111b",
+    "rewrite/src-tauri/core/Cargo.toml": "aa35cc231cb562e9012fe745d8a9cebd6c6423f4a0679b5d989eecf2c18a75a4",
+    "rewrite/src-tauri/core/src/contracts.rs": "b3a2749bf74cd3d5813c960b40a1c481ff32952f77bb9e94039a4c22cb9b9647",
+    "rewrite/src-tauri/core/src/lib.rs": "e7fc3dab5686b0d804c082e606737d37854a1537693464eab59a9bb6211d83fb",
+    "rewrite/src-tauri/core/src/library.rs": "d7fe7a21eba8a5a433bf924baaebe4fbcaa82ea8186af68e0318cef5161926ff",
+    "rewrite/src-tauri/core/src/paths.rs": "58f67f54b264a913b52f5c553f47f4454520e3573b9fe83a1deb19b81551f89f",
+    "rewrite/src-tauri/core/src/services.rs": "8cf797eae791ee496f87492f8597b1054a0ead08a8b1530e266fe2afe7bbfcca",
+    "rewrite/src-tauri/core/src/store.rs": "8264775f70d889e936a519d9fbc45a98b5964f1c45ca5303b10cf38f6d2ce06d",
+    "rewrite/src-tauri/icons/icon.icns": "6c201f573f776155b819fde9a2fbdc24abdcf07b0516658d0040e2e914b96475",
+    "rewrite/src-tauri/icons/icon.ico": "6f8878f5085af1fa835bf3192deec1f39b346c1222c1bae700d85e9c24c68bfe",
+    "rewrite/src-tauri/icons/icon.png": "d6b40713f1efe9032216ac021e2acd984f864e2a0ecc5994710d146cc274cd21",
+    "rewrite/src-tauri/src/credentials.rs": "619cb5feacc03db76062cb5ef1315a6c2af863d0bab23cd1f44caf06f79fa47a",
+    "rewrite/src-tauri/src/desktop.rs": "1c8f9d79d5f5d23ef57c136795c420d8bae100a9e658f1bbe213f106b3a19ec0",
+    "rewrite/src-tauri/src/main.rs": "17a52de8b37fb2e97bf96529c2aacea77f0f0d768109c39ca5bbc7276d240a9d",
+    "rewrite/src-tauri/tauri.conf.json": "c5bf1e43010360b9e6d4bfc3cfc01975bc5451d7995d3ac1012b690d43323fd4",
+    "rewrite/src/App.vue": "00d1ba32a507395498ea704f62d4e8533eac920215931fef5604236627376d6a",
+    "rewrite/src/LibraryPanel.vue": "2aef3aaa5f93bb118a73d0c51e7835dd216d5a5cf305bf31c36b2c63aa2574e1",
+    "rewrite/src/contracts.ts": "9d05a7dc95931cc271fbdcd10d7f38af599f7c51a36637536482c65c429b10d1"
+  },
+  "app_architecture": "arm64",
+  "license_notice": "byte-identical-to-repository",
+  "install": "copied-from-readonly-DMG-to-isolated-directory",
+  "events": [
+    {
+      "arch": "aarch64",
+      "event": "native-setup-complete",
+      "os": "macos",
+      "product": "TCM"
+    },
+    {
+      "arch": "aarch64",
+      "event": "frontend-mounted-ipc-roundtrip",
+      "os": "macos",
+      "product": "TCM"
+    },
+    {
+      "arch": "aarch64",
+      "event": "process-exit",
+      "os": "macos",
+      "product": "TCM"
+    }
+  ],
+  "exit_code": 0,
+  "exit_trigger": "automatic-IPC-smoke",
+  "worker_shutdown": "process-exit event occurs after synchronous Desktop.shutdown",
+  "remaining_app_processes": 0,
+  "limitations": [
+    "No Gatekeeper/notarization acceptance",
+    "No update or data migration exercised",
+    "Visual appearance requires separate native UI inspection",
+    "Removal of isolated app only; not production uninstaller validation"
+  ],
+  "isolated_install_removal": "passed"
+}

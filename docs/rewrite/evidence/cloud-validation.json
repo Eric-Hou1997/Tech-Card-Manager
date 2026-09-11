@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "product": "TCM",
+  "timestamp": "2026-09-11T03:40:28.637952+00:00",
+  "application_source_commit": "6077d4e394ba2a3980e46693acdae2ba762ca986",
+  "build_run": "https://github.com/Eric-Hou1997/Tech-Card-Manager/actions/runs/34557054059",
+  "build_targets_passed": 5,
+  "package_count": 9,
+  "linux_install_run": "https://github.com/Eric-Hou1997/Tech-Card-Manager/actions/runs/34558745966",
+  "linux_container_combinations_passed": 12,
+  "tested_package_sha256": {
+    "TCM Validation-4.1.0-1.aarch64.rpm": "591bb472e6e4bf85680ec4b225257ed576cf1931d8fa12b2c47f530b584ae08f",
+    "TCM Validation-4.1.0-1.x86_64.rpm": "8610be111d4a04b9f5b3aeaa86656041ba181e4addca051969f6289c1e39067d",
+    "TCM Validation_4.1.0_aarch64.AppImage": "a99820090d94b97c4c92172b7b308f7449950a64c3b8bb6ddd4e3af6e3497f9c",
+    "TCM Validation_4.1.0_aarch64.dmg": "989c21f580d85615818cb5c90aca9a4ac1e196f68525b190686e4b78fcc3c661",
+    "TCM Validation_4.1.0_amd64.AppImage": "3fc938d421c21778e46c5d10bf0c772670cda2b27906ef549ce388aba0bbc96b",
+    "TCM Validation_4.1.0_amd64.deb": "7b91a583337a9e4daa96558e7afed98fd9185d03402a34e2803435f476a57848",
+    "TCM Validation_4.1.0_arm64-setup.exe": "e4cbd887e8576f384c8219dfb7941d4e94f89fbd98c0ac8598825d83e18606de",
+    "TCM Validation_4.1.0_arm64.deb": "0d688b1810b687d9a54064ef37bdd3d5d8fca306f1236d795b0b0a7d1d72cd6b",
+    "TCM Validation_4.1.0_x64-setup.exe": "89b763c28dc717ced64a737429db0375e4d4af3e968d0de155886e567f85dd36"
+  },
+  "local_delivery": {
+    "status": "9-packages-match-cloud-tested-hashes",
+    "directory": "build/rewrite/cloud/34557054059",
+    "manifest": "DELIVERY.json",
+    "checksums": "SHA256SUMS.txt"
+  },
+  "acceptance": "isolated-validation-packages; not-complete-rewrite-or-official-release",
+  "remaining": [
+    "Full feature parity and retirement of old engines",
+    "TCM actual card integration and rendering",
+    "OTA, signed-channel bridge and data migration",
+    "Full native desktop UX and minimum OS acceptance",
+    "Windows 11 x64 acceptance; current x64 runner is Windows Server 2022"
+  ],
+  "emby_environment_run": "https://github.com/Eric-Hou1997/Tech-Card-Manager/actions/runs/34557466667",
+  "emby_environment": "real-4.9.5.0-linux-x64-and-arm64-api-web-restart-and-stop-passed; TCM integration unverified"
+}
