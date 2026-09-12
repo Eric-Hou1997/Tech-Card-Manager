@@ -39,13 +39,13 @@
         "windows/tests/readonly_patch_contract.py"
       ],
       "test_mapping_status": "candidate-references-not-proof",
-      "new_implementation": "not-implemented",
+      "new_implementation": "partial",
       "platforms": {
-        "macos-arm64": "not-implemented",
-        "windows-x64": "not-implemented",
-        "windows-arm64": "not-implemented",
-        "linux-x64": "not-implemented",
-        "linux-arm64": "not-implemented"
+        "macos-arm64": "partial-acceptance-pending",
+        "windows-x64": "partial-acceptance-pending",
+        "windows-arm64": "partial-acceptance-pending",
+        "linux-x64": "partial-acceptance-pending",
+        "linux-arm64": "partial-acceptance-pending"
       },
       "implementation_slices": [
         {
@@ -56,10 +56,24 @@
           ],
           "tests": [
             "rewrite/src-tauri/core/tests/emby.rs",
-            "rewrite/src-tauri/src/emby.rs::connection_tests"
+            "rewrite/src-tauri/src/emby.rs"
           ],
           "scope": "Read-only protected-root inspection and external backup planning; all write and lease paths require a writable owner; interrupted plans remain pending; preserve previous connection on failed target change. Elevation helper and actual UAC/polkit/authorization acceptance remain pending.",
           "evidence": "docs/rewrite/10-completion-checklist.md"
+        },
+        {
+          "sources": [
+            "rewrite/src-tauri/core/src/maintenance.rs",
+            "rewrite/src-tauri/core/src/emby.rs",
+            "rewrite/src-tauri/src/emby.rs",
+            "rewrite/src/EmbyPanel.vue"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/maintenance.rs",
+            "rewrite/src-tauri/core/tests/emby.rs"
+          ],
+          "scope": "Snapshot-bound review fingerprints and durable receipt query; narrow maintenance protocol with no implicit retransmission after unknown outcome and synchronous service cleanup on channel loss. Native macOS UI verified with ordinary-user fixture. OS-authorized launch, authenticated platform transport and protected helper journal still pending.",
+          "evidence": "docs/rewrite/evidence/native-maintenance-receipt.json"
         }
       ]
     },

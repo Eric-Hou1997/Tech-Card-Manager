@@ -3,13 +3,13 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import EmbyLibraries from './EmbyLibraries.vue';
 interface Status { target: string; installed: boolean; healthy: boolean; phase: string; issues: string[]; requires_permission: boolean }
-interface Plan { id: string; fingerprint: string; action: string; target: string; files: string[]; legacy_patch: boolean }
+interface Plan { id: string; fingerprint: string; action: string; target: string; files: string[]; legacy_patch: boolean; phase: string }
 interface Service { phase: string; error: { message: string } | null }
 const target = ref<Status | null>(null), plan = ref<Plan | null>(null), service = ref<Service>({phase:'stopped',error:null});
 interface Environment {web:string;data:string|null;endpoint:string;version:string|null;issues:string[];restore_error?:{message:string}}
 const environment=ref<Environment|null>(null),candidates=ref<Environment[]>([]),endpoint=ref('http://127.0.0.1:8096');
 const busy = ref(false), error = ref('');
-async function refresh(){target.value=await invoke<Status|null>('emby_status');const value=await invoke<Environment>('emby_environment');if(value.web){environment.value=value;endpoint.value=value.endpoint;if(value.restore_error)error.value=value.restore_error.message;}}
+async function refresh(){target.value=await invoke<Status|null>('emby_status');const value=await invoke<Environment>('emby_environment');if(value.web){environment.value=value;endpoint.value=value.endpoint;if(value.restore_error)error.value=value.restore_error.message;}plan.value=await invoke<Plan|null>('emby_operation',{id:null});}
 async function discover(){await run(async()=>{candidates.value=await invoke<Environment[]>('emby_discover');});}
 async function connect(path:string){await run(async()=>{target.value=await invoke<Status>('emby_connect',{path});plan.value=null;await refresh();});}
 async function checkServer(){await run(async()=>{environment.value=await invoke<Environment>('emby_check_server',{endpoint:endpoint.value});});}
@@ -20,7 +20,8 @@ let alive = true;
 async function run(work: () => Promise<void>) { if(busy.value)return; busy.value=true;error.value='';try{await work();}catch(e){error.value=typeof e==='object'?JSON.stringify(e):String(e);}finally{busy.value=false;} }
 async function select(){await run(async()=>{const selected=await invoke<Status|null>('emby_select');if(selected){target.value=selected;plan.value=null;await refresh();}});}
 async function prepare(action:string){await run(async()=>{plan.value=await invoke<Plan>('emby_plan',{id:crypto.randomUUID(),action});});}
-async function apply(){if(!plan.value)return;const reviewed=plan.value;await run(async()=>{target.value=await invoke<Status>('emby_apply',{id:reviewed.id,fingerprint:reviewed.fingerprint});plan.value=null;});}
+async function receipt(){if(!plan.value)return;const id=plan.value.id;await run(async()=>{plan.value=await invoke<Plan|null>('emby_operation',{id});target.value=await invoke<Status|null>('emby_status');});}
+async function apply(){if(!plan.value||plan.value.phase!=='planned')return;const reviewed=plan.value;await run(async()=>{try{target.value=await invoke<Status>('emby_apply',{id:reviewed.id,fingerprint:reviewed.fingerprint});}finally{try{plan.value=await invoke<Plan|null>('emby_operation',{id:reviewed.id});}catch{reviewed.phase='unverified';plan.value=reviewed;}}});}
 async function control(start:boolean){await run(async()=>{service.value=await invoke<Service>(start?'emby_start':'emby_stop',start?{id:crypto.randomUUID()}:{});});}
 onMounted(()=>{run(refresh);poll=setInterval(async()=>{if(busy.value)return;try{const next=await invoke<Service>('emby_service_status');const status=await invoke<Status|null>('emby_status');if(alive){service.value=next;target.value=status;}}catch(e){if(alive)error.value=String(e);}},2000);});
 onUnmounted(()=>{alive=false;if(poll)clearInterval(poll);});
@@ -53,13 +54,16 @@ onUnmounted(()=>{alive=false;if(poll)clearInterval(poll);});
   </template>
   <EmbyLibraries />
   <article v-if="plan" class="maintenance" aria-labelledby="maintenance-title">
-    <h3 id="maintenance-title">确认维护计划：{{ plan.action }}</h3>
+    <h3 id="maintenance-title">维护操作：{{ plan.action }}</h3>
+    <p class="path">操作 ID：{{ plan.id }}</p>
+    <p role="status">{{ ({planned:"等待确认",prepared:"已开始，等待提交或恢复",committed:"操作已提交；当前资源状态见上方检查结果",'rolled-back':"操作已回滚，需要重新生成计划",unverified:"结果尚未确认，请先查询操作回执"} as Record<string,string>)[plan.phase] || plan.phase }}</p>
     <p class="path">{{ plan.target }}</p>
     <p v-if="plan.legacy_patch">检测到历史注入标记；仅处理经过验证的标记内容。</p>
     <p>以下文件将备份后更新或移除；未列出的文件保持原状。</p>
     <ul><li v-for="file in plan.files" :key="file">{{ file }}</li></ul>
-    <button :disabled="busy||target?.requires_permission" @click="apply">确认执行此计划</button><p v-if="target?.requires_permission">计划已准备；取得安装目录访问权限后重新检查，再确认执行。</p>
-    <button :disabled="busy" @click="plan=null">取消</button>
+    <button v-if="plan.phase==='planned'" :disabled="busy||target?.requires_permission" @click="apply">确认执行此计划</button>
+    <button :disabled="busy" @click="receipt">查询操作结果</button><p v-if="target?.requires_permission">计划已准备；取得安装目录访问权限后重新检查，再确认执行。</p>
+    <button :disabled="busy" @click="plan=null">关闭计划</button>
   </article>
   <p v-if="error || service.error" role="alert">{{ error || service.error?.message }}</p>
 </section>

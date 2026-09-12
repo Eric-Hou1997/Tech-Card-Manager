@@ -33,3 +33,5 @@ pub mod lifecycle;
 pub mod startup_file;
 
 pub mod emby_libraries;
+
+pub mod maintenance;

@@ -4,6 +4,8 @@ on:
   push:
     branches: [v5.0.0-rewrite]
     paths:
+      - 'rewrite/**'
+      - 'language-packs/**'
       - '.github/workflows/emby-desktop-platforms.yml'
       - 'tools/rewrite/emby_other_platforms.py'
       - 'tools/rewrite/emby_card_acceptance.mjs'

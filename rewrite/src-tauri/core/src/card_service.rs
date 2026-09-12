@@ -4,13 +4,13 @@ use crate::{
     emby::{Integration, Lease},
     AppError, Result,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{
     sync::{mpsc, Arc, Mutex},
     thread::JoinHandle,
     time::Duration,
 };
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServiceStatus {
     pub phase: String,
     pub lease: Option<Lease>,

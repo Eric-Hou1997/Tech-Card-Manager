@@ -1,5 +1,8 @@
 use std::fs;
-use tcm_core::{emby::*, library, LibraryRoot, Space};
+use tcm_core::{
+    emby::{self, *},
+    library, LibraryRoot, Space,
+};
 fn html() -> Vec<u8> {
     format!(
         "\u{feff}<html><head><title>测试</title></head>\r\n<body>{}</body></html>",
@@ -508,4 +511,123 @@ fn actual_nonwritable_directory_remains_reviewable_even_with_an_old_writable_loc
     );
     assert_eq!(fs::read(web.join("index.html")).unwrap(), html());
     assert_eq!(fs::read_dir(&web).unwrap().count(), 2);
+}
+
+#[test]
+fn review_fingerprint_binds_the_actual_file_snapshot_across_private_journals() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().canonicalize().unwrap();
+    let web = root.join("web");
+    fs::create_dir(&web).unwrap();
+    let original = format!(
+        "<html><head></head><body>{}</body></html>",
+        "content ".repeat(40)
+    );
+    fs::write(web.join("index.html"), &original).unwrap();
+    let index = emby::public_index(&[], "same-input".into());
+    let languages = emby::bundled_card_languages().unwrap();
+    let javascript = include_bytes!("../../../web-card/technical-specs-card.js");
+    let first = Integration::inspect_only(&web, &root.join("first-journal")).unwrap();
+    let reviewed = first
+        .plan("review", "install", javascript, &index, &languages)
+        .unwrap();
+    let same = first
+        .plan("review", "install", javascript, &index, &languages)
+        .unwrap();
+    assert_eq!(same.fingerprint, reviewed.fingerprint);
+    drop(first);
+    let second = Integration::inspect_only(&web, &root.join("second-journal")).unwrap();
+    assert_eq!(
+        second
+            .plan("review", "install", javascript, &index, &languages)
+            .unwrap()
+            .fingerprint,
+        reviewed.fingerprint
+    );
+    drop(second);
+    fs::write(
+        web.join("index.html"),
+        original.replace("content", "upgraded"),
+    )
+    .unwrap();
+    let changed = Integration::open(&web, &root.join("third-journal")).unwrap();
+    let next = changed
+        .plan("review", "install", javascript, &index, &languages)
+        .unwrap();
+    assert_ne!(next.fingerprint, reviewed.fingerprint);
+    assert_eq!(
+        changed
+            .apply("review", &reviewed.fingerprint)
+            .unwrap_err()
+            .code,
+        "emby-plan-mismatch"
+    );
+    assert!(!web.join("technical-specs-card.js").exists());
+    assert_eq!(changed.operation("review").unwrap().phase, "planned");
+    changed.apply("review", &next.fingerprint).unwrap();
+    assert_eq!(changed.operation("review").unwrap().phase, "committed");
+}
+#[test]
+fn modified_review_journal_is_rejected_and_previous_format_receipts_remain_usable() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().canonicalize().unwrap();
+    let web = root.join("web");
+    fs::create_dir(&web).unwrap();
+    fs::write(
+        web.join("index.html"),
+        format!(
+            "<html><head></head><body>{}</body></html>",
+            "content ".repeat(40)
+        ),
+    )
+    .unwrap();
+    let backup = root.join("backups");
+    let integration = Integration::open(&web, &backup).unwrap();
+    let index = emby::public_index(&[], "same-input".into());
+    let languages = emby::bundled_card_languages().unwrap();
+    let javascript = include_bytes!("../../../web-card/technical-specs-card.js");
+    let plan = integration
+        .plan("review", "install", javascript, &index, &languages)
+        .unwrap();
+    let path = backup
+        .join(tcm_core::hash(web.to_string_lossy().as_bytes()))
+        .join("operations")
+        .join(format!("{}.json", tcm_core::hash(b"review")));
+    let bytes = fs::read(&path).unwrap();
+    let mut bad: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    bad["files"] = serde_json::json!(["different-visible-plan"]);
+    fs::write(&path, serde_json::to_vec(&bad).unwrap()).unwrap();
+    assert_eq!(
+        integration.operation("review").unwrap_err().code,
+        "emby-invalid-journal"
+    );
+    assert_eq!(
+        integration
+            .apply("review", &plan.fingerprint)
+            .unwrap_err()
+            .code,
+        "emby-invalid-journal"
+    );
+    assert!(!web.join("technical-specs-card.js").exists());
+    let mut legacy: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    legacy["fingerprint"] = legacy
+        .as_object_mut()
+        .unwrap()
+        .remove("request_fingerprint")
+        .unwrap();
+    fs::write(&path, serde_json::to_vec(&legacy).unwrap()).unwrap();
+    let old = integration
+        .plan("review", "install", javascript, &index, &languages)
+        .unwrap();
+    assert_eq!(old.fingerprint, legacy["fingerprint"]);
+    integration.apply("review", &old.fingerprint).unwrap();
+    drop(integration);
+    assert_eq!(
+        Integration::open(&web, &backup)
+            .unwrap()
+            .operation("review")
+            .unwrap()
+            .phase,
+        "committed"
+    );
 }

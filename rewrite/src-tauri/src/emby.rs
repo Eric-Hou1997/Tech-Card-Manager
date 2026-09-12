@@ -110,13 +110,46 @@ pub fn emby_plan(
         .integration
         .as_ref()
         .ok_or_else(|| AppError::new("emby-not-configured", "Select Emby web directory"))?;
-    integration.plan(
+    let plan = integration.plan(
         &id,
         &action,
         CARD_JS,
         &public_catalog(&desktop.store)?,
         &emby::bundled_card_languages()?,
-    )
+    )?;
+    desktop.store.save_preference(
+        "emby-maintenance-review",
+        &serde_json::json!({"id": plan.id, "target": plan.target}),
+    )?;
+    Ok(plan)
+}
+#[tauri::command]
+pub fn emby_operation(
+    id: Option<String>,
+    state: State<'_, EmbyDesktop>,
+    desktop: State<'_, Desktop>,
+) -> Result<Option<MaintenancePlan>> {
+    let session = state
+        .session
+        .lock()
+        .map_err(|e| AppError::new("emby-state", e))?;
+    let Some(integration) = session.integration.as_ref() else {
+        return Ok(None);
+    };
+    let id = match id {
+        Some(id) => id,
+        None => {
+            let saved = desktop.store.preferences("emby-maintenance-review")?;
+            if saved["target"].as_str() != Some(integration.status()?.target.as_str()) {
+                return Ok(None);
+            }
+            let Some(id) = saved["id"].as_str() else {
+                return Ok(None);
+            };
+            id.to_owned()
+        }
+    };
+    integration.operation(&id).map(Some)
 }
 #[tauri::command]
 pub async fn emby_apply(

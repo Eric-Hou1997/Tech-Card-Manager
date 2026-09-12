@@ -198,6 +198,7 @@ fn main() {
             emby::emby_status,
             emby::emby_plan,
             emby::emby_apply,
+            emby::emby_operation,
             emby::emby_start,
             emby::emby_stop,
             emby::emby_service_status,

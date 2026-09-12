@@ -1,0 +1,34 @@
+{
+  "date": "2026-09-12",
+  "target": "aarch64-apple-darwin",
+  "source_base": "0b45124",
+  "application_id": "io.github.eric-hou1997.tcm.receipt-validation",
+  "scope": "Native Tauri maintenance review, durable operation query, service cleanup, restart and removal against isolated HTML fixture",
+  "checks": [
+    "plan-lists-exact-files-before-confirmation",
+    "confirmed-install-shows-disk-ready-and-committed-receipt",
+    "query-does-not-repeat-apply",
+    "start-blocks-maintenance",
+    "normal-exit-disables-runtime-lease",
+    "restart-restores-same-operation-id-and-committed-receipt",
+    "restart-does-not-implicitly-start-service",
+    "reviewed-remove-restores-exact-original-html-and-removes-owned-assets",
+    "normal-exit-after-remove"
+  ],
+  "operation_ids": [
+    "cee8c286-beb9-45ab-83aa-16efe6740245",
+    "490ee5c7-9107-40fc-acd2-59c9340b9814"
+  ],
+  "source_sha256": {
+    "rewrite/src-tauri/core/src/emby.rs": "872072d124cea68fe1bb32b09502b77200b02f78ce760d41a15842bc617ba67f",
+    "rewrite/src-tauri/src/emby.rs": "95cffedc78792c1819091e4a66249953f451f411e0cf03a076de3104b7537881",
+    "rewrite/src-tauri/src/main.rs": "b447e78e2e8b5d2f8e7261383934bd8f028a996943741d7a996576c480cd24a2",
+    "rewrite/src/EmbyPanel.vue": "4b86514a691e6bce065c114231e8d97b5fb43ba0d26f7a1d3a25af56d7606482"
+  },
+  "html_sha256_after_remove": "693156512282401e1a795f3510de2eeccad8c45776ea6d0a32ea1c4595ab8124",
+  "limitations": [
+    "ordinary user writable fixture only",
+    "not OS elevation or real Emby display acceptance",
+    "other desktop platforms not covered by this local UI run"
+  ]
+}

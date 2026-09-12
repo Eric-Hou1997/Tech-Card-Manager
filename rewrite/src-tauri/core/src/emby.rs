@@ -281,7 +281,9 @@ pub struct MaintenancePlan {
     pub legacy_patch: bool,
     pub fingerprint: String,
     changes: Vec<Change>,
-    phase: String,
+    pub phase: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    request_fingerprint: Option<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IntegrationStatus {
@@ -291,6 +293,30 @@ pub struct IntegrationStatus {
     pub phase: String,
     pub issues: Vec<String>,
     pub requires_permission: bool,
+}
+
+impl MaintenancePlan {
+    fn review_fingerprint(&self) -> Result<String> {
+        Ok(hash(&serde_json::to_vec(&(
+            "tcm-maintenance-review-v2",
+            &self.id,
+            &self.action,
+            &self.target,
+            &self.files,
+            self.legacy_patch,
+            &self.request_fingerprint,
+            &self.changes,
+        ))?))
+    }
+    fn validate_review(&self) -> Result<()> {
+        if self.request_fingerprint.is_some() && self.fingerprint != self.review_fingerprint()? {
+            return Err(AppError::new(
+                "emby-invalid-journal",
+                "Reviewed file snapshot does not match its fingerprint",
+            ));
+        }
+        Ok(())
+    }
 }
 
 pub struct Integration {
@@ -457,7 +483,12 @@ impl Integration {
                 "Plan target mismatch",
             ));
         }
+        plan.validate_review()?;
         Ok(plan)
+    }
+    /// Read the durable receipt without replaying a mutation after transport loss.
+    pub fn operation(&self, id: &str) -> Result<MaintenancePlan> {
+        self.load_plan(id)
     }
     pub fn status(&self) -> Result<IntegrationStatus> {
         let owned = self.ownership()?;
@@ -531,12 +562,13 @@ impl Integration {
             hash(&after),
             hash(&previous_owner),
         ))?);
-        let plan = MaintenancePlan {
+        let mut plan = MaintenancePlan {
             id: format!("index-{fingerprint}"),
             action: "publish-index".into(),
             target: self.web.to_string_lossy().into(),
             files: vec![DATA.into(), "ownership.json".into()],
             legacy_patch: false,
+            request_fingerprint: Some(fingerprint.clone()),
             fingerprint,
             changes: vec![
                 Change {
@@ -552,6 +584,7 @@ impl Integration {
             ],
             phase: "planned".into(),
         };
+        plan.fingerprint = plan.review_fingerprint()?;
         self.save_plan(&plan)?;
         self.apply(&plan.id, &plan.fingerprint)?;
         Ok(true)
@@ -584,7 +617,7 @@ impl Integration {
         ))?);
         if self.journal_path(id).exists() {
             let old = self.load_plan(id)?;
-            if old.fingerprint != intent {
+            if old.request_fingerprint.as_ref().unwrap_or(&old.fingerprint) != &intent {
                 return Err(AppError::new(
                     "operation-conflict",
                     "Operation ID reused with different input",
@@ -723,16 +756,18 @@ impl Integration {
                 1
             }
         });
-        let plan = MaintenancePlan {
+        let mut plan = MaintenancePlan {
             id: id.into(),
             action: action.into(),
             target: self.web.to_string_lossy().into(),
             files: changes.iter().map(|c| c.name.clone()).collect(),
             legacy_patch: legacy,
+            request_fingerprint: Some(intent.clone()),
             fingerprint: intent,
             changes,
             phase: "planned".into(),
         };
+        plan.fingerprint = plan.review_fingerprint()?;
         self.save_plan(&plan)?;
         Ok(plan)
     }
@@ -824,6 +859,7 @@ impl Integration {
                     "Journal identity mismatch",
                 ));
             }
+            plan.validate_review()?;
             if plan.phase == "prepared" {
                 return Ok(true);
             }
@@ -847,6 +883,7 @@ impl Integration {
                     "Journal identity mismatch",
                 ));
             }
+            plan.validate_review()?;
             if plan.phase != "prepared" {
                 continue;
             }
