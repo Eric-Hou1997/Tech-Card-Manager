@@ -36,7 +36,7 @@ fn metadata(path: &Path, directory: bool, uid: u32) -> Result<fs::Metadata> {
         || (!directory && (!meta.is_file() || meta.nlink() != 1))
     {
         return Err(denied(
-            "Maintenance requires an owner-controlled directory or single-link regular file",
+            format!("Maintenance requires an owner-controlled directory or single-link regular file (expected uid {uid}, actual uid {}, mode {:o}, links {})", meta.uid(), meta.mode() & 0o7777, meta.nlink()),
         )
         .at(path.display()));
     }

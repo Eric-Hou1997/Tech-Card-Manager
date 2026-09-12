@@ -84,9 +84,6 @@ jobs:
         run: |
           cargo fmt --all --check
           cargo clippy --workspace --all-targets --locked --target ${{ matrix.target }} -- -D warnings
-      - name: Build isolated validation bundles
-        working-directory: rewrite
-        run: npm run tauri build -- --verbose --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
       - name: Linux protected-directory helper process acceptance
         if: runner.os == 'Linux'
         working-directory: rewrite/src-tauri
@@ -96,6 +93,9 @@ jobs:
           cp target/${{ matrix.target }}/debug/examples/privileged_acceptance ../../build/rewrite/permission-helper/tcm-validation
           cp binaries/tcm-maintenance-helper-${{ matrix.target }} ../../build/rewrite/permission-helper/tcm-maintenance-helper
           sudo ../../build/rewrite/permission-helper/tcm-validation > ../../build/rewrite/permission-helper.json
+      - name: Build isolated validation bundles
+        working-directory: rewrite
+        run: npm run tauri build -- --verbose --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
       - name: Validate required package inventory
         run: python tools/rewrite/check_artifacts.py --target ${{ matrix.target }}
       - name: macOS installed DMG startup and cleanup

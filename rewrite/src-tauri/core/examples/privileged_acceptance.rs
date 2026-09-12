@@ -62,7 +62,7 @@ mod check {
         pipes.input.reset(Duration::from_secs(30));
         pipes.output.reset(Duration::from_secs(30));
         match client.request(command).unwrap() {
-            Outcome::Failed(e) => panic!("{e}"),
+            Outcome::Failed(e) => panic!("{e:?}"),
             outcome => outcome,
         }
     }
@@ -114,7 +114,10 @@ mod check {
             0,
             "Run only in disposable cloud validation with administrator authorization"
         );
-        let root = Path::new("/opt").join(format!("tcm-permission-check-{}", std::process::id()));
+        // Hosted runners may make /opt writable for tool installation. Use the
+        // same protected system parent as the real recovery journal.
+        let root =
+            Path::new("/var/lib").join(format!("tcm-permission-check-{}", std::process::id()));
         fs::create_dir(&root).unwrap();
         fs::set_permissions(&root, fs::Permissions::from_mode(0o755)).unwrap();
         let web = root.join("web");
