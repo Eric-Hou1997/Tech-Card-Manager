@@ -368,3 +368,144 @@ fn windows_retry_never_overwrites_external_bytes_changed_during_sharing() {
     editor.join().unwrap();
     assert_eq!(fs::read(path).unwrap(), b"external changed lease");
 }
+
+#[test]
+fn inspection_can_prepare_verified_backups_without_writing_emby_or_starting_services() {
+    let (_temp, web, backup) = setup();
+    let before = fs::metadata(web.join("index.html"))
+        .unwrap()
+        .modified()
+        .unwrap();
+    let directory_before = fs::metadata(&web).unwrap().modified().unwrap();
+    let reader = Integration::inspect_only(&web, &backup).unwrap();
+    let status = reader.status().unwrap();
+    assert!(status.requires_permission);
+    assert_eq!(status.phase, "permission-required");
+    let plan = reader
+        .plan("review", "install", b"js", &index(), b"{}")
+        .unwrap();
+    for error in [
+        reader.apply(&plan.id, &plan.fingerprint).unwrap_err(),
+        reader.begin_session("denied").unwrap_err(),
+        reader.renew_session("denied", 1, true).unwrap_err(),
+        reader.publish_index(&index()).unwrap_err(),
+        reader.recover().unwrap_err(),
+    ] {
+        assert_eq!(error.code, "emby-permission-required");
+        assert_eq!(error.path.as_deref(), web.to_str());
+    }
+    assert_eq!(fs::read(web.join("index.html")).unwrap(), html());
+    assert_eq!(
+        fs::metadata(web.join("index.html"))
+            .unwrap()
+            .modified()
+            .unwrap(),
+        before
+    );
+    assert_eq!(
+        fs::metadata(&web).unwrap().modified().unwrap(),
+        directory_before
+    );
+    assert_eq!(fs::read_dir(&web).unwrap().count(), 1);
+    // The read-only owner serializes its private journal; another operation
+    // cannot edit those same receipts while the plan is displayed.
+    assert_eq!(
+        Integration::inspect_only(&web, &backup).err().unwrap().code,
+        "emby-busy"
+    );
+    drop(reader);
+    let writer = Integration::open(&web, &backup).unwrap();
+    assert!(writer.apply(&plan.id, &plan.fingerprint).unwrap().healthy);
+    assert!(!writer.status().unwrap().requires_permission);
+}
+#[test]
+fn inspection_never_recovers_partial_writes_or_hides_conflicts_before_authorization() {
+    let (_temp, web, backup) = setup();
+    let reader = Integration::inspect_only(&web, &backup).unwrap();
+    let plan = reader
+        .plan("interrupted", "install", b"js", &index(), b"{}")
+        .unwrap();
+    let journal = backup
+        .join(tcm_core::hash(web.to_string_lossy().as_bytes()))
+        .join("operations")
+        .join(format!("{}.json", tcm_core::hash(plan.id.as_bytes())));
+    let mut record: serde_json::Value =
+        serde_json::from_slice(&fs::read(&journal).unwrap()).unwrap();
+    record["phase"] = "prepared".into();
+    fs::write(&journal, serde_json::to_vec(&record).unwrap()).unwrap();
+    drop(reader);
+    let reader = Integration::inspect_only(&web, &backup).unwrap();
+    assert!(reader
+        .status()
+        .unwrap()
+        .issues
+        .contains(&"emby-recovery-required".into()));
+    assert_eq!(
+        reader
+            .plan("unsafe", "install", b"js", &index(), b"{}")
+            .unwrap_err()
+            .code,
+        "emby-recovery-required"
+    );
+    assert_eq!(fs::read_dir(&web).unwrap().count(), 1);
+    drop(reader);
+    let writer = Integration::open(&web, &backup).unwrap();
+    assert!(!writer
+        .status()
+        .unwrap()
+        .issues
+        .contains(&"emby-recovery-required".into()));
+    drop(writer);
+    let reader = Integration::inspect_only(&web, &backup).unwrap();
+    let plan = reader
+        .plan("reviewed", "install", b"js", &index(), b"{}")
+        .unwrap();
+    drop(reader);
+    let modified = String::from_utf8(html())
+        .unwrap()
+        .replace("测试", "Emby later upgraded");
+    fs::write(web.join("index.html"), &modified).unwrap();
+    let writer = Integration::open(&web, &backup).unwrap();
+    assert_eq!(
+        writer.apply(&plan.id, &plan.fingerprint).unwrap_err().code,
+        "emby-external-change"
+    );
+    assert_eq!(
+        fs::read_to_string(web.join("index.html")).unwrap(),
+        modified
+    );
+}
+#[cfg(unix)]
+#[test]
+fn actual_nonwritable_directory_remains_reviewable_even_with_an_old_writable_lock() {
+    use std::os::unix::fs::PermissionsExt;
+    struct Restore(std::path::PathBuf, std::fs::Permissions);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            fs::set_permissions(&self.0, self.1.clone()).unwrap();
+        }
+    }
+    let (_temp, web, backup) = setup();
+    fs::write(web.join(".tcm-web.lock"), b"").unwrap();
+    let _restore = Restore(web.clone(), fs::metadata(&web).unwrap().permissions());
+    fs::set_permissions(&web, fs::Permissions::from_mode(0o555)).unwrap();
+    // Test runners must use an ordinary account; root intentionally bypasses DAC.
+    assert!(
+        tempfile::NamedTempFile::new_in(&web).is_err(),
+        "Run this permission regression as an unprivileged user"
+    );
+    let integration = Integration::open_accessible(&web, &backup).unwrap();
+    assert!(integration.status().unwrap().requires_permission);
+    let plan = integration
+        .plan("review", "install", b"js", &index(), b"{}")
+        .unwrap();
+    assert_eq!(
+        integration
+            .apply(&plan.id, &plan.fingerprint)
+            .unwrap_err()
+            .code,
+        "emby-permission-required"
+    );
+    assert_eq!(fs::read(web.join("index.html")).unwrap(), html());
+    assert_eq!(fs::read_dir(&web).unwrap().count(), 2);
+}

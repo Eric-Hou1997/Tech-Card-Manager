@@ -19,7 +19,14 @@ const RUNTIME: &str = "technical-specs-runtime.json";
 const ALLOWED: &[&str] = &["index.html", JS, DATA, LANG, RUNTIME, "ownership.json"];
 
 fn io(error: std::io::Error) -> AppError {
-    AppError::new("emby-io", error)
+    AppError::new(
+        if error.kind() == std::io::ErrorKind::PermissionDenied {
+            "emby-permission-required"
+        } else {
+            "emby-io"
+        },
+        error,
+    )
 }
 fn conflict(path: &Path) -> AppError {
     AppError::new(
@@ -283,15 +290,39 @@ pub struct IntegrationStatus {
     pub healthy: bool,
     pub phase: String,
     pub issues: Vec<String>,
+    pub requires_permission: bool,
 }
 
 pub struct Integration {
     web: PathBuf,
     backup: PathBuf,
-    _lock: File,
+    _lock: Option<File>,
+    _backup_lock: File,
 }
 impl Integration {
     pub fn open(web: &Path, backup_root: &Path) -> Result<Self> {
+        Self::open_mode(web, backup_root, true)
+    }
+    /// Build a reviewable plan and external backups without writing the Emby tree.
+    /// This object can never apply, recover, publish or renew a service lease.
+    pub fn inspect_only(web: &Path, backup_root: &Path) -> Result<Self> {
+        Self::open_mode(web, backup_root, false)
+    }
+    pub fn open_accessible(web: &Path, backup_root: &Path) -> Result<Self> {
+        match Self::open(web, backup_root) {
+            Err(error) if error.code == "emby-permission-required" => {
+                Self::inspect_only(web, backup_root)
+            }
+            result => result,
+        }
+    }
+    fn require_write(&self) -> Result<()> {
+        if self._lock.is_none() {
+            return Err(AppError::new("emby-permission-required","Review the maintenance plan and authorize access to this Emby installation before writing").at(self.web.display()));
+        }
+        Ok(())
+    }
+    fn open_mode(web: &Path, backup_root: &Path, writable: bool) -> Result<Self> {
         let web = paths::checked(web)?;
         validate_html(
             &bytes(&web.join("index.html"))?
@@ -309,25 +340,52 @@ impl Integration {
         fs::create_dir_all(backup.join("blobs")).map_err(io)?;
         fs::create_dir_all(backup.join("operations")).map_err(io)?;
         paths::checked(&backup)?;
-        // A shared web-root lock coordinates installations using different data roots.
-        let lock_path = web.join(".tcm-web.lock");
-        if lock_path.exists() {
-            paths::checked(&lock_path)?;
+        let backup_lock_path = backup.join(".tcm-backup.lock");
+        if backup_lock_path.exists() {
+            paths::checked(&backup_lock_path)?;
         }
-        let lock = OpenOptions::new()
+        let backup_lock = OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
             .truncate(false)
-            .open(&lock_path)
-            .map_err(io)?;
-        lock.try_lock().map_err(|e| AppError::new("emby-busy", e))?;
+            .open(&backup_lock_path)
+            .map_err(|e| io(e).at(backup_lock_path.display()))?;
+        backup_lock
+            .try_lock()
+            .map_err(|e| AppError::new("emby-busy", e))?;
+        // Mutating owners also coordinate across different private backup roots.
+        let lock = if writable {
+            let lock_path = web.join(".tcm-web.lock");
+            if lock_path.exists() {
+                paths::checked(&lock_path)?;
+            }
+            let lock = OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create(true)
+                .truncate(false)
+                .open(&lock_path)
+                .map_err(|e| io(e).at(lock_path.display()))?;
+            lock.try_lock().map_err(|e| AppError::new("emby-busy", e))?;
+            // A pre-existing writable lock does not prove its directory still
+            // permits atomic replacement after an administrator changes access.
+            let probe =
+                tempfile::NamedTempFile::new_in(&web).map_err(|e| io(e).at(web.display()))?;
+            probe.close().map_err(|e| io(e).at(web.display()))?;
+            Some(lock)
+        } else {
+            None
+        };
         let integration = Self {
             web,
             backup,
             _lock: lock,
+            _backup_lock: backup_lock,
         };
-        integration.recover()?;
+        if writable {
+            integration.recover()?;
+        }
         Ok(integration)
     }
     fn target(&self, name: &str) -> Result<PathBuf> {
@@ -418,16 +476,28 @@ impl Integration {
         if !installed && !owned.assets.is_empty() {
             issues.push("emby-upgrade-removed-patch".into());
         }
+        if self._lock.is_none() && self.pending_recovery()? {
+            issues.push("emby-recovery-required".into());
+        }
         let healthy = installed && issues.is_empty();
         Ok(IntegrationStatus {
             target: self.web.to_string_lossy().into(),
             installed,
             healthy,
-            phase: if healthy { "disk-ready" } else { "unverified" }.into(),
+            phase: if self._lock.is_none() {
+                "permission-required"
+            } else if healthy {
+                "disk-ready"
+            } else {
+                "unverified"
+            }
+            .into(),
+            requires_permission: self._lock.is_none(),
             issues,
         })
     }
     pub fn publish_index(&self, index: &PublicIndex) -> Result<bool> {
+        self.require_write()?;
         if !self.status()?.healthy {
             return Err(AppError::new(
                 "emby-repair-required",
@@ -494,6 +564,9 @@ impl Integration {
         index: &PublicIndex,
         languages: &[u8],
     ) -> Result<MaintenancePlan> {
+        if self._lock.is_none() && self.pending_recovery()? {
+            return Err(AppError::new("emby-recovery-required","An interrupted maintenance operation must be recovered before creating another plan").at(self.web.display()));
+        }
         if id.is_empty()
             || id.len() > 200
             || !matches!(action, "install" | "update" | "repair" | "remove" | "adopt")
@@ -664,6 +737,7 @@ impl Integration {
         Ok(plan)
     }
     fn write_change(&self, change: &Change, forward: bool) -> Result<()> {
+        self.require_write()?;
         let path = self.target(&change.name)?;
         let (expected, desired) = if forward {
             (&change.before, &change.after)
@@ -694,6 +768,7 @@ impl Integration {
         Ok(())
     }
     pub fn apply(&self, id: &str, fingerprint: &str) -> Result<IntegrationStatus> {
+        self.require_write()?;
         let mut plan = self.load_plan(id)?;
         if plan.fingerprint != fingerprint {
             return Err(AppError::new(
@@ -733,7 +808,30 @@ impl Integration {
         self.save_plan(&plan)?;
         self.status()
     }
+    fn pending_recovery(&self) -> Result<bool> {
+        for file in fs::read_dir(self.backup.join("operations")).map_err(io)? {
+            let path = file.map_err(io)?.path();
+            if path.extension().and_then(|v| v.to_str()) != Some("json") {
+                continue;
+            }
+            let plan: MaintenancePlan =
+                serde_json::from_slice(&bytes(&path)?.ok_or_else(|| {
+                    AppError::new("emby-journal-missing", "Journal disappeared")
+                })?)?;
+            if plan.target != self.web.to_string_lossy() || path != self.journal_path(&plan.id) {
+                return Err(AppError::new(
+                    "emby-invalid-journal",
+                    "Journal identity mismatch",
+                ));
+            }
+            if plan.phase == "prepared" {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
     pub fn recover(&self) -> Result<()> {
+        self.require_write()?;
         for file in fs::read_dir(self.backup.join("operations")).map_err(io)? {
             let path = file.map_err(io)?.path();
             if path.extension().and_then(|v| v.to_str()) != Some("json") {
@@ -788,6 +886,7 @@ pub fn timestamp() -> String {
 }
 impl Integration {
     pub fn begin_session(&self, session: &str) -> Result<Lease> {
+        self.require_write()?;
         if !self.status()?.healthy {
             return Err(AppError::new(
                 "emby-repair-required",
@@ -838,6 +937,7 @@ impl Integration {
         Ok(lease)
     }
     pub fn renew_session(&self, session: &str, sequence: u64, enabled: bool) -> Result<Lease> {
+        self.require_write()?;
         if self.ownership()?.session.as_deref() != Some(session) {
             return Err(AppError::new(
                 "emby-session-lost",

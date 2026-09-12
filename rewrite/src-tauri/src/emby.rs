@@ -39,7 +39,7 @@ impl EmbyDesktop {
             .session
             .lock()
             .map_err(|e| AppError::new("emby-state", e))?;
-        match Integration::open(std::path::Path::new(&environment.web), &self.backup) {
+        match Integration::open_accessible(std::path::Path::new(&environment.web), &self.backup) {
             Ok(integration) => session.integration = Some(Arc::new(integration)),
             Err(error) => session.restore_error = Some(error),
         }
@@ -236,6 +236,28 @@ pub fn emby_connect(path: String, app: tauri::AppHandle) -> Result<IntegrationSt
     let environment = product_core::emby_environment::inspect(std::path::Path::new(&path))?;
     connect_environment(environment, &app)
 }
+fn connection_candidate(
+    session: &mut Session,
+    web: &str,
+    backup: &std::path::Path,
+) -> Result<Arc<Integration>> {
+    if let Some(integration) = session.integration.as_ref() {
+        let status = integration.status()?;
+        if status.target == web {
+            if !status.requires_permission {
+                return Ok(integration.clone());
+            }
+            // Reopen this same installation after permission changes. Preserve
+            // an unrelated connection until a different target opens successfully.
+            session.integration = None;
+        }
+    }
+    let integration = Arc::new(Integration::open_accessible(
+        std::path::Path::new(web),
+        backup,
+    )?);
+    Ok(integration)
+}
 fn connect_environment(
     environment: product_core::emby_environment::Environment,
     app: &tauri::AppHandle,
@@ -251,15 +273,7 @@ fn connect_environment(
             "Stop the current card service before changing its installation",
         ));
     }
-    if let Some(integration) = session.integration.as_ref() {
-        if integration.status()?.target == environment.web {
-            return integration.status();
-        }
-    }
-    let integration = Arc::new(Integration::open(
-        std::path::Path::new(&environment.web),
-        &state.backup,
-    )?);
+    let integration = connection_candidate(&mut session, &environment.web, &state.backup)?;
     let status = integration.status()?;
     app.state::<Desktop>()
         .store
@@ -433,4 +447,71 @@ pub async fn emby_add_library(
     })
     .await
     .map_err(|e| AppError::new("emby-worker", e))?
+}
+
+#[cfg(test)]
+mod connection_tests {
+    use super::*;
+    use std::fs;
+    fn fixture() -> (tempfile::TempDir, PathBuf, PathBuf) {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().canonicalize().unwrap();
+        let web = root.join("web");
+        let backup = root.join("backups");
+        fs::create_dir(&web).unwrap();
+        fs::write(
+            web.join("index.html"),
+            format!(
+                "<html><head></head><body>{}</body></html>",
+                "original ".repeat(40)
+            ),
+        )
+        .unwrap();
+        (temp, web, backup)
+    }
+    #[test]
+    fn failed_new_target_keeps_original_session_and_its_exclusive_lock() {
+        let (_temp, web, backup) = fixture();
+        let mut session = Session {
+            integration: Some(Arc::new(Integration::open(&web, &backup).unwrap())),
+            ..Default::default()
+        };
+        let bad = web.with_file_name("invalid-target");
+        fs::create_dir(&bad).unwrap();
+        fs::write(bad.join("index.html"), "invalid").unwrap();
+        assert!(connection_candidate(&mut session, bad.to_str().unwrap(), &backup).is_err());
+        assert_eq!(
+            session
+                .integration
+                .as_ref()
+                .unwrap()
+                .status()
+                .unwrap()
+                .target,
+            web.to_string_lossy()
+        );
+        assert_eq!(
+            Integration::open(&web, &backup.with_file_name("other-backups"))
+                .err()
+                .unwrap()
+                .code,
+            "emby-busy"
+        );
+    }
+    #[test]
+    fn permission_recheck_releases_only_the_same_readonly_connection() {
+        let (_temp, web, backup) = fixture();
+        let mut session = Session {
+            integration: Some(Arc::new(Integration::inspect_only(&web, &backup).unwrap())),
+            ..Default::default()
+        };
+        let next = connection_candidate(&mut session, web.to_str().unwrap(), &backup).unwrap();
+        assert!(!next.status().unwrap().requires_permission);
+        session.integration = Some(next.clone());
+        assert!(Arc::ptr_eq(
+            &next,
+            &connection_candidate(&mut session, web.to_str().unwrap(), &backup).unwrap()
+        ));
+        assert!(!next.status().unwrap().installed);
+    }
 }

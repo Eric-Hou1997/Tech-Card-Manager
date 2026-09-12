@@ -34,7 +34,7 @@ macOS DMG 初装，OTA 使用独立机器更新产物；Windows 当前用户 NSI
 
 ## 分支与发布
 
-保留 main 与 v4.1.0 历史。此次授权已扩展到第 1–8 步的开发、测试和隔离验证打包，不包含正式发布、tag、push 或部署软件源。正式产物命名按 product/version/os/arch/package 唯一匹配，文件名、签名、校验、更新目录及文档必须一致。未来正式命名规范在发布前冻结，不更改旧版 OTA 对旧产物的识别。
+保留 main 与 v4.1.0 历史。此次授权已扩展到第 1–12 步开发、测试、本地交付、两个现有公开仓库的 `v5.0.0-rewrite` 分支同步及 GitHub Actions 云端测试。不得推送 main、创建新发布 tag 或 GitHub Release；正式软件源部署与既有密钥变更不由测试授权推定。正式产物命名按 product/version/os/arch/package 唯一匹配，文件名、签名、校验、更新目录及文档必须一致。未来正式命名规范在发布前冻结，不更改旧版 OTA 对旧产物的识别。
 
 ## 证据边界
 
@@ -42,4 +42,4 @@ macOS DMG 初装，OTA 使用独立机器更新产物；Windows 当前用户 NSI
 
 ## 浏览器依赖边界
 
-Manager 窗口使用 Tauri 的系统 WebView，不要求用户另装 Chrome/Edge 浏览器。它仍依赖 macOS WKWebView、Windows WebView2 Runtime、Linux WebKitGTK；Windows 安装包带离线 Runtime 安装支持。IMDb 数据获取是另一个验收链，当前 HTTP 202 未证明可用，不能把窗口可启动当作已摆脱获取侧外部浏览器。参见 [Tauri WebView](https://tauri.app/reference/webview-versions/)。
+Manager 窗口使用 Tauri 的系统 WebView，不要求用户另装 Chrome/Edge 浏览器。它仍依赖 macOS WKWebView、Windows WebView2 Runtime、Linux WebKitGTK；Windows 安装包带离线 Runtime 安装支持。IMDb 数据获取另行验收：ITM 已接通 HTTP 与隔离 IMDb WebView 后备并记录部分原生证据；网络服务的长期稳定性及全部平台获取行为仍须分别验收，不能从 Manager 窗口启动推断。参见 [Tauri WebView](https://tauri.app/reference/webview-versions/)。
