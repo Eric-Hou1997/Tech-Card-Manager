@@ -1,0 +1,56 @@
+{
+  "source_commit": "fe7bdd6c72d1b2a2904ecc8a9fb4ff5816d10a4e",
+  "run_id": 34688788284,
+  "date": "2026-09-12",
+  "five_target_build_install_status": "passed",
+  "scope": "Native Linux x64 and ARM64 protected-directory helper processes with administrator-owned disposable fixtures",
+  "reports": [
+    {
+      "checks": [
+        "ordinary-user-write-denied",
+        "native-root-helper-started",
+        "protected-journal-install",
+        "lease-renewal",
+        "pipe-eof-stops-service-and-child",
+        "restart-recovers-receipt",
+        "lost-apply-reply-recovers-without-repeat",
+        "remove-restores-original-html",
+        "nfo-bytes-and-mtime-preserved",
+        "symlink-target-refused",
+        "isolated-files-cleaned"
+      ],
+      "limitations": [
+        "administrator cloud fixture; not interactive polkit or Manager desktop acceptance",
+        "no production Emby installation used"
+      ],
+      "status": "passed",
+      "target": "aarch64"
+    },
+    {
+      "checks": [
+        "ordinary-user-write-denied",
+        "native-root-helper-started",
+        "protected-journal-install",
+        "lease-renewal",
+        "pipe-eof-stops-service-and-child",
+        "restart-recovers-receipt",
+        "lost-apply-reply-recovers-without-repeat",
+        "remove-restores-original-html",
+        "nfo-bytes-and-mtime-preserved",
+        "symlink-target-refused",
+        "isolated-files-cleaned"
+      ],
+      "limitations": [
+        "administrator cloud fixture; not interactive polkit or Manager desktop acceptance",
+        "no production Emby installation used"
+      ],
+      "status": "passed",
+      "target": "x86_64"
+    }
+  ],
+  "limitations": [
+    "No interactive polkit authorization dialog or AppImage FUSE privilege acceptance",
+    "No protected production Emby installation used",
+    "macOS trusted signed helper blocked by unavailable Developer ID identity; Windows elevation still pending"
+  ]
+}

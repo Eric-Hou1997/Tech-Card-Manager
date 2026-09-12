@@ -91,6 +91,12 @@
           "scope": "Linux pkexec launch and private inherited pipes, root-owned fixed journal, explicit re-plan after authorization, durable reconnect receipt and bounded process/publication owner. Portable unit tests passed; Linux process, polkit dialog, packaged UI and other-platform privileged launch acceptance pending.",
           "evidence": "docs/rewrite/10-completion-checklist.md"
         }
+      ],
+      "supplemental_evidence": [
+        {
+          "path": "docs/rewrite/evidence/linux-protected-helper.json",
+          "scope": "Actual x64/ARM64 Linux root helper, inherited-pipe lifecycle and protected journals passed at fe7bdd6; interactive authorization, AppImage privilege flow, macOS/Windows elevation and final feature parity remain pending."
+        }
       ]
     },
     {
