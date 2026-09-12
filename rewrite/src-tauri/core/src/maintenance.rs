@@ -309,6 +309,10 @@ impl<T: Read + Write> Client<T> {
             sequence: 0,
         }
     }
+    /// Platform owner resets I/O deadlines before the next serialized request.
+    pub fn transport_mut(&mut self) -> Option<&mut T> {
+        self.transport.as_mut()
+    }
     pub fn request(&mut self, command: Command) -> Result<Outcome> {
         let mut transport = self.transport.take().ok_or_else(|| {
             invalid("Maintenance channel is closed; reconnect and query the operation receipt")

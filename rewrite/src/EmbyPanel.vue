@@ -8,8 +8,9 @@ interface Service { phase: string; error: { message: string } | null }
 const target = ref<Status | null>(null), plan = ref<Plan | null>(null), service = ref<Service>({phase:'stopped',error:null});
 interface Environment {web:string;data:string|null;endpoint:string;version:string|null;issues:string[];restore_error?:{message:string}}
 const environment=ref<Environment|null>(null),candidates=ref<Environment[]>([]),endpoint=ref('http://127.0.0.1:8096');
-const busy = ref(false), error = ref('');
-async function refresh(){target.value=await invoke<Status|null>('emby_status');const value=await invoke<Environment>('emby_environment');if(value.web){environment.value=value;endpoint.value=value.endpoint;if(value.restore_error)error.value=value.restore_error.message;}plan.value=await invoke<Plan|null>('emby_operation',{id:null});}
+const busy = ref(false), error = ref(''), authorizationAvailable=ref(false);
+async function authorize(){await run(async()=>{target.value=await invoke<Status>('emby_authorize');await refresh();});}
+async function refresh(){authorizationAvailable.value=await invoke<boolean>('emby_authorization_available');target.value=await invoke<Status|null>('emby_status');const value=await invoke<Environment>('emby_environment');if(value.web){environment.value=value;endpoint.value=value.endpoint;if(value.restore_error)error.value=value.restore_error.message;}plan.value=await invoke<Plan|null>('emby_operation',{id:null});}
 async function discover(){await run(async()=>{candidates.value=await invoke<Environment[]>('emby_discover');});}
 async function connect(path:string){await run(async()=>{target.value=await invoke<Status>('emby_connect',{path});plan.value=null;await refresh();});}
 async function checkServer(){await run(async()=>{environment.value=await invoke<Environment>('emby_check_server',{endpoint:endpoint.value});});}
@@ -23,7 +24,7 @@ async function prepare(action:string){await run(async()=>{plan.value=await invok
 async function receipt(){if(!plan.value)return;const id=plan.value.id;await run(async()=>{plan.value=await invoke<Plan|null>('emby_operation',{id});target.value=await invoke<Status|null>('emby_status');});}
 async function apply(){if(!plan.value||plan.value.phase!=='planned')return;const reviewed=plan.value;await run(async()=>{try{target.value=await invoke<Status>('emby_apply',{id:reviewed.id,fingerprint:reviewed.fingerprint});}finally{try{plan.value=await invoke<Plan|null>('emby_operation',{id:reviewed.id});}catch{reviewed.phase='unverified';plan.value=reviewed;}}});}
 async function control(start:boolean){await run(async()=>{service.value=await invoke<Service>(start?'emby_start':'emby_stop',start?{id:crypto.randomUUID()}:{});});}
-onMounted(()=>{run(refresh);poll=setInterval(async()=>{if(busy.value)return;try{const next=await invoke<Service>('emby_service_status');const status=await invoke<Status|null>('emby_status');if(alive){service.value=next;target.value=status;}}catch(e){if(alive)error.value=String(e);}},2000);});
+onMounted(()=>{run(refresh);poll=setInterval(async()=>{if(busy.value)return;try{const next=await invoke<Service>('emby_service_status');const status=await invoke<Status|null>('emby_status');if(alive){service.value=next;target.value=status;}}catch(e){if(alive){error.value=String(e);service.value={phase:"unverified",error:{message:String(e)}};}}},2000);});
 onUnmounted(()=>{alive=false;if(poll)clearInterval(poll);});
 </script>
 <template>
@@ -38,7 +39,8 @@ onUnmounted(()=>{alive=false;if(poll)clearInterval(poll);});
     <div v-if="environment"><label>Emby 服务地址 <input v-model="endpoint" type="url" :disabled="busy"></label><button :disabled="busy" @click="checkServer">验证连接与版本</button>
     <p>Emby {{ environment.version || '版本待检查' }} <span v-if="environment.issues.includes('server-version-not-accepted')">· 此版本尚未完成兼容验收</span></p>
     <p class="path">数据目录：{{ environment.data || '尚未配置' }} <button :disabled="busy" @click="chooseData">选择数据目录</button></p></div>
-    <p v-if="target.requires_permission" role="status">此 Emby 目录需要系统授权。可以先查看维护计划和备份；当前不会修改 Emby 文件或启动发布服务。<button :disabled="busy" @click="connect(target.target)">重新检查访问权限</button></p>
+    <p v-if="target.requires_permission" role="status">此 Emby 目录需要系统授权。授权后需要重新生成维护计划并确认。<button v-if="authorizationAvailable" :disabled="busy" @click="authorize">请求系统授权</button><span v-else>本平台的受信任权限辅助程序尚待交付验收。</span><button :disabled="busy" @click="connect(target.target)">重新检查访问权限</button></p>
+    <button v-if="authorizationAvailable && !target.requires_permission && service.phase==='unverified'" :disabled="busy" @click="authorize">重新授权并查询操作结果</button>
     <p role="status">资源：{{ target.healthy ? '磁盘就绪' : target.installed ? '需要检查或修复' : '尚未安装' }} · 服务：{{ service.phase }}</p>
     <p>网页是否已加载及实际显示卡片，需要在 Emby 页面中确认。</p>
     <ul v-if="target.issues.length"><li v-for="issue in target.issues" :key="issue">{{ issue }}</li></ul>

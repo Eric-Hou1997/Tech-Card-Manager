@@ -16,6 +16,7 @@ struct Session {
     integration: Option<Arc<Integration>>,
     service: Option<CardService>,
     restore_error: Option<AppError>,
+    privileged: Option<crate::privileged::Connection>,
 }
 pub struct EmbyDesktop {
     backup: PathBuf,
@@ -54,6 +55,10 @@ impl EmbyDesktop {
             service.stop()?;
         }
         session.service = None;
+        if let Some(remote) = session.privileged.as_mut() {
+            remote.shutdown()?;
+        }
+        session.privileged = None;
         Ok(())
     }
 }
@@ -82,74 +87,139 @@ pub async fn emby_select(app: tauri::AppHandle) -> Result<Option<IntegrationStat
     .map_err(|e| AppError::new("emby-worker", e))?
 }
 #[tauri::command]
-pub fn emby_status(state: State<'_, EmbyDesktop>) -> Result<Option<IntegrationStatus>> {
-    let session = state
-        .session
-        .lock()
-        .map_err(|e| AppError::new("emby-state", e))?;
-    session.integration.as_ref().map(|i| i.status()).transpose()
+pub async fn emby_status(app: tauri::AppHandle) -> Result<Option<IntegrationStatus>> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<EmbyDesktop>();
+        let session = state
+            .session
+            .lock()
+            .map_err(|e| AppError::new("emby-state", e))?;
+        if let Some(remote) = &session.privileged {
+            return match remote.request(product_core::maintenance::Command::Status {})? {
+                product_core::maintenance::Outcome::Status { integration, .. } => {
+                    Ok(Some(integration))
+                }
+                _ => Err(helper_reply()),
+            };
+        }
+        session.integration.as_ref().map(|i| i.status()).transpose()
+    })
+    .await
+    .map_err(|e| AppError::new("emby-worker", e))?
 }
 #[tauri::command]
-pub fn emby_plan(
+pub async fn emby_plan(
     id: String,
     action: String,
-    state: State<'_, EmbyDesktop>,
-    desktop: State<'_, Desktop>,
+    app: tauri::AppHandle,
 ) -> Result<MaintenancePlan> {
-    let session = state
-        .session
-        .lock()
-        .map_err(|e| AppError::new("emby-state", e))?;
-    if session.service.is_some() {
-        return Err(AppError::new(
-            "emby-stop-required",
-            "Stop the service before maintenance",
-        ));
-    }
-    let integration = session
-        .integration
-        .as_ref()
-        .ok_or_else(|| AppError::new("emby-not-configured", "Select Emby web directory"))?;
-    let plan = integration.plan(
-        &id,
-        &action,
-        CARD_JS,
-        &public_catalog(&desktop.store)?,
-        &emby::bundled_card_languages()?,
-    )?;
-    desktop.store.save_preference(
-        "emby-maintenance-review",
-        &serde_json::json!({"id": plan.id, "target": plan.target}),
-    )?;
-    Ok(plan)
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<EmbyDesktop>();
+        let desktop = app.state::<Desktop>();
+        let session = state
+            .session
+            .lock()
+            .map_err(|e| AppError::new("emby-state", e))?;
+        if session.service.is_some() {
+            return Err(AppError::new(
+                "emby-stop-required",
+                "Stop the service before maintenance",
+            ));
+        }
+        if let Some(remote) = &session.privileged {
+            let action = serde_json::from_value(serde_json::Value::String(action))?;
+            let outcome = remote.request(product_core::maintenance::Command::Plan {
+                id,
+                action,
+                index: public_catalog(&desktop.store)?,
+            })?;
+            if let product_core::maintenance::Outcome::Plan(plan) = outcome {
+                desktop.store.save_preference(
+                    "emby-maintenance-review",
+                    &serde_json::json!({"id":plan.id,"target":plan.target,"authority":"system"}),
+                )?;
+                return Ok(plan);
+            }
+            return Err(helper_reply());
+        }
+        let integration = session
+            .integration
+            .as_ref()
+            .ok_or_else(|| AppError::new("emby-not-configured", "Select Emby web directory"))?;
+        let plan = integration.plan(
+            &id,
+            &action,
+            CARD_JS,
+            &public_catalog(&desktop.store)?,
+            &emby::bundled_card_languages()?,
+        )?;
+        desktop.store.save_preference(
+            "emby-maintenance-review",
+            &serde_json::json!({"id": plan.id, "target": plan.target}),
+        )?;
+        Ok(plan)
+    })
+    .await
+    .map_err(|e| AppError::new("emby-worker", e))?
 }
 #[tauri::command]
-pub fn emby_operation(
+pub async fn emby_operation(
     id: Option<String>,
-    state: State<'_, EmbyDesktop>,
-    desktop: State<'_, Desktop>,
+    app: tauri::AppHandle,
 ) -> Result<Option<MaintenancePlan>> {
-    let session = state
-        .session
-        .lock()
-        .map_err(|e| AppError::new("emby-state", e))?;
-    let Some(integration) = session.integration.as_ref() else {
-        return Ok(None);
-    };
-    let id = match id {
-        Some(id) => id,
-        None => {
-            let saved = desktop.store.preferences("emby-maintenance-review")?;
-            if saved["target"].as_str() != Some(integration.status()?.target.as_str()) {
-                return Ok(None);
-            }
-            let Some(id) = saved["id"].as_str() else {
-                return Ok(None);
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<EmbyDesktop>();
+        let desktop = app.state::<Desktop>();
+        let session = state
+            .session
+            .lock()
+            .map_err(|e| AppError::new("emby-state", e))?;
+        if let Some(remote) = &session.privileged {
+            let id = match id {
+                Some(id) => id,
+                None => {
+                    let saved = desktop.store.preferences("emby-maintenance-review")?;
+                    let environment = desktop.store.preferences("emby-environment")?;
+                    if saved["target"] != environment["web"] {
+                        return Ok(None);
+                    }
+                    let Some(id) = saved["id"].as_str() else {
+                        return Ok(None);
+                    };
+                    id.to_owned()
+                }
             };
-            id.to_owned()
+            return match remote.request(product_core::maintenance::Command::Operation { id })? {
+                product_core::maintenance::Outcome::Operation(plan) => Ok(Some(plan)),
+                _ => Err(helper_reply()),
+            };
         }
-    };
-    integration.operation(&id).map(Some)
+        let Some(integration) = session.integration.as_ref() else {
+            return Ok(None);
+        };
+        let id = match id {
+            Some(id) => id,
+            None => {
+                let saved = desktop.store.preferences("emby-maintenance-review")?;
+                if saved["target"].as_str() != Some(integration.status()?.target.as_str()) {
+                    return Ok(None);
+                }
+                let Some(id) = saved["id"].as_str() else {
+                    return Ok(None);
+                };
+                if saved["authority"] == "system" {
+                    return Err(AppError::new(
+                        "maintenance-reconnect-required",
+                        format!("Authorize this installation to query operation {id}"),
+                    ));
+                }
+                id.to_owned()
+            }
+        };
+        integration.operation(&id).map(Some)
+    })
+    .await
+    .map_err(|e| AppError::new("emby-worker", e))?
 }
 #[tauri::command]
 pub async fn emby_apply(
@@ -169,6 +239,14 @@ pub async fn emby_apply(
                 "Stop the service before maintenance",
             ));
         }
+        if let Some(remote) = &session.privileged {
+            return match remote
+                .request(product_core::maintenance::Command::Apply { id, fingerprint })?
+            {
+                product_core::maintenance::Outcome::Applied(status) => Ok(status),
+                _ => Err(helper_reply()),
+            };
+        }
         session
             .integration
             .as_ref()
@@ -179,58 +257,90 @@ pub async fn emby_apply(
     .map_err(|e| AppError::new("emby-worker", e))?
 }
 #[tauri::command]
-pub fn emby_start(
-    id: String,
-    state: State<'_, EmbyDesktop>,
-    desktop: State<'_, Desktop>,
-) -> Result<ServiceStatus> {
-    let mut session = state
-        .session
-        .lock()
-        .map_err(|e| AppError::new("emby-state", e))?;
-    if let Some(service) = &session.service {
-        return service.status();
-    }
-    let target = session
-        .integration
-        .clone()
-        .ok_or_else(|| AppError::new("emby-not-configured", "Select Emby web directory"))?;
-    let service = CardService::start_with_store(target, &id, desktop.store.clone())?;
-    let status = service.status()?;
-    session.service = Some(service);
-    Ok(status)
-}
-#[tauri::command]
-pub fn emby_stop(state: State<'_, EmbyDesktop>) -> Result<ServiceStatus> {
-    let mut session = state
-        .session
-        .lock()
-        .map_err(|e| AppError::new("emby-state", e))?;
-    if let Some(service) = session.service.as_mut() {
-        let status = service.stop()?;
-        session.service = None;
-        return Ok(status);
-    }
-    Ok(ServiceStatus {
-        phase: "stopped".into(),
-        lease: None,
-        error: None,
+pub async fn emby_start(id: String, app: tauri::AppHandle) -> Result<ServiceStatus> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<EmbyDesktop>();
+        let desktop = app.state::<Desktop>();
+        let mut session = state
+            .session
+            .lock()
+            .map_err(|e| AppError::new("emby-state", e))?;
+        if let Some(remote) = &session.privileged {
+            return match remote
+                .request(product_core::maintenance::Command::Start { session: id })?
+            {
+                product_core::maintenance::Outcome::Service(status) => Ok(status),
+                _ => Err(helper_reply()),
+            };
+        }
+        if let Some(service) = &session.service {
+            return service.status();
+        }
+        let target = session
+            .integration
+            .clone()
+            .ok_or_else(|| AppError::new("emby-not-configured", "Select Emby web directory"))?;
+        let service = CardService::start_with_store(target, &id, desktop.store.clone())?;
+        let status = service.status()?;
+        session.service = Some(service);
+        Ok(status)
     })
+    .await
+    .map_err(|e| AppError::new("emby-worker", e))?
 }
 #[tauri::command]
-pub fn emby_service_status(state: State<'_, EmbyDesktop>) -> Result<ServiceStatus> {
-    let session = state
-        .session
-        .lock()
-        .map_err(|e| AppError::new("emby-state", e))?;
-    match session.service.as_ref() {
-        Some(service) => service.status(),
-        None => Ok(ServiceStatus {
+pub async fn emby_stop(app: tauri::AppHandle) -> Result<ServiceStatus> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<EmbyDesktop>();
+        let mut session = state
+            .session
+            .lock()
+            .map_err(|e| AppError::new("emby-state", e))?;
+        if let Some(remote) = &session.privileged {
+            return match remote.request(product_core::maintenance::Command::Stop {})? {
+                product_core::maintenance::Outcome::Service(status) => Ok(status),
+                _ => Err(helper_reply()),
+            };
+        }
+        if let Some(service) = session.service.as_mut() {
+            let status = service.stop()?;
+            session.service = None;
+            return Ok(status);
+        }
+        Ok(ServiceStatus {
             phase: "stopped".into(),
             lease: None,
             error: None,
-        }),
-    }
+        })
+    })
+    .await
+    .map_err(|e| AppError::new("emby-worker", e))?
+}
+#[tauri::command]
+pub async fn emby_service_status(app: tauri::AppHandle) -> Result<ServiceStatus> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<EmbyDesktop>();
+        let session = state
+            .session
+            .lock()
+            .map_err(|e| AppError::new("emby-state", e))?;
+        if let Some(remote) = &session.privileged {
+            return match remote.request(product_core::maintenance::Command::Status {})? {
+                product_core::maintenance::Outcome::Status { service, .. } => Ok(service),
+                _ => Err(helper_reply()),
+            };
+        }
+        match session.service.as_ref() {
+            Some(service) => service.status(),
+            None => Ok(ServiceStatus {
+                phase: "stopped".into(),
+                lease: None,
+                error: None,
+            }),
+        }
+    })
+    .await
+    .map_err(|e| AppError::new("emby-worker", e))?
 }
 #[tauri::command]
 pub fn emby_discover(
@@ -306,6 +416,21 @@ fn connect_environment(
             "Stop the current card service before changing its installation",
         ));
     }
+    if let Some(remote) = session.privileged.as_mut() {
+        match remote.request(product_core::maintenance::Command::Status {})? {
+            product_core::maintenance::Outcome::Status { service, .. }
+                if service.phase == "running" =>
+            {
+                return Err(AppError::new(
+                    "emby-stop-required",
+                    "Stop the current card service before changing its installation",
+                ))
+            }
+            _ => {}
+        }
+        remote.shutdown()?;
+    }
+    session.privileged = None;
     let integration = connection_candidate(&mut session, &environment.web, &state.backup)?;
     let status = integration.status()?;
     app.state::<Desktop>()
@@ -547,4 +672,55 @@ mod connection_tests {
         ));
         assert!(!next.status().unwrap().installed);
     }
+}
+
+fn helper_reply() -> AppError {
+    AppError::new("maintenance-protocol", "Unexpected helper response")
+}
+#[tauri::command]
+pub fn emby_authorization_available() -> bool {
+    crate::privileged::available()
+}
+#[tauri::command]
+pub async fn emby_authorize(app: tauri::AppHandle) -> Result<IntegrationStatus> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<EmbyDesktop>();
+        let desktop = app.state::<Desktop>();
+        let mut session = state
+            .session
+            .lock()
+            .map_err(|e| AppError::new("emby-state", e))?;
+        if session.service.is_some() {
+            return Err(AppError::new(
+                "emby-stop-required",
+                "Stop the service before authorization",
+            ));
+        }
+        if let Some(remote) = session.privileged.as_mut() {
+            remote.shutdown()?;
+        }
+        session.privileged = None;
+        let environment = desktop.store.preferences("emby-environment")?;
+        let web = environment["web"]
+            .as_str()
+            .ok_or_else(|| AppError::new("emby-not-configured", "Select Emby web directory"))?;
+        let remote = crate::privileged::launch(std::path::Path::new(web), desktop.store.clone())?;
+        let status = match remote.request(product_core::maintenance::Command::Status {})? {
+            product_core::maintenance::Outcome::Status { integration, .. } => integration,
+            _ => return Err(helper_reply()),
+        };
+        // User-owned plans are never copied to the privileged journal. The UI
+        // obtains a fresh plan and confirmation after this authorization.
+        let prior = desktop.store.preferences("emby-maintenance-review")?;
+        if prior["authority"] != "system" || prior["target"] != web {
+            desktop
+                .store
+                .save_preference("emby-maintenance-review", &serde_json::json!({}))?;
+        }
+        session.privileged = Some(remote);
+        session.restore_error = None;
+        Ok(status)
+    })
+    .await
+    .map_err(|e| AppError::new("emby-worker", e))?
 }

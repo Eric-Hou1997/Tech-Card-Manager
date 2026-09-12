@@ -83,6 +83,15 @@ jobs:
       - name: Build isolated validation bundles
         working-directory: rewrite
         run: npm run tauri build -- --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
+      - name: Linux protected-directory helper process acceptance
+        if: runner.os == 'Linux'
+        working-directory: rewrite/src-tauri
+        run: |
+          cargo build --locked -p tcm-core --example privileged_acceptance --target ${{ matrix.target }}
+          mkdir -p ../../build/rewrite/permission-helper
+          cp target/${{ matrix.target }}/debug/examples/privileged_acceptance ../../build/rewrite/permission-helper/tcm-validation
+          cp binaries/tcm-maintenance-helper-${{ matrix.target }} ../../build/rewrite/permission-helper/tcm-maintenance-helper
+          sudo ../../build/rewrite/permission-helper/tcm-validation > ../../build/rewrite/permission-helper.json
       - name: Validate required package inventory
         run: python tools/rewrite/check_artifacts.py --target ${{ matrix.target }}
       - name: macOS installed DMG startup and cleanup
@@ -104,6 +113,7 @@ jobs:
           path: |
             build/rewrite/native-smoke.json
             build/rewrite/package-smoke.json
+            build/rewrite/permission-helper.json
           retention-days: 3
           if-no-files-found: ignore
       - name: Original Windows x64 Go behavior

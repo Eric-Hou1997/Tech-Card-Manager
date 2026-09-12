@@ -1,0 +1,31 @@
+{
+  "date": "2026-09-12",
+  "source_base": "9bd4ef3",
+  "application_id": "io.github.eric-hou1997.tcm.receipt-validation",
+  "scope": "Native macOS regression after asynchronous maintenance and Linux permission routing",
+  "checks": [
+    "restored-old-committed-receipt",
+    "new-plan-and-explicit-apply",
+    "disk-ready",
+    "service-start-and-maintenance-disabled",
+    "service-stop",
+    "remove-plan-and-explicit-apply",
+    "original-html-bytes-restored",
+    "all-owned-card-assets-absent",
+    "normal-exit"
+  ],
+  "operation_ids": [
+    "af12ca1a-65d2-4df1-812a-376b603ac427",
+    "13f9262f-c47b-498f-be84-0bb5ad15c4f9"
+  ],
+  "source_sha256": {
+    "rewrite/src-tauri/src/emby.rs": "a02ede248b4949792821d17e2cf46219eed9ed308d2393edeabeff318ec9192c",
+    "rewrite/src/EmbyPanel.vue": "da325897cadf593f6879d3aaeb2c74471c6e9dbf763fa6d143c7a303cb342bbc",
+    "rewrite/src-tauri/src/privileged.rs": "94e412da5403270978d211d70c2a5f24ae535a2d126106d326390397649f4930"
+  },
+  "limitations": [
+    "ordinary-user isolated webpage copy; no local real Emby server",
+    "Linux privileged process and system authentication require separate acceptance",
+    "macOS privileged launch not enabled"
+  ]
+}

@@ -74,6 +74,22 @@
           ],
           "scope": "Snapshot-bound review fingerprints and durable receipt query; narrow maintenance protocol with no implicit retransmission after unknown outcome and synchronous service cleanup on channel loss. Native macOS UI verified with ordinary-user fixture. OS-authorized launch, authenticated platform transport and protected helper journal still pending.",
           "evidence": "docs/rewrite/evidence/native-maintenance-receipt.json"
+        },
+        {
+          "sources": [
+            "rewrite/src-tauri/core/src/maintenance_linux.rs",
+            "rewrite/src-tauri/core/src/maintenance_pipe.rs",
+            "rewrite/src-tauri/src/privileged/linux.rs",
+            "rewrite/src-tauri/src/emby.rs"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/src/maintenance_pipe.rs",
+            "rewrite/src-tauri/core/src/maintenance_linux.rs",
+            "rewrite/src-tauri/src/privileged/linux.rs",
+            "rewrite/src-tauri/core/examples/privileged_acceptance.rs"
+          ],
+          "scope": "Linux pkexec launch and private inherited pipes, root-owned fixed journal, explicit re-plan after authorization, durable reconnect receipt and bounded process/publication owner. Portable unit tests passed; Linux process, polkit dialog, packaged UI and other-platform privileged launch acceptance pending.",
+          "evidence": "docs/rewrite/10-completion-checklist.md"
         }
       ]
     },

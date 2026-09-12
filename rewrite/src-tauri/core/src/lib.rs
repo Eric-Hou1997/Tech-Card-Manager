@@ -35,3 +35,8 @@ pub mod startup_file;
 pub mod emby_libraries;
 
 pub mod maintenance;
+
+#[cfg(unix)]
+pub mod maintenance_linux;
+#[cfg(unix)]
+pub mod maintenance_pipe;

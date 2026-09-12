@@ -4615,6 +4615,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "flate2",
+ "libc",
  "minisign-verify",
  "plist",
  "regex",

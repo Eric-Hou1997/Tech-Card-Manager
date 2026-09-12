@@ -4,6 +4,7 @@ mod desktop;
 mod emby;
 mod lifecycle;
 mod migration;
+mod privileged;
 mod update;
 use product_core::services::CredentialStore;
 use serde_json::{json, Value};
@@ -186,6 +187,8 @@ fn main() {
             desktop::tv_members,
             desktop::inspector,
             emby::emby_select,
+            emby::emby_authorize,
+            emby::emby_authorization_available,
             emby::emby_path_mappings,
             emby::emby_save_mappings,
             emby::emby_libraries,
