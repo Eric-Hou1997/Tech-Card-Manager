@@ -75,6 +75,10 @@ jobs:
         run: |
           npm ci
           npm run build
+      - name: Prepare Linux helper before native cargo checks
+        if: runner.os == 'Linux'
+        working-directory: rewrite
+        run: node tools/build-helper.mjs ${{ matrix.target }}
       - name: Rust formatting and lint
         working-directory: rewrite/src-tauri
         run: |
@@ -82,7 +86,7 @@ jobs:
           cargo clippy --workspace --all-targets --locked --target ${{ matrix.target }} -- -D warnings
       - name: Build isolated validation bundles
         working-directory: rewrite
-        run: npm run tauri build -- --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
+        run: npm run tauri build -- --verbose --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
       - name: Linux protected-directory helper process acceptance
         if: runner.os == 'Linux'
         working-directory: rewrite/src-tauri

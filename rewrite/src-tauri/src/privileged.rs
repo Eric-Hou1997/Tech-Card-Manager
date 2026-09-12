@@ -3,7 +3,7 @@ use product_core::{
     maintenance::{Command, Outcome},
     AppError, Result,
 };
-#[cfg(any(target_os = "linux", test))]
+#[cfg(any(target_os = "linux", all(test, unix)))]
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 mod linux;
 #[cfg(target_os = "linux")]

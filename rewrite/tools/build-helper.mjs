@@ -1,7 +1,8 @@
 import {execFileSync} from 'node:child_process';
 import {mkdirSync,copyFileSync} from 'node:fs';
-if(process.env.TAURI_ENV_PLATFORM==='linux') {
- const arch=process.env.TAURI_ENV_ARCH;
+const explicit=process.argv[2];
+if(explicit || process.env.TAURI_ENV_PLATFORM==='linux') {
+ const arch=explicit?.replace('-unknown-linux-gnu','') ?? process.env.TAURI_ENV_ARCH;
  if(!['x86_64','aarch64'].includes(arch))throw new Error(`Unsupported Linux architecture ${arch}`);
  const triple=`${arch}-unknown-linux-gnu`;
  const profile=process.env.TAURI_ENV_DEBUG==='true'?'debug':'release';

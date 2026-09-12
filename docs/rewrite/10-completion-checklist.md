@@ -142,3 +142,5 @@ ITM 已用原有 Ed25519 私钥验证 Tauri Minisign 格式签名；原密钥和
 平台依据：[pkexec 授权与退出状态](https://polkit.pages.freedesktop.org/polkit/pkexec.1.html)、[Tauri 辅助程序打包](https://tauri.app/develop/sidecar/)。
 
 Linux AppImage 的 FUSE 挂载与提权辅助程序可执行性需要独立验证；不能从 DEB/RPM 中的权限链路推断 AppImage 已通过。
+
+首轮 d310c99 云端运行 34687707740 未通过：Windows lint 包含了 Unix 测试模块；Linux 原生 lint 早于辅助程序构建；macOS 完成编译后 DMG 工具失败。平台条件与构建顺序已修正，DMG 打包启用详细日志后重新验证；失败运行不计为完成。
