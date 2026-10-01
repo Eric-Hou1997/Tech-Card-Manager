@@ -67,6 +67,17 @@ fn read_only_index_runs_before_card_setup_and_after_emby_removes_the_patch() {
             if status.phase == "running"
                 && fs::read_to_string(web.join("technical-specs-data.json"))
                     .is_ok_and(|data| data.contains(title))
+                // The data file becomes visible before the transaction commits
+                // its ownership/journal. Do not simulate a later Emby deletion
+                // in the middle of that publication: it must fail closed.
+                && integration.status().is_ok_and(|observed| {
+                    !observed.issues.iter().any(|issue| {
+                        matches!(
+                            issue.as_str(),
+                            "changed:technical-specs-data.json" | "emby-recovery-required"
+                        )
+                    })
+                })
             {
                 break;
             }
@@ -111,7 +122,7 @@ fn read_only_index_runs_before_card_setup_and_after_emby_removes_the_patch() {
     service.stop().unwrap();
     assert!(!service.status().unwrap().lease.unwrap().enabled);
     let data = fs::read(web.join("technical-specs-data.json")).unwrap();
-    let mut retry = CardService::start_with_store(integration, "retry", store).unwrap();
+    let mut retry = CardService::start_with_store(integration.clone(), "retry", store).unwrap();
     wait(&retry, "After");
     retry.stop().unwrap();
     assert_eq!(
