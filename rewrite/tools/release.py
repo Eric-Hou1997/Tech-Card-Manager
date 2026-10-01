@@ -7,7 +7,10 @@ import os
 from pathlib import Path
 import shutil
 import struct
+import subprocess
 import sys
+import tempfile
+import plistlib
 
 ROOT = Path(__file__).resolve().parents[2]
 CATALOG = ROOT / 'rewrite/src-tauri/core/assets/release-packages.json'
@@ -48,6 +51,7 @@ def collect(target, target_dir, output):
         assert len(candidates) == 1, f'Ambiguous/missing {entry["kind"]}: {candidates}'
         source = candidates[0]
         assert source.stat().st_size > 100000, f'Empty package: {source}'
+        inspect_package(source.resolve(), entry, architecture)
         name = entry['pattern'].replace('{version}', version)
         destination = output / name
         assert not destination.exists(), f'Refusing to overwrite {destination}'
@@ -55,8 +59,52 @@ def collect(target, target_dir, output):
         print(name)
     evidence = {'target': target, 'version': version, 'identifier': config['identifier'],
                 'binaries': {p.name: {'architecture': machine(p), 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in binaries},
+                'package_checks': ['extracted main/helper architecture', 'packaged LICENSE/NOTICE byte parity'],
                 'runtime_acceptance': 'not performed', 'macos_signing': 'ad hoc; not notarized' if 'apple' in target else 'not applicable'}
     (output / f'TCM-v{version}-{target}-build.json').write_text(json.dumps(evidence, indent=2) + '\n')
+
+
+def inspect_package(source, entry, architecture):
+    """Unpack without installing or starting the product or Emby service."""
+    with tempfile.TemporaryDirectory(prefix='tcm-package-') as temporary:
+        unpacked = Path(temporary)
+        kind = entry['kind']
+        mounted = False
+        def run(*args):
+            subprocess.run(args, cwd=unpacked, check=True, stdout=subprocess.DEVNULL)
+        try:
+            if kind == 'dmg':
+                run('hdiutil', 'attach', str(source), '-readonly', '-nobrowse', '-mountpoint', str(unpacked))
+                mounted = True
+                app = unpacked / 'Tech Card Manager.app'
+                run('codesign', '--verify', '--deep', '--strict', str(app))
+                info = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
+                assert info['CFBundleIdentifier'] == 'io.github.eric-hou1997.tcm'
+                assert info['CFBundleShortVersionString'] == json.loads(CATALOG.read_text())['version']
+            elif kind == 'deb':
+                run('dpkg-deb', '--extract', str(source), str(unpacked))
+                actual = subprocess.check_output(['dpkg-deb', '--field', str(source), 'Architecture'], text=True).strip()
+                assert actual == {'x86_64': 'amd64', 'aarch64': 'arm64'}[architecture]
+            elif kind == 'rpm':
+                run('bsdtar', '-xf', str(source))
+                actual = subprocess.check_output(['rpm', '-qp', '--queryformat', '%{ARCH}', str(source)], text=True).strip()
+                assert actual == architecture
+            elif kind == 'appimage':
+                run(str(source), '--appimage-extract')
+            else:
+                sevenzip = shutil.which('7z') or str(Path(os.environ.get('ProgramFiles', 'C:/Program Files')) / '7-Zip/7z.exe')
+                run(sevenzip, 'x', str(source), '-y', f'-o{unpacked}')
+            suffix = '.exe' if kind == 'nsis' else ''
+            for name in [f'Tech-Card-Manager{suffix}', f'tcm-maintenance-helper{suffix}']:
+                files = [p for p in unpacked.rglob(name) if p.is_file() and not p.is_symlink()]
+                assert len(files) == 1, f'{kind} does not contain exactly one {name}: {files}'
+                assert machine(files[0]) == architecture, f'{kind}: wrong packaged {name} architecture'
+            for name in ['LICENSE', 'NOTICE']:
+                expected = (ROOT / name).read_bytes()
+                assert any(p.is_file() and p.read_bytes() == expected for p in unpacked.rglob(name)), f'{kind} missing {name}'
+        finally:
+            if mounted:
+                subprocess.run(['hdiutil', 'detach', str(unpacked)], check=True, stdout=subprocess.DEVNULL)
 
 
 def verify(output):

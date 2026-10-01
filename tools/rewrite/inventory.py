@@ -69,10 +69,10 @@ def main():
     ap=argparse.ArgumentParser();ap.add_argument('--write',action='store_true');args=ap.parse_args()
     target=ROOT/'docs/rewrite/entrypoints.json';inventory=discover()
     if not args.write:
-        saved=json.loads(target.read_text())
+        saved=json.loads(target.read_text(encoding='utf-8'))
         if saved!=inventory:
             print('FAIL legacy source/entrypoints changed: review and explicitly update inventory');return 1
-        features=json.loads((target.parent/'features.json').read_text())
+        features=json.loads((target.parent/'features.json').read_text(encoding='utf-8'))
         ids={f['id'] for f in features['features']}
         assert all(e['feature'] in ids for e in inventory['entries'])
         assert set(features['targets'])==set(TARGETS)
