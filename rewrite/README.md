@@ -34,7 +34,7 @@ cargo test --locked -p tcm-core --test migration --test history --test startup_m
 
 ## v5.0.0 发行准备
 
-开发仍默认使用隔离的 validation 身份。维护者已授权正式制包及 GitHub Actions；真实 Emby、完整原生界面/操作与 Windows/Linux 运行验收仍暂缓，未记为通过。
+开发仍默认使用隔离的 validation 身份。维护者已授权正式制包及 GitHub Actions；工作流 `tcm-release.yml` 保留手动触发，收尾后源码上传不自动重复制包。真实 Emby、完整原生界面/操作与 Windows/Linux 运行验收仍暂缓，未记为通过。
 
 正式构建同时设置 `TCM_RELEASE_BUILD=1` 并合并 `src-tauri/tauri.release.conf.json`。身份为 `io.github.eric-hou1997.tcm`，包内程序为 `Tech-Card-Manager`；维护辅助程序使用同一发行标记验证父程序及维护目录。macOS 使用临时签名，未做 Apple 公证。
 

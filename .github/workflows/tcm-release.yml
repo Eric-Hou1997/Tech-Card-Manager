@@ -1,12 +1,6 @@
 name: TCM v5 package preparation
 on:
   workflow_dispatch:
-  push:
-    branches: [v5.0.0-rewrite]
-    paths:
-      - 'rewrite/**'
-      - 'language-packs/**'
-      - '.github/workflows/tcm-release.yml'
 permissions:
   contents: read
 env:
