@@ -47,15 +47,26 @@ pub enum Command {
         action: Action,
         index: PublicIndex,
     },
+    PlanAdoption {
+        id: String,
+        reviewed: String,
+        index: PublicIndex,
+    },
     Apply {
         id: String,
         fingerprint: String,
+    },
+    Repair {
+        id: String,
     },
     Publish {
         index: PublicIndex,
     },
     Start {
         session: String,
+    },
+    IndexCurrent {
+        fingerprint: Option<String>,
     },
     Stop {},
     Close {},
@@ -98,13 +109,12 @@ fn invalid(message: &str) -> AppError {
     AppError::new("maintenance-protocol", message)
 }
 fn validate_index(index: &PublicIndex) -> Result<()> {
-    let imdb = |id: &str| {
-        id.starts_with("tt")
-            && (3..=18).contains(&id.len())
-            && id[2..].bytes().all(|c| c.is_ascii_digit())
-    };
     if index.version != 7
-        || index.items.keys().any(|id| !imdb(id))
+        || index.items.keys().any(|id| emby::public_imdb(id).is_none())
+        || index
+            .items
+            .keys()
+            .any(|id| !index.item_types.contains_key(id))
         || index.item_types.iter().any(|(id, kind)| {
             !index.items.contains_key(id) || !matches!(kind.as_str(), "Movie" | "Series")
         })
@@ -113,6 +123,7 @@ fn validate_index(index: &PublicIndex) -> Result<()> {
     }
     Ok(())
 }
+
 impl Session {
     /// Only the authenticated platform launcher supplies these fixed paths.
     /// The journal must be private to the helper's elevated identity in production.
@@ -131,6 +142,7 @@ impl Session {
             .unwrap_or_else(|| {
                 Ok(ServiceStatus {
                     phase: "stopped".into(),
+                    last_started_at: None,
                     lease: None,
                     error: None,
                 })
@@ -198,6 +210,26 @@ impl Session {
                     &emby::bundled_card_languages()?,
                 )?))
             }
+            Command::PlanAdoption {
+                id,
+                reviewed,
+                index,
+            } => {
+                if self.service.is_some() {
+                    return Err(AppError::new(
+                        "emby-stop-required",
+                        "Stop the service before maintenance",
+                    ));
+                }
+                validate_index(&index)?;
+                Ok(Outcome::Plan(self.integration.plan_adoption(
+                    &id,
+                    &reviewed,
+                    SCRIPT,
+                    &index,
+                    &emby::bundled_card_languages()?,
+                )?))
+            }
             Command::Apply { id, fingerprint } => {
                 if self.service.is_some() {
                     return Err(AppError::new(
@@ -207,16 +239,38 @@ impl Session {
                 }
                 Ok(Outcome::Applied(self.integration.apply(&id, &fingerprint)?))
             }
+            Command::Repair { id } => {
+                let languages = emby::bundled_card_languages()?;
+                let status = if let Some(service) = &self.service {
+                    service.repair_web(&id, SCRIPT, &languages)?
+                } else {
+                    self.integration.repair_web(&id, SCRIPT, &languages)?
+                };
+                Ok(Outcome::Applied(status))
+            }
             Command::Publish { index } => {
                 validate_index(&index)?;
-                Ok(Outcome::Published(self.integration.publish_index(&index)?))
+                let changed = match &self.service {
+                    Some(service) => service.publish_index(&index)?,
+                    None => self.integration.publish_index(&index)?,
+                };
+                Ok(Outcome::Published(changed))
             }
             Command::Start { session } => {
                 if self.service.is_none() {
-                    self.service = Some(CardService::start(self.integration.clone(), &session)?);
+                    self.service = Some(CardService::start_waiting_for_index(
+                        self.integration.clone(),
+                        &session,
+                    )?);
                 }
                 Ok(Outcome::Service(self.service_status()?))
             }
+            Command::IndexCurrent { fingerprint } => match &self.service {
+                Some(service) => Ok(Outcome::Service(
+                    service.set_index_current(fingerprint.as_deref())?,
+                )),
+                None => Ok(Outcome::Service(self.service_status()?)),
+            },
             Command::Stop {} => Ok(Outcome::Service(self.stop()?)),
             Command::Close {} => {
                 self.stop()?;
@@ -341,11 +395,17 @@ impl<T: Read + Write> Client<T> {
                 (_, Outcome::Failed(_))
                     | (Command::Status {}, Outcome::Status { .. })
                     | (Command::Operation { .. }, Outcome::Operation(_))
-                    | (Command::Plan { .. }, Outcome::Plan(_))
-                    | (Command::Apply { .. }, Outcome::Applied(_))
+                    | (
+                        Command::Plan { .. } | Command::PlanAdoption { .. },
+                        Outcome::Plan(_)
+                    )
+                    | (
+                        Command::Apply { .. } | Command::Repair { .. },
+                        Outcome::Applied(_)
+                    )
                     | (Command::Publish { .. }, Outcome::Published(_))
                     | (
-                        Command::Start { .. } | Command::Stop {},
+                        Command::Start { .. } | Command::Stop {} | Command::IndexCurrent { .. },
                         Outcome::Service(_)
                     )
                     | (Command::Close {}, Outcome::Closed)
@@ -354,7 +414,9 @@ impl<T: Read + Write> Client<T> {
                 return Err(invalid("Helper response has the wrong result kind"));
             }
             if let (
-                Command::Operation { id } | Command::Plan { id, .. },
+                Command::Operation { id }
+                | Command::Plan { id, .. }
+                | Command::PlanAdoption { id, .. },
                 Outcome::Operation(plan) | Outcome::Plan(plan),
             ) = (&request.request, &reply.outcome)
             {
@@ -380,9 +442,48 @@ impl<T: Read + Write> Client<T> {
             .at(match &request.request {
                 Command::Operation { id }
                 | Command::Plan { id, .. }
-                | Command::Apply { id, .. } => id.as_str(),
+                | Command::PlanAdoption { id, .. }
+                | Command::Apply { id, .. }
+                | Command::Repair { id } => id.as_str(),
                 _ => "maintenance-session",
             })),
         }
+    }
+}
+
+#[cfg(test)]
+mod index_tests {
+    use super::*;
+    use std::collections::BTreeMap;
+
+    fn index(id: &str) -> PublicIndex {
+        PublicIndex {
+            version: 7,
+            generated_at: "2026-09-15T00:00:00Z".into(),
+            items: BTreeMap::from([(
+                id.into(),
+                BTreeMap::from([("Color".into(), vec!["Color".into()])]),
+            )]),
+            item_types: BTreeMap::from([(id.into(), "Movie".into())]),
+        }
+    }
+
+    #[test]
+    fn helper_uses_the_original_five_to_twelve_digit_imdb_gate() {
+        for valid in ["tt12345", "tt123456789012"] {
+            validate_index(&index(valid)).unwrap();
+        }
+        for invalid in ["tt1234", "tt1234567890123", "TT12345", "tt12x45"] {
+            assert_eq!(
+                validate_index(&index(invalid)).unwrap_err().code,
+                "maintenance-protocol"
+            );
+        }
+        let mut missing_type = index("tt12345");
+        missing_type.item_types.clear();
+        assert_eq!(
+            validate_index(&missing_type).unwrap_err().code,
+            "maintenance-protocol"
+        );
     }
 }

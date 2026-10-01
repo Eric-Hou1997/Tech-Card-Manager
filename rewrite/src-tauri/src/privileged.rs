@@ -6,11 +6,18 @@ use product_core::{
 #[cfg(any(target_os = "linux", all(test, unix)))]
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 mod linux;
-#[cfg(target_os = "linux")]
-pub use linux::Connection;
-#[cfg(not(target_os = "linux"))]
+#[cfg(target_os = "macos")]
+mod macos;
+#[cfg(windows)]
+mod windows;
+#[cfg(any(target_os = "linux", target_os = "macos", windows, all(test, unix)))]
+#[cfg_attr(not(any(target_os = "linux", windows)), allow(dead_code))]
+mod worker;
+#[cfg(any(target_os = "linux", target_os = "macos", windows))]
+pub use worker::Connection;
+#[cfg(not(any(target_os = "linux", target_os = "macos", windows)))]
 pub struct Connection;
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "macos", windows)))]
 impl Connection {
     pub fn request(&self, _command: Command) -> Result<Outcome> {
         Err(unavailable())
@@ -19,7 +26,7 @@ impl Connection {
         Ok(())
     }
 }
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "macos", windows)))]
 fn unavailable() -> AppError {
     AppError::new(
         "maintenance-platform-pending",
@@ -34,12 +41,20 @@ pub fn launch(
     {
         linux::launch(web, store)
     }
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(target_os = "macos")]
+    {
+        macos::launch(web, store)
+    }
+    #[cfg(windows)]
+    {
+        windows::launch(web, store)
+    }
+    #[cfg(not(any(target_os = "linux", target_os = "macos", windows)))]
     {
         let _ = (web, store);
         Err(unavailable())
     }
 }
 pub fn available() -> bool {
-    cfg!(target_os = "linux")
+    cfg!(any(target_os = "linux", target_os = "macos", windows))
 }

@@ -16,6 +16,30 @@ pub enum Locale {
     Traditional,
     #[serde(rename = "en-US")]
     English,
+    #[serde(rename = "fr-FR")]
+    French,
+    #[serde(rename = "ru-RU")]
+    Russian,
+    #[serde(rename = "ja-JP")]
+    Japanese,
+    #[serde(rename = "es-ES")]
+    Spanish,
+    #[serde(rename = "th-TH")]
+    Thai,
+}
+impl Locale {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Simplified => "zh-CN",
+            Self::Traditional => "zh-Hant",
+            Self::English => "en-US",
+            Self::French => "fr-FR",
+            Self::Russian => "ru-RU",
+            Self::Japanese => "ja-JP",
+            Self::Spanish => "es-ES",
+            Self::Thai => "th-TH",
+        }
+    }
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
 pub struct LibraryRoot {
@@ -109,6 +133,10 @@ pub struct TaskControl {
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
 pub struct Task {
+    #[serde(default)]
+    pub force_parse: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub service_session: Option<String>,
     pub id: String,
     pub state: TaskState,
     pub locale: Locale,
@@ -145,6 +173,10 @@ pub struct MediaItem {
     pub path: String,
     pub source_hash: String,
     pub title: String,
+    #[serde(default)]
+    pub original_title: String,
+    #[serde(default)]
+    pub show_title: String,
     pub year: String,
     pub imdb: String,
     pub kind: String,
@@ -170,6 +202,10 @@ pub struct CatalogPage {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(tag = "kind", content = "result", rename_all = "kebab-case")]
 pub enum OperationResult {
+    ManagerScan(Vec<Task>),
+    Rebuild(Vec<Task>),
+    Folders(crate::folders::FolderReceipt),
+    IncrementalSettings(crate::incremental::IncrementalSettings),
     PathMappings(crate::emby_libraries::MappingSettings),
     Lifecycle(crate::lifecycle::SettingsOperation),
     Ui(crate::ui::UiReceipt),
@@ -182,6 +218,17 @@ pub enum OperationResult {
 
 pub fn typescript() -> String {
     let declarations = [
+        crate::languages::LanguageOption::decl(),
+        crate::languages::LanguageSnapshot::decl(),
+        crate::folders::FolderKind::decl(),
+        crate::folders::FolderSource::decl(),
+        crate::folders::MediaFolder::decl(),
+        crate::folders::FolderSettings::decl(),
+        crate::folders::FolderReceipt::decl(),
+        serde_json::Value::decl(),
+        crate::history::HistoryArchive::decl(),
+        crate::history::HistoryArchives::decl(),
+        crate::history::HistoryPage::decl(),
         Space::decl(),
         Locale::decl(),
         LibraryRoot::decl(),
@@ -194,6 +241,7 @@ pub fn typescript() -> String {
         Ownership::decl(),
         Tag::decl(),
         MediaItem::decl(),
+        crate::ui::ManagerRow::decl(),
         CatalogQuery::decl(),
         CatalogPage::decl(),
         crate::migration::LegacyFile::decl(),
@@ -204,12 +252,30 @@ pub fn typescript() -> String {
         crate::update::UpdateArtifact::decl(),
         crate::update::UpdateCatalog::decl(),
         crate::update::UpdateProgress::decl(),
+        crate::manual_update::Failure::decl(),
+        crate::manual_update::ReleaseCheck::decl(),
+        crate::emby_environment::Environment::decl(),
+        crate::emby::LegacyPatchObservation::decl(),
+        crate::emby::IntegrationDetails::decl(),
+        crate::emby::IntegrationStatus::decl(),
+        crate::emby::MaintenancePlan::decl(),
+        crate::emby::Lease::decl(),
+        crate::card_service::ServiceStatus::decl(),
+        crate::legacy_components::Component::decl(),
+        crate::legacy_components::Review::decl(),
         crate::ui::Sort::decl(),
         crate::ui::LibraryView::decl(),
+        crate::ui::InspectorTab::decl(),
+        crate::ui::SpecFilter::decl(),
+        crate::ui::CatalogSummary::decl(),
+        crate::incremental::IncrementalSettings::decl(),
+        crate::incremental::IncrementalStatus::decl(),
+        crate::diagnostics::RootDiagnostic::decl(),
+        crate::diagnostics::NfoDiagnostic::decl(),
+        crate::diagnostics::LibraryDiagnostics::decl(),
+        crate::ui::PresentationState::decl(),
         crate::ui::UiState::decl(),
         crate::ui::UiReceipt::decl(),
-        crate::tv::TvRow::decl(),
-        crate::tv::TvPage::decl(),
         crate::lifecycle::CloseAction::decl(),
         crate::lifecycle::Settings::decl(),
         crate::lifecycle::SettingsOperation::decl(),

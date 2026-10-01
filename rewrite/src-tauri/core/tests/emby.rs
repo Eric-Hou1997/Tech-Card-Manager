@@ -23,6 +23,41 @@ fn setup() -> (tempfile::TempDir, std::path::PathBuf, std::path::PathBuf) {
     (temp, web, backup)
 }
 #[test]
+fn indexing_without_a_patch_never_claims_existing_unknown_data_or_runtime() {
+    for (name, contents) in [
+        (
+            "technical-specs-data.json",
+            serde_json::to_vec(&index()).unwrap(),
+        ),
+        (
+            "technical-specs-runtime.json",
+            serde_json::to_vec(&Lease {
+                version: 1,
+                manager_version: "other".into(),
+                web_card_version: "other".into(),
+                session_id: "other-manager".into(),
+                sequence: 1,
+                enabled: false,
+                updated_at: timestamp(),
+                expires_at: timestamp(),
+            })
+            .unwrap(),
+        ),
+    ] {
+        let (_temp, web, backup) = setup();
+        fs::write(web.join(name), &contents).unwrap();
+        let integration = Integration::open(&web, &backup).unwrap();
+        assert!(integration.begin_session("unconfirmed").is_err());
+        assert_eq!(fs::read(web.join(name)).unwrap(), contents);
+        assert_eq!(fs::read(web.join("index.html")).unwrap(), html());
+        if name != "technical-specs-runtime.json" {
+            assert!(!web.join("technical-specs-runtime.json").exists());
+        }
+        assert!(integration.publish_index(&index()).is_err());
+        assert_eq!(fs::read(web.join(name)).unwrap(), contents);
+    }
+}
+#[test]
 fn install_replay_lease_stop_remove_preserve_original_and_unowned_files() {
     let (_temp, web, backup) = setup();
     fs::write(web.join("other-plugin.js"), "external").unwrap();
@@ -143,11 +178,28 @@ fn public_feed_is_path_free_merges_series_and_excludes_episodes() {
         fs::write(&path, nfo).unwrap();
         items.push(library::read(&root, &path).unwrap());
     }
+    for (index, imdb) in ["tt1234", "tt1234567890123", "nm1234567"]
+        .into_iter()
+        .enumerate()
+    {
+        let mut item = items[0].clone();
+        item.path = format!("invalid-{index}");
+        item.imdb = imdb.into();
+        item.specs.get_mut("Camera").unwrap()[0] = format!("Invalid{index}");
+        items.push(item);
+    }
+    let mut trimmed = items[0].clone();
+    trimmed.path = "trimmed".into();
+    trimmed.imdb = " tt7654321 ".into();
+    trimmed.specs.get_mut("Camera").unwrap()[0] = "Trimmed".into();
+    items.push(trimmed);
     let public = public_index(&items, "2026-09-11T00:00:00Z".into());
     let json = serde_json::to_string(&public).unwrap();
     assert!(!json.contains(web.to_str().unwrap()));
     assert!(!json.contains("SecretEpisodeCamera"));
+    assert!(!json.contains("Invalid"));
     assert_eq!(public.item_types["tt1234567"], "Series");
+    assert_eq!(public.items["tt7654321"]["Camera"], ["Trimmed"]);
 }
 
 #[test]
@@ -161,9 +213,11 @@ fn stop_joins_renewal_and_restart_gets_new_session() {
         .unwrap();
     target.apply(&p.id, &p.fingerprint).unwrap();
     let mut service = CardService::start(target.clone(), "one").unwrap();
+    let first_start = service.status().unwrap().last_started_at.unwrap();
     let deadline = std::time::Instant::now() + Duration::from_secs(15);
     loop {
         let status = service.status().unwrap();
+        assert_eq!(status.last_started_at.as_ref(), Some(&first_start));
         if status
             .lease
             .as_ref()
@@ -185,8 +239,73 @@ fn stop_joins_renewal_and_restart_gets_new_session() {
         fs::read(web.join("technical-specs-runtime.json")).unwrap()
     );
     let mut restarted = CardService::start(target, "two").unwrap();
+    assert_ne!(
+        restarted.status().unwrap().last_started_at.as_ref(),
+        Some(&first_start)
+    );
     assert_eq!(restarted.status().unwrap().lease.unwrap().session_id, "two");
     restarted.stop().unwrap();
+}
+
+#[test]
+fn legacy_start_gate_preserves_web_files_and_never_creates_a_lease_when_blocked() {
+    use std::{collections::BTreeMap, sync::Arc};
+    use tcm_core::{
+        card_service::CardService,
+        legacy_components::{start_after_check, Component, Inventory},
+        AppError,
+    };
+    let (_temp, web, backup) = setup();
+    let target = Arc::new(Integration::open(&web, &backup).unwrap());
+    let plan = target
+        .plan("install", "install", b"js", &index(), b"{}")
+        .unwrap();
+    target.apply(&plan.id, &plan.fingerprint).unwrap();
+    let snapshot = || {
+        fs::read_dir(&web)
+            .unwrap()
+            .map(|entry| {
+                let path = entry.unwrap().path();
+                (
+                    path.file_name().unwrap().to_owned(),
+                    (
+                        fs::read(&path).unwrap(),
+                        fs::metadata(&path).unwrap().modified().unwrap(),
+                    ),
+                )
+            })
+            .collect::<BTreeMap<_, _>>()
+    };
+    let before = snapshot();
+    for observation in [
+        Err(AppError::new("read-denied", "unknown")),
+        Ok(Inventory {
+            items: vec![Component {
+                pid: None,
+                kind: "process".into(),
+                target: "original.exe".into(),
+                identity: "old-instance".into(),
+            }],
+            ..Default::default()
+        }),
+    ] {
+        assert!(start_after_check(
+            || observation,
+            || CardService::start(target.clone(), "blocked-session")
+        )
+        .is_err());
+        assert_eq!(snapshot(), before);
+        assert!(!target.status().unwrap().details.unwrap().runtime_valid);
+    }
+    let mut service = start_after_check(
+        || Ok(Inventory::default()),
+        || CardService::start(target.clone(), "clear-session"),
+    )
+    .unwrap();
+    assert_eq!(service.status().unwrap().phase, "running");
+    assert!(service.status().unwrap().lease.unwrap().enabled);
+    assert_eq!(service.stop().unwrap().phase, "stopped");
+    assert!(!target.status().unwrap().details.unwrap().runtime_valid);
 }
 
 #[test]
@@ -237,6 +356,197 @@ fn card_language_publication_contains_all_five_presentation_packs() {
             .iter()
             .all(|(key, value)| key.starts_with("legacy.")
                 && value.as_str().is_some_and(|s| !s.is_empty())));
+    }
+}
+
+#[test]
+fn legacy_patch_observation_is_readonly_and_binds_all_files_for_later_review() {
+    let (_temp, web, backup) = setup();
+    let patched = String::from_utf8(html()).unwrap().replace("</body>", "<!-- IMDbTechManager WebPatch BEGIN --><script src=\"technical-specs-card.js?v=4.1.0\"></script><!-- IMDbTechManager WebPatch END --></body>");
+    fs::write(web.join("index.html"), &patched).unwrap();
+    fs::write(
+        web.join("technical-specs-card.js"),
+        include_bytes!("../../../web-card/technical-specs-card.js"),
+    )
+    .unwrap();
+    let original = fs::read(web.join("index.html")).unwrap();
+    let modified = fs::metadata(web.join("index.html"))
+        .unwrap()
+        .modified()
+        .unwrap();
+    let integration = Integration::inspect_only(&web, &backup).unwrap();
+    let before = integration.status().unwrap();
+    assert!(!before.healthy);
+    let observed = before.legacy_patch.unwrap();
+    assert!(!observed.unsafe_patch);
+    assert_eq!(observed.items, ["旧版网页卡片 v4.1.0"]);
+    assert_eq!(
+        integration
+            .status()
+            .unwrap()
+            .legacy_patch
+            .unwrap()
+            .fingerprint,
+        observed.fingerprint
+    );
+    fs::write(
+        web.join("technical-specs-data.json"),
+        serde_json::to_vec(&index()).unwrap(),
+    )
+    .unwrap();
+    assert_ne!(
+        integration
+            .status()
+            .unwrap()
+            .legacy_patch
+            .unwrap()
+            .fingerprint,
+        observed.fingerprint
+    );
+    assert_eq!(fs::read(web.join("index.html")).unwrap(), original);
+    assert_eq!(
+        fs::metadata(web.join("index.html"))
+            .unwrap()
+            .modified()
+            .unwrap(),
+        modified
+    );
+    let transaction_root = backup.join(tcm_core::hash(web.to_string_lossy().as_bytes()));
+    for directory in ["blobs", "operations"] {
+        assert_eq!(
+            fs::read_dir(transaction_root.join(directory))
+                .unwrap()
+                .count(),
+            0
+        );
+    }
+    // A script version string is presentation, not proof of ownership.
+    fs::write(
+        web.join("technical-specs-card.js"),
+        b"const WEB_CARD_VERSION = \"4.1.0\";\nexternal",
+    )
+    .unwrap();
+    assert!(
+        integration
+            .status()
+            .unwrap()
+            .legacy_patch
+            .unwrap()
+            .unsafe_patch
+    );
+}
+
+#[test]
+fn reviewed_adoption_rejects_changed_files_and_survives_restart_and_reply_loss() {
+    let (_temp, web, backup) = setup();
+    let script = include_bytes!("../../../web-card/technical-specs-card.js");
+    let patched=String::from_utf8(html()).unwrap().replace("</body>","<!-- IMDbTechManager WebPatch BEGIN --><script src=\"technical-specs-card.js?v=4.1.0\"></script><!-- IMDbTechManager WebPatch END --></body>");
+    fs::write(web.join("index.html"), patched).unwrap();
+    fs::write(web.join("technical-specs-card.js"), script).unwrap();
+    let integration = Integration::open(&web, &backup).unwrap();
+    let reviewed = integration
+        .status()
+        .unwrap()
+        .legacy_patch
+        .unwrap()
+        .fingerprint;
+    assert_eq!(
+        integration
+            .plan_adoption("wrong", "different", script, &index(), b"{}")
+            .unwrap_err()
+            .code,
+        "emby-legacy-review-changed"
+    );
+    let plan = integration
+        .plan_adoption("reviewed", &reviewed, script, &index(), b"{}")
+        .unwrap();
+    assert_eq!(
+        integration
+            .plan_adoption("reviewed", "another-review", script, &index(), b"{}")
+            .unwrap_err()
+            .code,
+        "operation-conflict"
+    );
+    // This fixed file was absent and is not a change in this plan. Its later
+    // appearance must invalidate the review before any candidate is written.
+    let runtime = web.join("technical-specs-runtime.json");
+    fs::write(&runtime, b"{}").unwrap();
+    let before = fs::read(web.join("index.html")).unwrap();
+    assert_eq!(
+        integration
+            .apply(&plan.id, &plan.fingerprint)
+            .unwrap_err()
+            .code,
+        "emby-legacy-review-changed"
+    );
+    assert_eq!(fs::read(web.join("index.html")).unwrap(), before);
+    assert_eq!(fs::read(&runtime).unwrap(), b"{}");
+    assert_eq!(integration.operation(&plan.id).unwrap().phase, "planned");
+    fs::remove_file(runtime).unwrap();
+    drop(integration);
+    let reopened = Integration::open(&web, &backup).unwrap();
+    assert!(reopened.apply(&plan.id, &plan.fingerprint).unwrap().healthy);
+    assert!(reopened.apply(&plan.id, &plan.fingerprint).unwrap().healthy);
+    assert_eq!(
+        reopened
+            .plan_adoption(&plan.id, &reviewed, script, &index(), b"{}")
+            .unwrap()
+            .phase,
+        "committed"
+    );
+}
+
+#[test]
+fn ambiguous_marker_and_case_variant_reference_never_report_a_healthy_integration() {
+    let (_temp, web, backup) = setup();
+    let integration = Integration::open(&web, &backup).unwrap();
+    let script = include_bytes!("../../../web-card/technical-specs-card.js");
+    let plan = integration
+        .plan(
+            "owned",
+            "install",
+            script,
+            &index(),
+            &bundled_card_languages().unwrap(),
+        )
+        .unwrap();
+    assert!(
+        integration
+            .apply(&plan.id, &plan.fingerprint)
+            .unwrap()
+            .healthy
+    );
+    assert!(integration.status().unwrap().legacy_patch.is_none());
+    let installed = fs::read_to_string(web.join("index.html")).unwrap();
+    for modified in [
+        installed.replace("<!-- IMDbTechManager WebPatch END -->", ""),
+        installed.replace(
+            "<!-- IMDbTechManager WebPatch END -->",
+            "<script src=\"external.js\"></script><!-- IMDbTechManager WebPatch END -->",
+        ),
+        String::from_utf8(html()).unwrap().replace(
+            "</body>",
+            "<script src=\"TECHNICAL-SPECS-CARD.JS?v=4.1.0\"></script></body>",
+        ),
+    ] {
+        fs::write(web.join("index.html"), &modified).unwrap();
+        let status = integration.status().unwrap();
+        assert!(!status.healthy);
+        assert!(status.legacy_patch.unwrap().unsafe_patch);
+        assert!(status
+            .issues
+            .iter()
+            .any(|issue| issue == "emby-unknown-ownership"));
+        assert!(clean_index(modified.as_bytes()).is_err());
+        assert_eq!(
+            integration.begin_session("unsafe").unwrap_err().code,
+            "emby-repair-required"
+        );
+        assert!(!web.join("technical-specs-runtime.json").exists());
+        assert_eq!(
+            fs::read(web.join("index.html")).unwrap(),
+            modified.as_bytes()
+        );
     }
 }
 #[test]
@@ -629,5 +939,190 @@ fn modified_review_journal_is_rejected_and_previous_format_receipts_remain_usabl
             .unwrap()
             .phase,
         "committed"
+    );
+}
+
+#[test]
+fn live_web_repair_preserves_index_bytes_runtime_identity_and_renewal() {
+    use std::{sync::Arc, time::Duration};
+    use tcm_core::card_service::CardService;
+    let (_temp, web, backup) = setup();
+    let integration = Arc::new(Integration::open(&web, &backup).unwrap());
+    let languages = emby::bundled_card_languages().unwrap();
+    let original_index = index();
+    let plan = integration
+        .plan(
+            "install-online",
+            "install",
+            b"window.card='old'",
+            &original_index,
+            &languages,
+        )
+        .unwrap();
+    integration.apply(&plan.id, &plan.fingerprint).unwrap();
+    let data = fs::read(web.join("technical-specs-data.json")).unwrap();
+    let modified = fs::metadata(web.join("technical-specs-data.json"))
+        .unwrap()
+        .modified()
+        .unwrap();
+    let mut service = CardService::start(integration.clone(), "continuous-session").unwrap();
+    let before = service.status().unwrap();
+    let repaired = service
+        .repair_web("repair-online", b"window.card='new'", &languages)
+        .unwrap();
+    assert!(repaired.healthy);
+    assert_eq!(
+        fs::read(web.join("technical-specs-data.json")).unwrap(),
+        data
+    );
+    assert_eq!(
+        fs::metadata(web.join("technical-specs-data.json"))
+            .unwrap()
+            .modified()
+            .unwrap(),
+        modified
+    );
+    assert_eq!(
+        fs::read(web.join("technical-specs-card.js")).unwrap(),
+        b"window.card='new'"
+    );
+    std::thread::sleep(Duration::from_millis(2200));
+    let after = service.status().unwrap();
+    assert_eq!(after.phase, "running");
+    assert_eq!(after.last_started_at, before.last_started_at);
+    let before = before.lease.unwrap();
+    let after = after.lease.unwrap();
+    assert_eq!(after.session_id, before.session_id);
+    assert!(after.enabled);
+    assert!(after.sequence > before.sequence);
+    assert!(
+        service
+            .repair_web("repair-online", b"window.card='new'", &languages)
+            .unwrap()
+            .healthy
+    );
+    assert_eq!(
+        service
+            .repair_web("repair-online", b"window.card='different'", &languages)
+            .unwrap_err()
+            .code,
+        "operation-conflict"
+    );
+    service.stop().unwrap();
+}
+#[test]
+fn web_repair_does_not_claim_or_replace_unowned_published_data() {
+    let (_temp, web, backup) = setup();
+    let integration = Integration::open(&web, &backup).unwrap();
+    let languages = emby::bundled_card_languages().unwrap();
+    let plan = integration
+        .plan("owned", "install", b"window.card=1", &index(), &languages)
+        .unwrap();
+    integration.apply(&plan.id, &plan.fingerprint).unwrap();
+    fs::write(web.join("technical-specs-data.json"), b"external change").unwrap();
+    let before = fs::read(web.join("index.html")).unwrap();
+    let script = fs::read(web.join("technical-specs-card.js")).unwrap();
+    assert_eq!(
+        integration
+            .repair_web("unsafe", b"window.card=2", &languages)
+            .unwrap_err()
+            .code,
+        "emby-unknown-asset"
+    );
+    assert_eq!(
+        fs::read(web.join("technical-specs-data.json")).unwrap(),
+        b"external change"
+    );
+    assert_eq!(fs::read(web.join("index.html")).unwrap(), before);
+    assert_eq!(
+        fs::read(web.join("technical-specs-card.js")).unwrap(),
+        script
+    );
+}
+
+#[test]
+fn diagnostic_file_observations_do_not_confuse_installed_running_and_valid() {
+    let (_temp, web, backup) = setup();
+    let integration = Integration::open(&web, &backup).unwrap();
+    let absent = integration.status().unwrap().details.unwrap();
+    assert!(!absent.script_exists && !absent.data_exists && !absent.runtime_valid);
+    let script = include_bytes!("../../../web-card/technical-specs-card.js");
+    let plan = integration
+        .plan("diagnostic-install", "install", script, &index(), b"{}")
+        .unwrap();
+    integration.apply(&plan.id, &plan.fingerprint).unwrap();
+    let installed = integration.status().unwrap().details.unwrap();
+    assert!(installed.script_matches && installed.data_valid);
+    assert_eq!(installed.script_version.as_deref(), Some("5.0.0"));
+    assert_eq!(
+        installed.data_fingerprint,
+        Some(index_fingerprint(&index()).unwrap())
+    );
+    assert!(!installed.runtime_valid);
+    let lease = integration.begin_session("diagnostic-session").unwrap();
+    assert!(integration.status().unwrap().details.unwrap().runtime_valid);
+    let mut expired = lease.clone();
+    expired.expires_at = "2000-01-01T00:00:00Z".into();
+    fs::write(
+        web.join("technical-specs-runtime.json"),
+        serde_json::to_vec(&expired).unwrap(),
+    )
+    .unwrap();
+    assert!(!integration.status().unwrap().details.unwrap().runtime_valid);
+    let mut future = lease;
+    future.expires_at = (chrono::Utc::now() + chrono::Duration::hours(1)).to_rfc3339();
+    fs::write(
+        web.join("technical-specs-runtime.json"),
+        serde_json::to_vec(&future).unwrap(),
+    )
+    .unwrap();
+    assert!(!integration.status().unwrap().details.unwrap().runtime_valid);
+    fs::write(web.join("technical-specs-data.json"), b"broken JSON").unwrap();
+    fs::write(
+        web.join("technical-specs-card.js"),
+        b"const WEB_CARD_VERSION = \"4.1.0\"; // external",
+    )
+    .unwrap();
+    let broken = integration.status().unwrap();
+    assert!(!broken.healthy);
+    let details = broken.details.unwrap();
+    assert!(details.script_exists && details.data_exists);
+    assert!(!details.script_matches && !details.data_valid);
+    assert_eq!(details.data_fingerprint, None);
+    let paths = [
+        web.join("index.html"),
+        web.join("technical-specs-card.js"),
+        web.join("technical-specs-data.json"),
+        web.join("technical-specs-runtime.json"),
+    ];
+    let before: Vec<_> = paths
+        .iter()
+        .map(|p| {
+            (
+                fs::read(p).unwrap(),
+                fs::metadata(p).unwrap().modified().unwrap(),
+            )
+        })
+        .collect();
+    integration.status().unwrap();
+    for (path, (bytes, modified)) in paths.iter().zip(before) {
+        assert_eq!(fs::read(path).unwrap(), bytes);
+        assert_eq!(fs::metadata(path).unwrap().modified().unwrap(), modified);
+    }
+}
+
+#[test]
+fn diagnostic_index_identity_excludes_only_generation_time() {
+    let original = index();
+    let mut next = original.clone();
+    next.generated_at = timestamp();
+    assert_eq!(
+        index_fingerprint(&original).unwrap(),
+        index_fingerprint(&next).unwrap()
+    );
+    next.item_types.insert("tt0000001".into(), "Movie".into());
+    assert_ne!(
+        index_fingerprint(&original).unwrap(),
+        index_fingerprint(&next).unwrap()
     );
 }

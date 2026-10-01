@@ -21,9 +21,28 @@ impl Default for Settings {
             revision: 0,
             close_action: CloseAction::Quit,
             launch_at_login: false,
-            start_hidden: true,
+            start_hidden: false,
         }
     }
+}
+/// Full argv, including the executable. v4.1.0 only examines its first switch;
+/// a stale Agent registration exits before creating any application resources.
+pub fn ignored_agent_launch(
+    arguments: impl IntoIterator<Item = impl AsRef<std::ffi::OsStr>>,
+) -> bool {
+    arguments
+        .into_iter()
+        .nth(1)
+        .is_some_and(|argument| argument.as_ref() == std::ffi::OsStr::new("--agent"))
+}
+pub fn silent_login_launch(
+    settings: &Settings,
+    arguments: impl IntoIterator<Item = impl AsRef<str>>,
+) -> bool {
+    settings.start_hidden
+        && arguments
+            .into_iter()
+            .any(|arg| matches!(arg.as_ref(), "--background" | "--login-startup"))
 }
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 pub struct SettingsOperation {

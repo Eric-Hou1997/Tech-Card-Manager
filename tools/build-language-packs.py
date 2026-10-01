@@ -200,13 +200,18 @@ def build_pack(catalog: dict, locale: str, descriptor: dict, required: Optional[
 
 
 def main() -> int:
+    global CATALOG_PATH, EMBEDDED_CATALOG_PATH
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path)
     parser.add_argument("--changed-only", action="store_true")
     parser.add_argument("--update-catalog", action="store_true")
     parser.add_argument("--app-version")
     parser.add_argument("--require-complete", action="store_true")
+    parser.add_argument("--catalog", type=Path, default=CATALOG_PATH)
+    parser.add_argument("--embedded-catalog", type=Path, default=EMBEDDED_CATALOG_PATH)
+    parser.add_argument("--additional-web", type=Path)
     args = parser.parse_args()
+    CATALOG_PATH, EMBEDDED_CATALOG_PATH = args.catalog, args.embedded_catalog
     catalog = load_catalog()
     if args.app_version and catalog["app_version"] != args.app_version:
         raise ValueError(f"catalog targets {catalog['app_version']}, not {args.app_version}")
@@ -214,6 +219,10 @@ def main() -> int:
     built: list[str] = []
     common_message_set_hash: Optional[str] = None
     required = required_messages() if args.require_complete else None
+    if args.additional_web:
+        if required is None:
+            raise ValueError("additional messages require --require-complete")
+        required["web"].update(json.loads(args.additional_web.read_text(encoding="utf-8"))["v5_english"].values())
     for locale, descriptor in sorted(catalog["languages"].items()):
         payload, message_set_hash = build_pack(catalog, locale, descriptor, required)
         if common_message_set_hash is None:

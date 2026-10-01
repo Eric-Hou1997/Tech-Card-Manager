@@ -1,0 +1,24 @@
+/* Vue mount; visual rules come from v4.1.0 baseline.css. */
+#app{min-height:100vh}
+
+/* WKWebView lets its native select chrome override the field height and radius.
+   Keep the v4 field geometry and retain the original up/down affordance. */
+input.search,.rootInput input{min-height:42px}
+select.select{
+ height:42px;
+ min-height:42px;
+ border-radius:10px;
+ -webkit-appearance:none;
+ appearance:none;
+ padding-right:32px;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 16'%3E%3Cpath d='M2 6 6 2l4 4M2 10l4 4 4-4' fill='none' stroke='%23eef3f8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+ background-repeat:no-repeat;
+ background-position:right 10px center;
+ background-size:12px 16px;
+}
+@media(prefers-color-scheme:light){select.select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 16'%3E%3Cpath d='M2 6 6 2l4 4M2 10l4 4 4-4' fill='none' stroke='%2317212c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}}
+
+/* The baseline row margin compounded the editor grid gap. Use one 10 px
+   rhythm from the path field to the first card and between every card. */
+.rootEditor{gap:10px}
+.rootEditor>.row+.row{margin-top:0}

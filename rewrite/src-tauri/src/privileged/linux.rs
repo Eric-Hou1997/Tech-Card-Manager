@@ -1,11 +1,11 @@
+use super::worker::Connection;
 use super::*;
-use product_core::{emby, maintenance::Client, maintenance_pipe::Pipe};
+use product_core::{maintenance::Client, maintenance_pipe::Pipe};
 use std::{
     io::{Read, Write},
     path::Path,
     process::{Child, Command as Process, Stdio},
-    sync::{mpsc, Arc},
-    thread::JoinHandle,
+    sync::Arc,
     time::{Duration, Instant},
 };
 const IO: Duration = Duration::from_secs(10);
@@ -36,48 +36,6 @@ fn request(client: &mut Client<Duplex>, command: Command) -> Result<Outcome> {
         outcome => Ok(outcome),
     }
 }
-struct Work {
-    command: Command,
-    reply: mpsc::Sender<Result<Outcome>>,
-}
-pub struct Connection {
-    sender: Option<mpsc::Sender<Work>>,
-    worker: Option<JoinHandle<Result<()>>>,
-}
-impl Connection {
-    pub fn request(&self, command: Command) -> Result<Outcome> {
-        let (tx, rx) = mpsc::channel();
-        self.sender
-            .as_ref()
-            .ok_or_else(|| {
-                AppError::new("maintenance-disconnected", "Authorization session closed")
-            })?
-            .send(Work { command, reply: tx })
-            .map_err(|e| AppError::new("maintenance-disconnected", e))?;
-        rx.recv_timeout(Duration::from_secs(35)).map_err(|e| {
-            AppError::new(
-                "maintenance-result-unverified",
-                format!("{e}; query the original operation after reconnecting"),
-            )
-        })?
-    }
-    pub fn shutdown(&mut self) -> Result<()> {
-        self.sender = None;
-        match self.worker.take() {
-            Some(worker) => worker
-                .join()
-                .map_err(|_| AppError::new("maintenance-worker", "Permission worker panicked"))?,
-            None => Ok(()),
-        }
-    }
-}
-impl Drop for Connection {
-    fn drop(&mut self) {
-        if let Err(error) = self.shutdown() {
-            eprintln!("maintenance-cleanup: {error}");
-        }
-    }
-}
 fn wait_child(child: &mut Child, timeout: Duration) -> Result<()> {
     let deadline = Instant::now() + timeout;
     loop {
@@ -93,7 +51,15 @@ struct ProcessOwner {
     client: Option<Client<Duplex>>,
     child: Child,
 }
-impl ProcessOwner {
+impl super::worker::Owner for ProcessOwner {
+    fn request(&mut self, command: Command) -> Result<Outcome> {
+        request(
+            self.client.as_mut().ok_or_else(|| {
+                AppError::new("maintenance-disconnected", "Permission session closed")
+            })?,
+            command,
+        )
+    }
     fn finish(&mut self) -> Result<()> {
         let closing = match self.client.as_mut() {
             Some(client) => request(client, Command::Close {}).map(|_| ()),
@@ -170,68 +136,7 @@ pub fn launch(web: &Path, store: Arc<product_core::store::Store>) -> Result<Conn
         });
     }
     owner.client = Some(client);
-    let (tx, rx) = mpsc::channel::<Work>();
-    let worker = std::thread::Builder::new()
-        .name("emby-permission".into())
-        .spawn(move || {
-            let mut revision = None;
-            let mut next_tick = Instant::now() + Duration::from_secs(2);
-            let mut publish_error: Option<AppError> = None;
-            loop {
-                let client = owner.client.as_mut().expect("owned maintenance client");
-                match rx.recv_timeout(next_tick.saturating_duration_since(Instant::now())) {
-                    Ok(work) => {
-                        let start = matches!(work.command, Command::Start { .. });
-                        if start {
-                            revision = None;
-                            publish_error = None;
-                        }
-                        let mut result = request(client, work.command);
-                        if let (Some(error), Ok(Outcome::Status { service, .. })) =
-                            (&publish_error, &mut result)
-                        {
-                            service.phase = "failed".into();
-                            service.error = Some(error.clone());
-                        }
-                        let _ = work.reply.send(result);
-                    }
-                    Err(mpsc::RecvTimeoutError::Disconnected) => break,
-                    Err(mpsc::RecvTimeoutError::Timeout) => {}
-                }
-                if Instant::now() >= next_tick {
-                    next_tick = Instant::now() + Duration::from_secs(2);
-                    let status = request(client, Command::Status {});
-                    match status {
-                        Ok(Outcome::Status { service, .. }) if service.phase == "running" => {
-                            let publication = (|| -> Result<()> {
-                                if let Some((next, items)) = store.publication_snapshot(revision)? {
-                                    request(
-                                        client,
-                                        Command::Publish {
-                                            index: emby::public_index(&items, emby::timestamp()),
-                                        },
-                                    )?;
-                                    revision = Some(next);
-                                }
-                                Ok(())
-                            })();
-                            if let Err(error) = publication {
-                                publish_error = Some(error);
-                                let _ = request(client, Command::Stop {});
-                            }
-                        }
-                        Ok(_) => {}
-                        Err(_) => break,
-                    }
-                }
-            }
-            owner.finish()
-        })
-        .map_err(|e| AppError::new("maintenance-worker", e))?;
-    Ok(Connection {
-        sender: Some(tx),
-        worker: Some(worker),
-    })
+    super::worker::launch(owner, store)
 }
 
 #[cfg(test)]

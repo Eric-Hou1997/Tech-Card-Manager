@@ -1,0 +1,13 @@
+v5.0.0
+
+This version migrates to Rust + Tauri 2 + TypeScript + Vue 3/Vite, using v4.1.0 functionality, UI and operation as the baseline. TCM remains a read-only NFO and Emby Technical Specs card manager, without AI, NFO writing or automatic update installation.
+
+Release targets: macOS ARM64 DMG, Windows x64/ARM64 NSIS and Linux x64/ARM64 AppImage/DEB/RPM: five targets and nine packages, without macOS Intel. Package names are bound to the original manual update flow using the installed channel.
+
+The original Windows source, data migration, confirmation lists, privileged maintenance, transactional backups and failure recovery are preserved. Corrections cover read-only NFO encoding compatibility, initial indexing failure state, retry and service shutdown cleanup. Media NFO bytes and modification times remain read-only.
+
+Simplified Chinese, Traditional Chinese and English are built in. Five external locales use r2 packs with required platform and failure messages. Verified r1 installed files remain usable offline; failed new downloads do not delete the old language or user data.
+
+Installation and upgrade: download the matching package, verify TCM-v5.0.0-SHA256SUMS.txt, fully exit through the menu bar or tray, then install or replace. Preserve system user data, Emby maintenance backups and all original Portable files. Install or upgrade DEB/RPM with the system package manager.
+
+Distribution and acceptance limits: macOS uses ad hoc signing without Apple notarization; Windows has no distribution certificate signature. Real Emby, complete native UI/operation and Windows/Linux runtime acceptance remain incomplete. Source regressions, architecture and package checks do not prove these real acceptance items. The target list is not a claim of real-machine certification.

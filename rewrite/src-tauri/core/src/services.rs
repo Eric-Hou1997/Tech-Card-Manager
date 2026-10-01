@@ -23,7 +23,7 @@ pub const LOCALES: [LocaleDescriptor; 8] = [
     },
     LocaleDescriptor {
         code: "en-US",
-        native_name: "English",
+        native_name: "English (United States)",
         built_in: true,
     },
     LocaleDescriptor {

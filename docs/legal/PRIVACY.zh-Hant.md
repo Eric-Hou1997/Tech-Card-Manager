@@ -2,10 +2,10 @@
 
 [簡體中文](../../PRIVACY.md) | **繁體中文** | [English](./PRIVACY.en.md) | [Français](./PRIVACY.fr.md) | [Русский](./PRIVACY.ru.md) | [日本語](./PRIVACY.ja.md) | [Español](./PRIVACY.es.md) | [ไทย](./PRIVACY.th.md)
 
-Tech Card Manager 是本機 Windows Portable 工具，不會建立本產品自己的遙測、廣告追蹤或帳號系統。
+Tech Card Manager 是本地 macOS、Windows、Linux 桌面工具，不建立自己的遙測、廣告追蹤或帳號系統。
 
-- 您選擇的媒體目錄、唯讀 NFO 索引、設定、記錄、備份和執行階段檔案均保存在目前的 Portable 軟體目錄。
-- 只有在您手動選擇「檢查更新」時，軟體才會連線 GitHub 查詢正式版本資訊；只有選擇「繼續前往 GitHub」後才會開啟 Releases 頁面。
-- 軟體只會依您主動執行的操作讀取本機 NFO 與已設定的 Emby Server 檔案；媒體 NFO 永遠保持唯讀，本軟體不會寫入。
+- 設定、衍生唯讀 NFO 索引、日誌及執行狀態儲存於系統使用者資料目錄，應用程式身分為 `io.github.eric-hou1997.tcm`。舊 Portable 檔案作為遷移來源保留；Emby 維護備份儲存於受權限保護的維護目錄。
+- 開啟設定或發起檢查更新時，軟體可能連線 GitHub 查詢正式發行資訊，保留原快取規則。語言包安裝/復原也從綁定的官方 Release 下載並驗證。只有確認下載後才開啟系統瀏覽器；應用程式不自動安裝更新。
+- 軟體按設定與操作讀取媒體 NFO 和 Emby Server 檔案；媒體 NFO 始終唯讀。Emby 網頁檔案的維護需要確認並有備份及復原路徑。
 
-本政策會隨正式版本更新；原始碼中的發佈日期預留內容會在對應的正式版本中確定。
+本政策適用於 v5.0.0，更新日期：2026-10-02。

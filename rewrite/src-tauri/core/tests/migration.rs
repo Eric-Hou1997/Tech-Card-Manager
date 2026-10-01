@@ -170,3 +170,204 @@ fn mixed_legacy_root_migrates_both_spaces_without_copying_or_moving_media() {
         receipt.configuration.roots[1].space
     );
 }
+
+#[test]
+fn tcm_directory_rows_survive_import_restart_save_and_offline_recovery() {
+    use tcm_core::folders::{FolderKind, FolderSource};
+    let (_temp, old, store) = setup();
+    let root = old.parent().unwrap();
+    let movie = root.join("movies");
+    let offline = root.join("offline-tv");
+    let disabled = root.join("disabled");
+    let mixed = root.join("mixed");
+    let auto = root.join("auto");
+    for path in [&movie, &mixed, &auto] {
+        fs::create_dir(path).unwrap();
+    }
+    let value = serde_json::json!({"roots_configured":true,"library_roots":[
+        {"path":movie,"name":"自定义电影名","kind":"movies","source":"auto","enabled":true},
+        {"path":offline,"name":"离线剧集","kind":"tv","source":"manual","enabled":true},
+        {"path":disabled,"name":"保留但停用","kind":"mixed","source":"auto","enabled":false},
+        {"path":mixed,"name":"混合目录","kind":"mixed","source":"manual","enabled":true},
+        {"path":auto,"name":"自动分类","kind":"auto","source":"auto","enabled":true}
+    ]});
+    let mut bytes = vec![0xef, 0xbb, 0xbf];
+    bytes.extend(serde_json::to_vec(&value).unwrap());
+    fs::write(old.join("settings.json"), &bytes).unwrap();
+    let modified = fs::metadata(old.join("settings.json"))
+        .unwrap()
+        .modified()
+        .unwrap();
+    let plan = store
+        .prepare_migration("rows", &old, "tcm-portable")
+        .unwrap();
+    assert!(!plan
+        .warnings
+        .iter()
+        .any(|warning| warning.starts_with("Malformed JSON")));
+    let receipt = store.apply_migration("rows", &plan.fingerprint).unwrap();
+    let folders = store.folder_settings().unwrap();
+    assert_eq!(folders.folders.len(), 5);
+    assert_eq!(
+        folders
+            .folders
+            .iter()
+            .map(|f| f.name.as_str())
+            .collect::<Vec<_>>(),
+        [
+            "自定义电影名",
+            "离线剧集",
+            "保留但停用",
+            "混合目录",
+            "自动分类"
+        ]
+    );
+    assert_eq!(folders.folders[0].source, FolderSource::Auto);
+    assert_eq!(folders.folders[1].kind, FolderKind::Tv);
+    assert_eq!(folders.folders[2].kind, FolderKind::Mixed);
+    assert!(!folders.folders[2].enabled);
+    assert_eq!(folders.folders[4].kind, FolderKind::Auto);
+    assert_eq!(receipt.configuration.roots.len(), 6);
+    assert!(!receipt
+        .pending_roots
+        .iter()
+        .any(|r| r.path == offline.to_str().unwrap()));
+    assert!(store.catalog_summary().unwrap().roots_configured);
+    assert!(store.tasks().unwrap().is_empty());
+    assert_eq!(
+        store.legacy_artifact("rows", "settings.json").unwrap(),
+        bytes
+    );
+    drop(store);
+    let store = Store::open(&root.join("new.sqlite")).unwrap();
+    assert_eq!(store.folder_settings().unwrap(), folders);
+    let saved = store
+        .save_folder_settings("save-after-upgrade", folders)
+        .unwrap();
+    fs::create_dir(&offline).unwrap();
+    let nfo = offline.join("tvshow.nfo");
+    let raw = b"\xef\xbb\xbf<tvshow>\r\n<title>Restored</title></tvshow>\r\n";
+    fs::write(&nfo, raw).unwrap();
+    let nfo_time = fs::metadata(&nfo).unwrap().modified().unwrap();
+    store
+        .submit(ScanRequest {
+            operation_id: "online".into(),
+            space: Space::Tv,
+            root_ids: saved
+                .configuration
+                .roots
+                .iter()
+                .filter(|r| r.path == offline.to_str().unwrap())
+                .map(|r| r.id.clone())
+                .collect(),
+        })
+        .unwrap();
+    store.run_next(|| false, |_| {}).unwrap();
+    assert_eq!(
+        store
+            .query(CatalogQuery {
+                space: Space::Tv,
+                search: String::new(),
+                only_errors: false,
+                offset: 0,
+                limit: 100
+            })
+            .unwrap()
+            .total,
+        1
+    );
+    assert_eq!(fs::read(nfo.clone()).unwrap(), raw);
+    assert_eq!(fs::metadata(nfo).unwrap().modified().unwrap(), nfo_time);
+    assert_eq!(fs::read(old.join("settings.json")).unwrap(), bytes);
+    assert_eq!(
+        fs::metadata(old.join("settings.json"))
+            .unwrap()
+            .modified()
+            .unwrap(),
+        modified
+    );
+}
+
+#[test]
+fn tcm_import_preserves_existing_folder_choices_and_does_not_activate_unconfirmed_roots() {
+    use tcm_core::folders::*;
+    let (_temp, old, store) = setup();
+    let media = old.parent().unwrap().join("media");
+    fs::create_dir(&media).unwrap();
+    let original = store
+        .save_folder_settings(
+            "current",
+            FolderSettings {
+                revision: 0,
+                folders: vec![MediaFolder {
+                    id: "existing".into(),
+                    path: media.to_string_lossy().into(),
+                    name: "当前名字".into(),
+                    kind: FolderKind::Movies,
+                    source: FolderSource::Manual,
+                    enabled: true,
+                }],
+            },
+        )
+        .unwrap();
+    for (id, configured) in [("unconfirmed", false), ("confirmed", true)] {
+        fs::write(old.join("settings.json"),serde_json::to_vec(&serde_json::json!({"roots_configured":configured,"library_roots":[{"path":media,"name":"旧名字","kind":"mixed","source":"auto","enabled":true}]})).unwrap()).unwrap();
+        let plan = store.prepare_migration(id, &old, "tcm-portable").unwrap();
+        store.apply_migration(id, &plan.fingerprint).unwrap();
+        assert_eq!(
+            store.folder_settings().unwrap().folders,
+            original.settings.folders
+        );
+        assert_eq!(
+            store.configuration().unwrap().roots,
+            original.configuration.roots
+        );
+    }
+}
+
+#[test]
+fn tcm_folder_adapter_failure_rolls_back_files_configuration_and_interval() {
+    let (_temp, old, store) = setup();
+    let media = old.parent().unwrap().join("media");
+    fs::create_dir(&media).unwrap();
+    fs::write(old.join("settings.json"),serde_json::to_vec(&serde_json::json!({"interval_seconds":300,"roots_configured":true,"library_roots":[{"path":media,"name":"invalid\nname","kind":"movies","source":"manual","enabled":true}]})).unwrap()).unwrap();
+    let plan = store
+        .prepare_migration("bad-rows", &old, "tcm-portable")
+        .unwrap();
+    assert_eq!(
+        store
+            .apply_migration("bad-rows", &plan.fingerprint)
+            .unwrap_err()
+            .code,
+        "migration-folders-invalid"
+    );
+    assert_eq!(store.configuration().unwrap().revision, 0);
+    assert!(store.folder_settings().unwrap().folders.is_empty());
+    assert_eq!(store.incremental_settings().unwrap().interval_seconds, 60);
+    assert!(store.legacy_artifact("bad-rows", "settings.json").is_err());
+}
+
+#[test]
+fn tcm_unusable_root_is_pending_and_an_unconfirmed_source_stays_unconfigured() {
+    let (_temp, old, store) = setup();
+    let path = old.parent().unwrap().join("file-instead-of-directory");
+    fs::write(&path, b"not media").unwrap();
+    for (id, configured) in [("draft", false), ("unusable", true)] {
+        fs::write(old.join("settings.json"),serde_json::to_vec(&serde_json::json!({"roots_configured":configured,"library_roots":[{"path":path,"kind":"movies","source":"manual","enabled":true}]})).unwrap()).unwrap();
+        let plan = store.prepare_migration(id, &old, "tcm-portable").unwrap();
+        let receipt = store.apply_migration(id, &plan.fingerprint).unwrap();
+        assert!(receipt.configuration.roots.is_empty());
+        assert!(!receipt.pending_roots.is_empty());
+        if !configured {
+            assert_eq!(receipt.pending_roots[0].state, "not-configured");
+            assert!(!store.catalog_summary().unwrap().roots_configured);
+        } else {
+            assert_eq!(
+                receipt.pending_roots[0].state,
+                "unavailable-or-needs-mapping"
+            );
+        }
+        assert!(store.tasks().unwrap().is_empty());
+        assert_eq!(fs::read(&path).unwrap(), b"not media");
+    }
+}

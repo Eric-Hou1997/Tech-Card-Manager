@@ -15,6 +15,8 @@ pub struct LegacyFile {
     pub hash: String,
     pub bytes: u64,
     pub category: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub modified_unix: Option<i64>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 pub struct LegacyRoot {
@@ -30,6 +32,8 @@ pub struct MigrationPlan {
     pub source_kind: String,
     pub fingerprint: String,
     pub configuration_revision: u32,
+    #[serde(default)]
+    pub incremental: Option<crate::incremental::IncrementalSettings>,
     pub files: Vec<LegacyFile>,
     pub roots: Vec<LegacyRoot>,
     pub locale: Option<String>,
@@ -127,7 +131,9 @@ fn walk(
         }
         let bytes = fs::read(&path).map_err(|e| error("migration-read", e, &path))?;
         if relative.ends_with(".json") {
-            match serde_json::from_slice::<Value>(&bytes) {
+            match serde_json::from_slice::<Value>(
+                bytes.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(&bytes),
+            ) {
                 Ok(value) => {
                     if secret_field(&value) {
                         return Err(error("migration-credential-boundary","Credential-bearing JSON needs native credential migration before import",&path));
@@ -148,6 +154,11 @@ fn walk(
             hash: hash(&bytes),
             bytes: bytes.len() as u64,
             category: category.into(),
+            modified_unix: meta
+                .modified()
+                .ok()
+                .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+                .and_then(|duration| duration.as_secs().try_into().ok()),
         });
     }
     Ok(())
@@ -186,6 +197,14 @@ fn secret_field(value: &Value) -> bool {
     }
 }
 
+pub(crate) fn credential_json(bytes: &[u8]) -> bool {
+    match serde_json::from_slice::<Value>(bytes.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(bytes))
+    {
+        Ok(value) => secret_field(&value),
+        Err(_) => malformed_secret_key(bytes),
+    }
+}
+
 pub fn prepare(
     id: &str,
     source: &Path,
@@ -215,11 +234,36 @@ pub fn prepare(
     }
     let mut roots = Vec::new();
     let mut locale = None;
+    let mut interval = None;
     for file in files.iter().filter(|f| f.category == "configuration") {
         let data = read_snapshot(&source, file)?;
-        let Ok(value) = serde_json::from_slice::<Value>(&data) else {
+        let Ok(value) = serde_json::from_slice::<Value>(
+            data.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(&data),
+        ) else {
             continue;
         };
+        if kind.starts_with("tcm-") {
+            if let Some(raw) = value.get("interval_seconds") {
+                let seconds = raw
+                    .as_u64()
+                    .filter(|n| (30..=86400).contains(n))
+                    .ok_or_else(|| {
+                        error(
+                            "migration-check-interval",
+                            "Legacy interval_seconds must be an integer between 30 and 86400",
+                            &source.join(&file.relative),
+                        )
+                    })? as u32;
+                if interval.is_some_and(|old| old != seconds) {
+                    return Err(error(
+                        "migration-check-interval",
+                        "Legacy configuration files disagree on interval_seconds",
+                        &source,
+                    ));
+                }
+                interval = Some(seconds);
+            }
+        }
         if let Some(language) = value.get("language").and_then(Value::as_str) {
             locale = Some(language.into());
         }
@@ -301,6 +345,10 @@ pub fn prepare(
         source_kind: kind.into(),
         fingerprint,
         configuration_revision: current.revision,
+        incremental: interval.map(|interval_seconds| crate::incremental::IncrementalSettings {
+            revision: 0,
+            interval_seconds,
+        }),
         files,
         roots,
         locale,
@@ -349,7 +397,15 @@ pub fn read_snapshot(source: &Path, file: &LegacyFile) -> Result<Vec<u8>> {
         ));
     }
     let bytes = fs::read(&path).map_err(|e| error("migration-read", e, &path))?;
-    if bytes.len() as u64 != file.bytes || hash(&bytes) != file.hash {
+    let modified_unix = meta
+        .modified()
+        .ok()
+        .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+        .and_then(|duration| duration.as_secs().try_into().ok());
+    if bytes.len() as u64 != file.bytes
+        || hash(&bytes) != file.hash
+        || file.modified_unix.is_some() && modified_unix != file.modified_unix
+    {
         return Err(error(
             "migration-source-changed",
             "Legacy source changed after review; prepare a new plan",
@@ -417,6 +473,11 @@ pub fn merged_configuration(
             "zh-CN" => Locale::Simplified,
             "zh-Hant" => Locale::Traditional,
             "en-US" => Locale::English,
+            "fr-FR" => Locale::French,
+            "ru-RU" => Locale::Russian,
+            "ja-JP" => Locale::Japanese,
+            "es-ES" => Locale::Spanish,
+            "th-TH" => Locale::Thai,
             _ => next.locale,
         };
     }
@@ -439,6 +500,213 @@ pub fn normalized_preferences(files: &BTreeMap<String, Value>) -> Value {
     }
     Value::Object(merged)
 }
+
+/// Restore the original directory editor rows alongside scanner configuration.
+/// The input is the verified archived settings, never an arbitrary UI payload.
+pub(crate) fn tcm_folder_settings(
+    plan: &MigrationPlan,
+    files: &BTreeMap<String, Value>,
+    current: &Configuration,
+    next: &mut Configuration,
+    pending: &mut Vec<LegacyRoot>,
+    previous: Option<crate::folders::FolderSettings>,
+) -> Result<Option<crate::folders::FolderSettings>> {
+    use crate::folders::{from_configuration, FolderKind, FolderSource, MediaFolder};
+    if !plan.source_kind.starts_with("tcm-") {
+        return Ok(None);
+    }
+    let mut settings = None;
+    for (path, value) in files {
+        let Some(rows) = value.get("library_roots").and_then(Value::as_array) else {
+            continue;
+        };
+        let configured = value
+            .get("roots_configured")
+            .and_then(Value::as_bool)
+            .unwrap_or(!rows.is_empty());
+        let candidate = (configured, rows);
+        if settings.is_some_and(|old| old != candidate) {
+            return Err(
+                AppError::new("migration-folders-conflict", "旧配置中的媒体目录不一致").at(path),
+            );
+        }
+        settings = Some(candidate);
+    }
+    let Some((configured, rows)) = settings else {
+        return Ok(None);
+    };
+    // A saved but unconfirmed draft never activates a scan scope on upgrade.
+    if !configured {
+        next.roots = current.roots.clone();
+        *pending = plan
+            .roots
+            .iter()
+            .cloned()
+            .map(|mut root| {
+                root.state = "not-configured".into();
+                root
+            })
+            .collect();
+        return Ok(None);
+    }
+    if rows.len() > 256 {
+        return Err(AppError::new("invalid-folders", "媒体目录不能超过 256 个"));
+    }
+    let mut folders = from_configuration(current, previous);
+    next.roots = current.roots.clone();
+    let mut seen = std::collections::BTreeSet::new();
+    for row in rows {
+        let original = row.get("path").and_then(Value::as_str).unwrap_or("");
+        if ["path", "name", "kind", "source"]
+            .iter()
+            .any(|field| row.get(field).is_some_and(|value| !value.is_string()))
+            || row.get("enabled").is_some_and(|value| !value.is_boolean())
+        {
+            return Err(
+                AppError::new("migration-folders-invalid", "旧媒体目录字段类型无效").at(original),
+            );
+        }
+        if original.is_empty()
+            || original.len() > 32768
+            || original.chars().any(char::is_control)
+            || !seen.insert(original.trim_end_matches(['\\', '/']).to_lowercase())
+        {
+            return Err(
+                AppError::new("migration-folders-invalid", "旧媒体目录路径无效或重复").at(original),
+            );
+        }
+        let enabled = row.get("enabled").and_then(Value::as_bool).unwrap_or(false);
+        let kind = match row
+            .get("kind")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_ascii_lowercase()
+            .as_str()
+        {
+            "movie" | "movies" => FolderKind::Movies,
+            "tv" | "series" => FolderKind::Tv,
+            "mixed" => FolderKind::Mixed,
+            _ => FolderKind::Auto,
+        };
+        let path = match paths::configured_directory(Path::new(original)) {
+            Ok(path) => path.to_string_lossy().into_owned(),
+            // Disabled foreign-platform paths are presentation data. Enabled
+            // unmapped paths remain explicitly pending and cannot be scanned.
+            Err(_) if !enabled => original.to_string(),
+            Err(_) => {
+                for space in kind.spaces() {
+                    if !pending
+                        .iter()
+                        .any(|root| root.path == original && root.space == Some(space.clone()))
+                    {
+                        pending.push(LegacyRoot {
+                            path: original.into(),
+                            space: Some(space),
+                            enabled,
+                            state: "unavailable-or-needs-mapping".into(),
+                        });
+                    }
+                }
+                continue;
+            }
+        };
+        if folders.folders.iter().any(|folder| folder.path == path) {
+            continue; // Existing destination settings take precedence.
+        }
+        if enabled
+            && next.roots.iter().any(|root| {
+                root.path != path
+                    && (Path::new(&root.path).starts_with(&path)
+                        || Path::new(&path).starts_with(&root.path))
+            })
+        {
+            continue; // merged_configuration already records the overlap.
+        }
+        let name = row
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
+        if name.len() > 1024 || name.chars().any(char::is_control) {
+            return Err(
+                AppError::new("migration-folders-invalid", "旧媒体目录名称无效").at(original),
+            );
+        }
+        let folder = MediaFolder {
+            id: hash(path.as_bytes()),
+            path: path.clone(),
+            name,
+            kind,
+            source: if row
+                .get("source")
+                .and_then(Value::as_str)
+                .is_some_and(|source| source.eq_ignore_ascii_case("auto"))
+            {
+                FolderSource::Auto
+            } else {
+                FolderSource::Manual
+            },
+            enabled,
+        };
+        if enabled {
+            for space in folder.kind.spaces() {
+                if !next
+                    .roots
+                    .iter()
+                    .any(|root| root.path == path && root.space == space)
+                {
+                    next.roots.push(LibraryRoot {
+                        id: hash(format!("{}:{space:?}", folder.id).as_bytes()),
+                        path: path.clone(),
+                        space,
+                    });
+                }
+            }
+            pending.retain(|root| root.path != original);
+        }
+        folders.folders.push(folder);
+    }
+    if folders.folders.len() > 256 {
+        return Err(AppError::new("invalid-folders", "媒体目录不能超过 256 个"));
+    }
+    folders.revision = next.revision;
+    Ok(Some(folders))
+}
 pub fn source_path(plan: &MigrationPlan) -> PathBuf {
     PathBuf::from(&plan.source)
+}
+
+pub(crate) fn tcm_application_settings(
+    files: &BTreeMap<String, Value>,
+) -> Result<Option<crate::lifecycle::Settings>> {
+    let mut values = BTreeMap::new();
+    for (path, value) in files {
+        for field in ["auto_start", "auto_start_configured", "silent_start"] {
+            let Some(raw) = value.get(field) else {
+                continue;
+            };
+            let enabled = raw.as_bool().ok_or_else(|| {
+                AppError::new("migration-application-settings", "旧应用设置字段类型无效").at(path)
+            })?;
+            if values
+                .insert(field, enabled)
+                .is_some_and(|old| old != enabled)
+            {
+                return Err(AppError::new(
+                    "migration-application-settings",
+                    "旧配置中的应用设置不一致",
+                )
+                .at(path));
+            }
+        }
+    }
+    if values.is_empty() {
+        return Ok(None);
+    }
+    Ok(Some(crate::lifecycle::Settings {
+        revision: 1,
+        launch_at_login: values.get("auto_start").copied().unwrap_or(false),
+        start_hidden: values.get("silent_start").copied().unwrap_or(false),
+        ..Default::default()
+    }))
 }

@@ -1,0 +1,5 @@
+{
+  "identifier": "io.github.eric-hou1997.tcm",
+  "mainBinaryName": "Tech-Card-Manager",
+  "bundle": {"macOS": {"signingIdentity": "-"}}
+}

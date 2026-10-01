@@ -1,10 +1,10 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "TCM Validation",
-  "version": "4.1.0",
+  "productName": "Tech Card Manager",
+  "version": "5.0.0",
   "identifier": "io.github.eric-hou1997.tcm.validation",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "node tools/build-helper.mjs --debug && npm run dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "node tools/build-helper.mjs && npm run build",
     "frontendDist": "../dist"
@@ -13,7 +13,8 @@
     "windows": [
       {
         "label": "main",
-        "title": "TCM 技术验证",
+        "title": "Tech Card Manager",
+        "maximized": true,
         "width": 1000,
         "height": 760,
         "minWidth": 420,

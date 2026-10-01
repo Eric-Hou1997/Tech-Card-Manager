@@ -19,7 +19,7 @@ ITM 的 backend_native_localization_contract 仍断言根目录 PRIVACY.en.md/TE
 
 - 各入口的动态菜单、选择范围、持久化和错误反馈逐项验收。
 - NFO/Emby 事务崩溃重启恢复、undo 日志丢失、网络共享并发写入和重放。
-- AI 缓存、费用、截断/限流、任务暂停恢复保持旧测试，并扩展为新 Rust 核心对照。
+- ITM 的 AI 缓存、费用、截断/限流继续由 ITM 仓库单独对照；TCM 没有 AI，也不新增用户暂停/恢复任务入口。
 - TCM 实际浏览器加载、Emby DOM、停止后的租约与卡片失效。
 
 以上未执行项不能因已有测试通过而视为完成。

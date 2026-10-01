@@ -7,7 +7,7 @@
     "linux-x64",
     "linux-arm64"
   ],
-  "status": "partial-migration-steps-5-to-8-real-platform-and-semantic-acceptance-pending",
+  "status": "baseline-only-typescript-vue-migration-pixel-parity-pending",
   "features": [
     {
       "id": "TCM-WEBPATCH",
@@ -39,40 +39,38 @@
         "windows/tests/readonly_patch_contract.py"
       ],
       "test_mapping_status": "candidate-references-not-proof",
-      "new_implementation": "partial",
+      "new_implementation": "source-parity-native-acceptance-pending",
       "platforms": {
-        "macos-arm64": "partial-acceptance-pending",
-        "windows-x64": "partial-acceptance-pending",
-        "windows-arm64": "partial-acceptance-pending",
-        "linux-x64": "partial-acceptance-pending",
-        "linux-arm64": "partial-acceptance-pending"
+        "macos-arm64": "source-parity-native-acceptance-pending",
+        "windows-x64": "source-parity-native-acceptance-pending",
+        "windows-arm64": "source-parity-native-acceptance-pending",
+        "linux-x64": "source-parity-native-acceptance-pending",
+        "linux-arm64": "source-parity-native-acceptance-pending"
       },
       "implementation_slices": [
         {
           "sources": [
             "rewrite/src-tauri/core/src/emby.rs",
-            "rewrite/src-tauri/src/emby.rs",
-            "rewrite/src/EmbyPanel.vue"
+            "rewrite/src-tauri/src/emby.rs"
           ],
           "tests": [
             "rewrite/src-tauri/core/tests/emby.rs",
             "rewrite/src-tauri/src/emby.rs"
           ],
-          "scope": "Read-only protected-root inspection and external backup planning; all write and lease paths require a writable owner; interrupted plans remain pending; preserve previous connection on failed target change. Elevation helper and actual UAC/polkit/authorization acceptance remain pending.",
+          "scope": "Read-only protected-root inspection and external backup planning; all write and lease paths require a writable owner; interrupted plans remain pending; preserve previous connection on failed target change. Elevation helper and actual UAC/polkit/authorization acceptance remain pending. The experimental EmbyPanel has been removed; this slice describes backend evidence only and does not certify the restored v4.1.0 interface.",
           "evidence": "docs/rewrite/10-completion-checklist.md"
         },
         {
           "sources": [
             "rewrite/src-tauri/core/src/maintenance.rs",
             "rewrite/src-tauri/core/src/emby.rs",
-            "rewrite/src-tauri/src/emby.rs",
-            "rewrite/src/EmbyPanel.vue"
+            "rewrite/src-tauri/src/emby.rs"
           ],
           "tests": [
             "rewrite/src-tauri/core/tests/maintenance.rs",
             "rewrite/src-tauri/core/tests/emby.rs"
           ],
-          "scope": "Snapshot-bound review fingerprints and durable receipt query; narrow maintenance protocol with no implicit retransmission after unknown outcome and synchronous service cleanup on channel loss. Native macOS UI verified with ordinary-user fixture. OS-authorized launch, authenticated platform transport and protected helper journal still pending.",
+          "scope": "Snapshot-bound review fingerprints and durable receipt query; narrow maintenance protocol with no implicit retransmission after unknown outcome and synchronous service cleanup on channel loss. Native macOS UI verified with ordinary-user fixture. OS-authorized launch, authenticated platform transport and protected helper journal still pending. The experimental EmbyPanel has been removed; this slice describes backend evidence only and does not certify the restored v4.1.0 interface.",
           "evidence": "docs/rewrite/evidence/native-maintenance-receipt.json"
         },
         {
@@ -80,7 +78,9 @@
             "rewrite/src-tauri/core/src/maintenance_linux.rs",
             "rewrite/src-tauri/core/src/maintenance_pipe.rs",
             "rewrite/src-tauri/src/privileged/linux.rs",
-            "rewrite/src-tauri/src/emby.rs"
+            "rewrite/src-tauri/src/emby.rs",
+            "rewrite/tools/build-helper.mjs",
+            "rewrite/src-tauri/tauri.linux.conf.json"
           ],
           "tests": [
             "rewrite/src-tauri/core/src/maintenance_pipe.rs",
@@ -90,6 +90,51 @@
           ],
           "scope": "Linux pkexec launch and private inherited pipes, root-owned fixed journal, explicit re-plan after authorization, durable reconnect receipt and bounded process/publication owner. Portable unit tests passed; Linux process, polkit dialog, packaged UI and other-platform privileged launch acceptance pending.",
           "evidence": "docs/rewrite/10-completion-checklist.md"
+        },
+        {
+          "sources": [
+            "rewrite/src-tauri/core/src/windows_arguments.rs",
+            "rewrite/src-tauri/core/src/windows_transport.rs",
+            "rewrite/src-tauri/core/src/windows_security.rs",
+            "rewrite/src-tauri/core/src/windows_authorization.rs",
+            "rewrite/src-tauri/core/src/maintenance_windows.rs",
+            "rewrite/src-tauri/core/src/bin/tcm-maintenance-helper.rs",
+            "rewrite/src-tauri/core/Cargo.toml",
+            "rewrite/src-tauri/src/privileged.rs",
+            "rewrite/src-tauri/src/privileged/worker.rs",
+            "rewrite/src-tauri/src/privileged/windows.rs",
+            "rewrite/src-tauri/src/privileged/linux.rs",
+            "rewrite/tools/build-helper.mjs",
+            "rewrite/src-tauri/tauri.windows.conf.json"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/src/windows_arguments.rs",
+            "rewrite/src-tauri/core/src/windows_transport.rs",
+            "rewrite/src-tauri/core/src/windows_security.rs",
+            "rewrite/src-tauri/src/privileged/worker.rs",
+            "rewrite/src-tauri/src/privileged/linux.rs"
+          ],
+          "scope": "Windows runas launcher, process-authenticated local named pipe, pinned ACL-checked targets, private administrator-owned recovery journal, and common Linux/Windows publication/cleanup owner. Host-executed quoting and generic/Linux worker tests passed. Windows x64/ARM64 Rust metadata checks passed with C compilation/linking explicitly excluded in an external harness; normal Windows build is blocked by the missing SDK. UAC, Windows pipe/ACL tests, installation, service rendering and final platform acceptance are unverified.",
+          "evidence": "docs/rewrite/13-windows-maintenance.md"
+        },
+        {
+          "slice": "macos-authorized-maintenance-helper",
+          "sources": [
+            "rewrite/src-tauri/core/src/maintenance_macos.rs",
+            "rewrite/src-tauri/core/src/bin/tcm-maintenance-helper.rs",
+            "rewrite/src-tauri/src/privileged/macos.rs",
+            "rewrite/src-tauri/src/privileged.rs",
+            "rewrite/tools/build-helper.mjs",
+            "rewrite/src-tauri/tauri.macos.conf.json"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/src/maintenance_macos.rs",
+            "rewrite/src-tauri/src/privileged/macos.rs",
+            "rewrite/src-tauri/src/privileged/worker.rs"
+          ],
+          "scope": "macOS now builds the existing restricted helper as a Tauri sidecar and starts it through the system administrator dialog. A private Unix socket verifies effective UID, peer PID and the exact adjacent helper path on both ends; the root helper keeps the fixed validation journal and rechecks the protected Emby target before every request. Local ARM64 compilation, quoting and kernel peer-identity tests passed. Signed packaged-helper identity, authorization cancellation, protected fixture mutation, cleanup and real Emby acceptance remain pending.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-compiled-native-authorization-acceptance-pending"
         }
       ],
       "supplemental_evidence": [
@@ -119,14 +164,71 @@
       ],
       "baseline_test_candidates": [],
       "test_mapping_status": "candidate-references-not-proof",
-      "new_implementation": "not-implemented",
+      "new_implementation": "source-implemented-native-acceptance-pending",
       "platforms": {
-        "macos-arm64": "not-implemented",
-        "windows-x64": "not-implemented",
-        "windows-arm64": "not-implemented",
-        "linux-x64": "not-implemented",
-        "linux-arm64": "not-implemented"
-      }
+        "macos-arm64": "not-applicable-windows-upgrade-components",
+        "windows-x64": "source-implemented-native-acceptance-pending",
+        "windows-arm64": "source-implemented-native-acceptance-pending",
+        "linux-x64": "not-applicable-windows-upgrade-components",
+        "linux-arm64": "not-applicable-windows-upgrade-components"
+      },
+      "implementation_slices": [
+        {
+          "slice": "windows-system-component-migration",
+          "sources": [
+            "rewrite/src-tauri/core/src/legacy_components.rs",
+            "rewrite/src-tauri/core/src/legacy_process.rs",
+            "rewrite/src-tauri/core/src/legacy_startup.rs",
+            "rewrite/src-tauri/core/src/legacy_task.rs",
+            "rewrite/src-tauri/core/src/legacy_agent.rs",
+            "rewrite/src-tauri/core/src/legacy_migration.rs",
+            "rewrite/src-tauri/core/src/legacy_migration/windows.rs",
+            "rewrite/src-tauri/src/emby.rs",
+            "rewrite/src/legacy-migration.ts",
+            "rewrite/src/LegacyDialog.vue",
+            "rewrite/src/LibraryPanel.vue"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/legacy_agent.rs",
+            "rewrite/src-tauri/core/tests/legacy_startup.rs",
+            "rewrite/src-tauri/core/tests/legacy_system.rs",
+            "rewrite/tests/legacy-baseline.test.ts",
+            "rewrite/tests/service-observation.test.ts"
+          ],
+          "scope": "The v4.1.0 Windows upgrade gate observes only evidence-bound old Manager processes, sign-in entries, scheduled-task state and fixed Agent files; it shows the original confirmation flow, persists immutable backups and operation receipts, rechecks identity before each effect, and restores only effects proven to belong to the failed operation. macOS and Linux have no Windows v4.1.0 system components to migrate. Legacy Emby web-patch adoption on every platform remains tracked by TCM-WEBPATCH. Windows native process, registry/task and relaunch acceptance is pending.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-implemented-windows-native-acceptance-pending"
+        },
+        {
+          "slice": "read-only-legacy-history",
+          "sources": [
+            "rewrite/src-tauri/core/src/history.rs",
+            "rewrite/src-tauri/core/src/store/history.rs"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/history.rs"
+          ],
+          "scope": "Internal compatibility access to imported original log/task bytes with checksum validation; never rewrites or resumes old work. The standalone history viewer was removed because it is not a v4.1.0 product entry. Existing diagnostics/task-log presentation must be assessed separately.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "local-tests-passed-native-and-cross-platform-acceptance-pending"
+        },
+        {
+          "slice": "service-incremental-reader",
+          "sources": [
+            "rewrite/src-tauri/core/src/incremental.rs",
+            "rewrite/src-tauri/core/src/store/incremental.rs",
+            "rewrite/src-tauri/src/emby.rs",
+            "rewrite/src/IncrementalPanel.vue"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/incremental.rs",
+            "rewrite/tests/settings-baseline.test.ts"
+          ],
+          "scope": "Service-owned periodic read-only scans, synchronous stop/join, manual queue isolation, crash cancellation, indexed scheduling and legacy interval adaptation. The original interval selector now preserves and replays an unresolved operation identity after an IPC reply/receipt failure, restores the last confirmed visible value, and accepts the exact persisted receipt before reporting success. Existing CardService/Linux connection publishers remain the sole publication owners. Native settings, long-run and target-platform acceptance remain pending.",
+          "evidence": "docs/rewrite/12-local-completion.md",
+          "status": "local-tests-passed-native-and-cross-platform-acceptance-pending"
+        }
+      ]
     },
     {
       "id": "TCM-CARD",
@@ -159,19 +261,40 @@
         "windows/tests/windows_native_card_dom_regression.py"
       ],
       "test_mapping_status": "candidate-references-not-proof",
-      "new_implementation": "not-implemented",
+      "new_implementation": "source-parity-native-acceptance-pending",
       "platforms": {
-        "macos-arm64": "not-implemented",
-        "windows-x64": "not-implemented",
-        "windows-arm64": "not-implemented",
-        "linux-x64": "not-implemented",
-        "linux-arm64": "not-implemented"
-      }
+        "macos-arm64": "source-parity-native-acceptance-pending",
+        "windows-x64": "source-parity-native-acceptance-pending",
+        "windows-arm64": "source-parity-native-acceptance-pending",
+        "linux-x64": "source-parity-native-acceptance-pending",
+        "linux-arm64": "source-parity-native-acceptance-pending"
+      },
+      "implementation_slices": [
+        {
+          "sources": [
+            "rewrite/src-tauri/core/src/emby.rs",
+            "rewrite/src-tauri/core/src/card_service.rs",
+            "rewrite/src-tauri/src/emby.rs",
+            "rewrite/src/ConsolePanel.vue",
+            "rewrite/src/service-control.ts",
+            "rewrite/web-card/technical-specs-card.js"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/emby.rs",
+            "rewrite/src-tauri/core/src/emby.rs",
+            "rewrite/tests/console-baseline.test.ts",
+            "rewrite/tests/service-observation.test.ts"
+          ],
+          "scope": "The v5 Web Card retains the complete v4.1.0 renderer except the required v5 version and agreed presentation-locale adapters. Its public feed exposes no local media paths, preserves the original Movie/Series eligibility and merge rules, excludes Episode/Season cards, uses the original route/DOM behavior, and binds cache identity to actual card bytes. Publication uses one completed current-root snapshot; repair preserves owned data and the live lease, removal restores original Emby files, and stop/exit disables and joins the owned lease/publication workers. Unresolved transactions, ambiguous patches, unknown data or foreign leases block publication/start. Missing Web Card presentation resources do not block the original read-only indexing service; repair remains an explicit action. Source and local file/runtime regression evidence do not prove current real Emby clients, browser routes or the five-platform acceptance matrix.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-parity-native-acceptance-pending"
+        }
+      ]
     },
     {
       "id": "TCM-SERVICE",
       "title": "服务状态和资源所有权",
-      "contract": "请求、运行、磁盘就绪、服务可用、客户端加载和渲染状态区分；启动和停止幂等；失败不得伪报成功。",
+      "contract": "保留 v4.1.0 的启动中、运行中、关闭中、已关闭、启动失败和撤卡待重试状态；网页集成、当前索引与运行许可分别观察；启停幂等且失败不得伪报成功。原版没有客户端加载或渲染遥测，不新增该状态。",
       "negative_paths": "初始租约写入失败、停止写入失败可重试、重复启动、退出时同步清理。",
       "planned_destination": "application/service / console",
       "entrypoints": [
@@ -203,20 +326,43 @@
         "windows/tests/service_card_regression.py"
       ],
       "test_mapping_status": "candidate-references-not-proof",
-      "new_implementation": "not-implemented",
+      "new_implementation": "source-parity-native-acceptance-pending",
       "platforms": {
-        "macos-arm64": "not-implemented",
-        "windows-x64": "not-implemented",
-        "windows-arm64": "not-implemented",
-        "linux-x64": "not-implemented",
-        "linux-arm64": "not-implemented"
-      }
+        "macos-arm64": "source-parity-native-acceptance-pending",
+        "windows-x64": "source-parity-native-acceptance-pending",
+        "windows-arm64": "source-parity-native-acceptance-pending",
+        "linux-x64": "source-parity-native-acceptance-pending",
+        "linux-arm64": "source-parity-native-acceptance-pending"
+      },
+      "implementation_slices": [
+        {
+          "sources": [
+            "rewrite/src-tauri/core/src/emby.rs",
+            "rewrite/src-tauri/core/src/card_service.rs",
+            "rewrite/src-tauri/src/emby.rs",
+            "rewrite/src/ConsolePanel.vue",
+            "rewrite/src/service-control.ts"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/emby.rs",
+            "rewrite/src-tauri/core/src/emby.rs",
+            "rewrite/tests/console-baseline.test.ts",
+            "rewrite/tests/service-observation.test.ts",
+            "rewrite/tests/application-refresh.test.ts",
+            "rewrite/src-tauri/core/tests/publication.rs",
+            "rewrite/src-tauri/core/tests/maintenance.rs"
+          ],
+          "scope": "Rust and Vue preserve the v4.1.0 observable service phases, last successful start time, separate Web integration/index/runtime observations and one start/stop control. At least one enabled media root, an accessible Emby target and cleared legacy blockers are required. Initial scans keep the service starting with display disabled; successful completed publication enables the lease and records the start. Initial failure stops the scanner and local/helper service, retains the exact error and permits retry; uncertain stop remains a stop-retry state. Repeated start/stop is idempotent, reply loss uses readback without repeating effects, and stop/exit synchronously joins scanning/publication/renewal owners and disables the lease. Pending transactions, unknown data and foreign leases block new publication/start; missing presentation resources do not. Index publication can create only absent derived data with a journaled owner, never claim unowned files or silently install the card. Startup, manual control and local/helper owners follow this same original boundary. v4.1.0 has no client-loaded or rendered telemetry, so none is added. Native lifecycle, actual crash/exit behavior, real Emby clients and the five-platform acceptance matrix remain pending.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-parity-native-acceptance-pending"
+        }
+      ]
     },
     {
       "id": "TCM-READONLY",
       "title": "只读 NFO 解析和归属展示",
-      "contract": "读取 Movie/Series/Season/Episode；直接 section 解析与去重；仅展示 manifest 归属；保持原始 NFO 字节和 mtime。",
-      "negative_paths": "坏XML、缺IMDb、同IMDb多条目、重复标签、无归属元数据、共享盘暂时不可读。",
+      "contract": "读取 Movie/Series/Season/Episode；直接 section 解析与去重；按原版修剪 IMDb/归属属性并仅展示 manifest 归属；保持原始 NFO 字节和 mtime。",
+      "negative_paths": "坏XML、合法但不相关的 NFO 根节点、空 IMDb 候选、同IMDb多条目、重复标签、无归属元数据、共享盘暂时不可读。",
       "planned_destination": "domain/nfo-reader / inspector",
       "entrypoints": [
         "TCM-E-bc75efda196f",
@@ -231,25 +377,31 @@
         "windows/tests/readonly_patch_contract.py"
       ],
       "test_mapping_status": "executed-slice-only-full-group-pending",
-      "new_implementation": "partial",
+      "new_implementation": "source-parity-native-acceptance-pending",
       "platforms": {
-        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
-        "windows-x64": "unverified",
-        "windows-arm64": "unverified",
-        "linux-x64": "unverified",
-        "linux-arm64": "unverified"
+        "macos-arm64": "source-parity-native-acceptance-pending",
+        "windows-x64": "source-parity-native-acceptance-pending",
+        "windows-arm64": "source-parity-native-acceptance-pending",
+        "linux-x64": "source-parity-native-acceptance-pending",
+        "linux-arm64": "source-parity-native-acceptance-pending"
       },
       "implementation_slices": [
         {
+          "slice": "original-read-only-nfo-parser",
           "sources": [
             "rewrite/src-tauri/core/src/library.rs",
-            "rewrite/src-tauri/core/src/paths.rs"
+            "rewrite/src-tauri/core/src/store.rs",
+            "rewrite/src-tauri/src/desktop.rs",
+            "rewrite/src-tauri/core/assets/html4-entities.tsv"
           ],
           "tests": [
-            "rewrite/src-tauri/core/tests/reading.rs"
+            "rewrite/src-tauri/core/tests/reading.rs",
+            "rewrite/src-tauri/core/tests/catalog_presentation.rs",
+            "rewrite/tests/catalog-baseline.test.ts"
           ],
-          "scope": "Readonly NFO contents and mtime tested on isolated fixtures; real library pending",
-          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+          "scope": "The Rust parser matches the original direct-root Movie/Series/Season/Episode reader, last IMDb technicalspecs selection, trimmed case-insensitive IMDb and ownership attributes, first non-empty IMDb uniqueid fallback, five-to-twelve digit IMDb gate, section replacement/deduplication and manifest-only tag ownership. Manual ownership never exposes a manifest engine; generated engine values are trimmed and normalized. Valid XML for unrelated root elements is ignored without becoming an XML error and prunes an older cached item for the same path; its internal fingerprint prevents unchanged files from being reparsed or exposed as catalog data. Scans preserve source bytes and mtime, keep offline rows, reject symlink escape and surface malformed XML without repair. The early rewrite-only 32 MiB NFO rejection has been removed because v4.1.0 reads the complete file. Unicode UTF-16/UTF-32 byte orders and declared legacy encodings decode only in memory; malformed sequences and conflicting declarations remain errors. Tag comparison applies the original one-pass HTML 4 entity decoding without changing displayed root tag bytes. Charset fixtures do not establish exhaustive Windows code-page equivalence. Parser revision 5 forces existing cached NFO rows through these semantics. Local source/fixture regressions pass; real libraries, network shares, native file reveal and target-platform acceptance remain pending.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-parity-local-tests-passed-native-and-platform-acceptance-pending"
         }
       ],
       "supplemental_evidence": [
@@ -349,25 +501,34 @@
       ],
       "baseline_test_candidates": [],
       "test_mapping_status": "executed-slice-only-full-group-pending",
-      "new_implementation": "partial",
+      "new_implementation": "source-parity-native-acceptance-pending",
       "platforms": {
-        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
-        "windows-x64": "unverified",
-        "windows-arm64": "unverified",
-        "linux-x64": "unverified",
-        "linux-arm64": "unverified"
+        "macos-arm64": "source-parity-native-acceptance-pending",
+        "windows-x64": "source-parity-native-acceptance-pending",
+        "windows-arm64": "source-parity-native-acceptance-pending",
+        "linux-x64": "source-parity-native-acceptance-pending",
+        "linux-arm64": "source-parity-native-acceptance-pending"
       },
       "implementation_slices": [
         {
+          "slice": "rust-generated-active-contracts",
           "sources": [
             "rewrite/src-tauri/core/src/contracts.rs",
-            "rewrite/src/contracts.ts"
+            "rewrite/src/contracts.ts",
+            "rewrite/src/console.ts",
+            "rewrite/src/useEmby.ts",
+            "rewrite/src/maintenance.ts",
+            "rewrite/src/legacy-migration.ts"
           ],
           "tests": [
-            "rewrite/src-tauri/core/examples/export_types.rs"
+            "rewrite/src-tauri/core/examples/export_types.rs",
+            "rewrite/tests/console-baseline.test.ts",
+            "rewrite/tests/maintenance.test.ts",
+            "rewrite/tests/legacy-baseline.test.ts"
           ],
-          "scope": "Generated typed contracts for migrated read commands only",
-          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+          "scope": "Rust generates the active read and mutation contracts, including folder/settings receipts, tasks, diagnostics, manual update, Emby environment and integration status, maintenance plans, service leases/status and legacy component review. The frontend imports those generated shapes and only extends them for transient pre-response UI state or Tauri-layer flattened wrappers. The previously missing LegacyFile source timestamp is synchronized. Contract check, Vue type/build and affected behavior regressions pass; native serialization and target-platform acceptance remain pending.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-parity-local-checks-passed-native-and-platform-acceptance-pending"
         }
       ]
     },
@@ -385,14 +546,34 @@
       ],
       "baseline_test_candidates": [],
       "test_mapping_status": "candidate-references-not-proof",
-      "new_implementation": "not-implemented",
+      "new_implementation": "source-parity-native-acceptance-pending",
       "platforms": {
-        "macos-arm64": "not-implemented",
-        "windows-x64": "not-implemented",
-        "windows-arm64": "not-implemented",
-        "linux-x64": "not-implemented",
-        "linux-arm64": "not-implemented"
-      }
+        "macos-arm64": "source-parity-native-acceptance-pending",
+        "windows-x64": "source-parity-native-acceptance-pending",
+        "windows-arm64": "source-parity-native-acceptance-pending",
+        "linux-x64": "source-parity-native-acceptance-pending",
+        "linux-arm64": "source-parity-native-acceptance-pending"
+      },
+      "implementation_slices": [
+        {
+          "sources": [
+            "rewrite/src-tauri/src/main.rs",
+            "rewrite/src-tauri/src/emby.rs",
+            "rewrite/src/LibraryPanel.vue",
+            "rewrite/src/maintenance.ts",
+            "rewrite/src/legacy-migration.ts"
+          ],
+          "tests": [
+            "rewrite/tests/maintenance-retry.test.ts",
+            "rewrite/tests/maintenance.test.ts",
+            "rewrite/tests/legacy-migration.test.ts",
+            "rewrite/src-tauri/tests/legacy_launch.rs"
+          ],
+          "scope": "Every visible v4.1.0 action is connected to a typed Tauri command: service start/stop, current-space and single-folder scans, Emby discovery, folder selection/save, Web Card repair/removal, full rebuild, diagnostics/export, path reveal, legacy confirmation, language/application settings and manual update. Running-state, target, root, action and durable operation identities are revalidated at the command or transaction boundary; unknown helper actions, arbitrary paths/scripts, changed confirmations and repeated uncertain mutations fail closed. The deprecated first-argument --agent exit remains a Windows upgrade compatibility path, not a new product command. The five early feasibility probes for environment, arbitrary directory sampling, validation storage, credential round-trip and public-network access remain as unregistered source evidence only; they are absent from the product IPC surface and have no v4.1.0 UI obligation. Native dialogs, protected operations and five-target execution remain pending.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-parity-native-acceptance-pending"
+        }
+      ]
     },
     {
       "id": "TCM-LOCALE",
@@ -422,33 +603,43 @@
         "windows/tests/web_language_picker_dom_regression.py"
       ],
       "test_mapping_status": "executed-slice-only-full-group-pending",
-      "new_implementation": "partial",
+      "new_implementation": "source-parity-native-acceptance-pending",
       "platforms": {
-        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
-        "windows-x64": "unverified",
-        "windows-arm64": "unverified",
-        "linux-x64": "unverified",
-        "linux-arm64": "unverified"
+        "macos-arm64": "source-parity-native-acceptance-pending",
+        "windows-x64": "source-parity-native-acceptance-pending",
+        "windows-arm64": "source-parity-native-acceptance-pending",
+        "linux-x64": "source-parity-native-acceptance-pending",
+        "linux-arm64": "source-parity-native-acceptance-pending"
       },
       "implementation_slices": [
         {
+          "slice": "original-eight-language-flow",
           "sources": [
-            "rewrite/src-tauri/core/src/services.rs",
-            "rewrite/src-tauri/core/src/contracts.rs"
+            "rewrite/src/baseline-language.ts",
+            "rewrite/src/ConsolePanel.vue",
+            "rewrite/src/LanguagePicker.vue",
+            "rewrite/src/assets/baseline-backend-phrases.json",
+            "rewrite/src-tauri/src/languages.rs",
+            "rewrite/src-tauri/core/src/languages.rs",
+            "rewrite/src-tauri/core/src/job_text.rs",
+            "rewrite/src-tauri/core/assets/language_catalog.json"
           ],
           "tests": [
-            "rewrite/src-tauri/core/tests/reading.rs"
+            "rewrite/tests/language-baseline.test.ts",
+            "rewrite/src-tauri/core/tests/languages.rs",
+            "rewrite/src-tauri/src/languages.rs"
           ],
-          "scope": "Registry and task locale snapshot only; complete translations and packs pending",
-          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+          "scope": "All eight original options and fixed flag/native-name rows are present. zh-CN, zh-Hant and en-US remain built in; the five unchanged v4.1.0 external assets keep their exact descriptors and message IDs while the application reports v5.0.0. Verified old packs are restored without rewriting user data; missing packs use the original assets, and failed or ambiguous downloads keep the prior locale. Platform-adapted macOS/Linux console hints reuse the original Windows message identity and replace only the platform label after translation. New DMG, NSIS and AppImage manual replacement instructions plus visible operation-receipt, recovery and uncertainty failures have complete built-in Chinese/English text; unchanged external packs use the original English fallback instead of leaving Chinese fragments until matching v5 pack assets are prepared. The current presentation-source inventory has no unexplained English-locale Chinese residue; its remaining candidates are protected author text or compiler fragments that are translated after Vue composes the visible node. Web, native-menu and Web Card sections remain separate, and task locale is captured at start. Local source/runtime regressions passed; real downloads, updated external-pack assets, native menus, runtime-produced backend values and target-platform UI acceptance remain pending.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-parity-local-tests-passed-native-and-platform-acceptance-pending"
         }
       ]
     },
     {
       "id": "TCM-UPDATE",
       "title": "安装和更新",
-      "contract": "识别正确产品、系统、架构和包型；校验后更新；显示真实阶段；保留用户数据。",
-      "negative_paths": "断网、限流、资产错误、签名失败、取消、升级中断及回退。",
+      "contract": "保留 4.1.0 更新检查、状态、内嵌下载确认和手动打开下载链接；准确匹配产品、系统、应用架构与包型。TCM 不新增自动安装或重启入口。",
+      "negative_paths": "断网、主限额/二级限流、资产缺失或目标不符、检查失败、取消确认和打开下载链接失败；保留用户数据，不引入自动安装/验签流程。",
       "planned_destination": "platform/update / settings",
       "entrypoints": [
         "TCM-E-7eede668f0e6",
@@ -468,21 +659,41 @@
         "windows/tests/upgrade_continuity_regression.py",
         "windows/update_test.go"
       ],
-      "test_mapping_status": "candidate-references-not-proof",
-      "new_implementation": "not-implemented",
+      "test_mapping_status": "source-parity-focused-tests-executed-native-and-release-input-acceptance-pending",
+      "new_implementation": "source-parity-release-input-and-native-acceptance-pending",
       "platforms": {
-        "macos-arm64": "not-implemented",
-        "windows-x64": "not-implemented",
-        "windows-arm64": "not-implemented",
-        "linux-x64": "not-implemented",
-        "linux-arm64": "not-implemented"
-      }
+        "macos-arm64": "source-parity-release-input-and-native-acceptance-pending",
+        "windows-x64": "source-parity-release-input-and-native-acceptance-pending",
+        "windows-arm64": "source-parity-release-input-and-native-acceptance-pending",
+        "linux-x64": "source-parity-release-input-and-native-acceptance-pending",
+        "linux-arm64": "source-parity-release-input-and-native-acceptance-pending"
+      },
+      "implementation_slices": [
+        {
+          "sources": [
+            "rewrite/src/UpdatePanel.vue",
+            "rewrite/src/AboutPanel.vue",
+            "rewrite/src/baseline-language.ts",
+            "rewrite/src/assets/baseline-languages.json",
+            "rewrite/src-tauri/src/manual_update.rs",
+            "rewrite/src-tauri/core/src/manual_update.rs"
+          ],
+          "tests": [
+            "rewrite/tests/update-baseline.test.ts",
+            "rewrite/tests/language-baseline.test.ts",
+            "rewrite/src-tauri/core/tests/manual_update.rs"
+          ],
+          "scope": "Original manual update presentation, cache/error handling and verified download selection. Without formal package-name inputs, a source/development build can now report that v5.0.0 is current from validated release metadata; a genuinely newer release still fails closed until the exact installed product/system/architecture/channel asset pattern is configured. DMG, NSIS and AppImage replacement guidance is complete in the three built-in languages; unchanged external packs fall back to the complete English guidance rather than mixed Chinese, and their translated v5 asset revisions remain a release-preparation input. Formal package target/pattern inputs, real network/browser behavior and platform acceptance remain unresolved. No automatic TCM OTA installation or new signing key is authorized.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-current-check-restored-newer-package-and-platform-acceptance-pending"
+        }
+      ]
     },
     {
       "id": "TCM-DIAGNOSTICS",
       "title": "诊断、日志和路径定位",
-      "contract": "可导出诊断、打开日志/数据和受影响路径；错误包含可用的媒体身份、路径与任务。",
-      "negative_paths": "无权限、路径不存在、导出失败；不泄露凭据。",
+      "contract": "保留原维护区诊断、诊断包导出、日志和受影响路径定位；错误保留可用媒体身份、路径与任务。",
+      "negative_paths": "无权限、路径不存在、诊断或导出失败；不泄露凭据。",
       "planned_destination": "application/diagnostics / diagnostics",
       "entrypoints": [
         "TCM-E-011020462a04",
@@ -514,14 +725,86 @@
         "windows/tests/catalog_contract.py"
       ],
       "test_mapping_status": "candidate-references-not-proof",
-      "new_implementation": "not-implemented",
+      "new_implementation": "source-parity-native-acceptance-pending",
       "platforms": {
-        "macos-arm64": "not-implemented",
-        "windows-x64": "not-implemented",
-        "windows-arm64": "not-implemented",
-        "linux-x64": "not-implemented",
-        "linux-arm64": "not-implemented"
-      }
+        "macos-arm64": "source-parity-native-acceptance-pending",
+        "windows-x64": "source-parity-native-acceptance-pending",
+        "windows-arm64": "source-parity-native-acceptance-pending",
+        "linux-x64": "source-parity-native-acceptance-pending",
+        "linux-arm64": "source-parity-native-acceptance-pending"
+      },
+      "implementation_slices": [
+        {
+          "slice": "local-diagnostic-report",
+          "sources": [
+            "rewrite/src-tauri/core/src/store/diagnostics.rs",
+            "rewrite/src-tauri/src/diagnostics.rs",
+            "rewrite/src/DiagnosticsPanel.vue"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/diagnostics.rs",
+            "rewrite/src-tauri/src/diagnostics.rs"
+          ],
+          "scope": "Read-only bounded database/root/index diagnostics and reviewed local export. A successfully written archive remains successful if opening its containing folder fails, matching v4.1.0; the original generic success toast and current task log are preserved. The ZIP contains the v5 equivalents of the original settings, task/log, index/XML, Web Card and status evidence; obsolete PowerShell engine and Agent heartbeat files are not invented in the new stack. Native file-manager launch and real platform acceptance remain pending.",
+          "evidence": "docs/rewrite/12-local-completion.md",
+          "status": "local-tests-passed-native-and-cross-platform-acceptance-pending"
+        },
+        {
+          "slice": "read-only-legacy-history",
+          "sources": [
+            "rewrite/src-tauri/core/src/history.rs",
+            "rewrite/src-tauri/core/src/store/history.rs"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/history.rs"
+          ],
+          "scope": "Internal compatibility access to imported original log/task bytes with checksum validation; never rewrites or resumes old work. The standalone history viewer was removed because it is not a v4.1.0 product entry. Existing diagnostics/task-log presentation must be assessed separately.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "local-tests-passed-native-and-cross-platform-acceptance-pending"
+        },
+        {
+          "slice": "original-diagnostic-job-persistence",
+          "sources": [
+            "rewrite/src/DiagnosticsPanel.vue",
+            "rewrite/src-tauri/src/diagnostics.rs",
+            "rewrite/src-tauri/core/src/store/jobs.rs",
+            "rewrite/src-tauri/core/src/incremental.rs"
+          ],
+          "tests": [
+            "rewrite/tests/diagnostics-job.test.ts",
+            "rewrite/src-tauri/core/src/store/jobs.rs",
+            "rewrite/src-tauri/core/tests/incremental.rs"
+          ],
+          "scope": "Explicit diagnose persists its original task log and captured language; polling/export preserve the existing job. Reopen restores idle state with unchanged prior output. Diagnostic and scan submission serialize; a diagnostic winning the scan race does not fail the service reader. Saved scan statistics, exact historical summary/XML provenance and full error-path presentation are connected; real native/elevation acceptance remains pending.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-parity-native-acceptance-pending"
+        },
+        {
+          "slice": "persisted-original-scan-statistics",
+          "sources": [
+            "rewrite/src-tauri/core/src/store/index_summary.rs",
+            "rewrite/src-tauri/core/src/store.rs",
+            "rewrite/src-tauri/core/src/store/jobs.rs",
+            "rewrite/src-tauri/src/diagnostics.rs",
+            "rewrite/src-tauri/core/src/store/emby_diagnostic_import.rs",
+            "rewrite/src-tauri/src/emby.rs",
+            "rewrite/src/LibraryPanel.vue",
+            "rewrite/src/console.ts"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/index_summary.rs",
+            "rewrite/src-tauri/core/tests/reading.rs",
+            "rewrite/src-tauri/core/tests/emby_diagnostic_import.rs",
+            "rewrite/src-tauri/src/emby.rs",
+            "rewrite/src-tauri/core/tests/publication.rs",
+            "rewrite/tests/legacy-baseline.test.ts",
+            "rewrite/tests/web-card-baseline.test.ts"
+          ],
+          "scope": "A completed scan atomically saves measured read/reparse/error counts, complete-catalog spec counts and captured root states with its task identity. Never-generated and completed-empty summaries remain distinct; cancellation preserves the prior summary. Explicit diagnostics and export read that saved observation. Already archived original TCM summaries are read with product provenance, hash checks and exact export bytes; absent statistics remain absent and corrupt summaries produce explicit diagnostic failures. Automatic cycles, rebuilds and directory actions now commit a single summary only after all their child tasks finish; cancelled or restarted partial groups retain the prior observation. Group scan counters accumulate actual reads while catalog-derived counts are recomputed once. Mixed physical roots are traversed by their first child once, routing parsed items to both frozen media roots; later children reuse that completed traversal without rereading NFOs or replacing its online observation. Current completed scans persist original-shaped XML detail rows atomically with the summary. Diagnostics materializes and verifies the real detail file before logging its path; exports use manager-xml-errors.json from that observation. Archived TCM XML details now use the same validated import as the summary, preserving exact bytes and rejecting hash/copy/count/time conflicts; summary and details are captured in one SQLite read transaction. Before attaching or starting the selected original Windows Emby installation, production identity verifies the v4.1.0 worker and captures the fixed summary, XML details and display catalog. A complete summary can restore missing original directory settings; a catalog matching that summary restores the offline read-only list while forcing a real NFO reparse when the roots return. The incompatible manager-items-cache parser stamps remain untouched at the original source and are not treated as new parser evidence. Validation builds, other platforms and installations skip this path. Existing archives, new-stack choices and current scan summaries take precedence; transactional archive failure remains retryable. The Emby card renderer remains the complete v4.1.0 script except the v5 version and required locale adapters; the public data feed preserves the original Movie/Series eligibility, Episode/Season exclusion, case-insensitive merge and tt plus 5-12 digit IMDb gate. Real native/elevation and Emby client acceptance remain pending. Completed publication identity now stores the configured physical root set and card-content fingerprint in the scan transaction. Manager status and diagnostics share this check; active scans retain the last completed identity, root changes invalidate it even when content is unchanged. Service lease and initial-index lifecycle parity remain pending; status evidence does not prove that old cards were disabled. Local store-owned services now renew a disabled lease until actual published content matches completed current roots; the authenticated helper receives a fixed IndexCurrent command and independently verifies healthy files and fingerprint before enabling display. Renewal remains alive while display is withheld. Initial withheld leases now report starting and defer last_started_at until the first successful enabled lease; scanner and helper publisher remain active while starting, and frontend startup replies preserve this pending state. Core lease/repair/history and frontend reply-loss regressions pass. Imported v4 diagnostic summary, XML and log source times are preserved through nullable schema 7 metadata and ZIP entries; schema 6 archives retain their bytes with unknown times rather than fabricated values. Full original startup failure/recovery and real-platform/client acceptance remain pending.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-parity-native-acceptance-pending"
+        }
+      ]
     },
     {
       "id": "TCM-LIFECYCLE",
@@ -551,33 +834,47 @@
         "windows/tray_windows_test.go"
       ],
       "test_mapping_status": "executed-slice-only-full-group-pending",
-      "new_implementation": "partial",
+      "new_implementation": "source-parity-native-acceptance-pending",
       "platforms": {
-        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
-        "windows-x64": "unverified",
-        "windows-arm64": "unverified",
-        "linux-x64": "unverified",
-        "linux-arm64": "unverified"
+        "macos-arm64": "native-start-ipc-clean-exit-and-second-instance-process-probes-passed-full-acceptance-pending",
+        "windows-x64": "source-parity-including-cancel-default-native-acceptance-pending",
+        "windows-arm64": "source-parity-including-cancel-default-native-acceptance-pending",
+        "linux-x64": "source-parity-native-acceptance-pending",
+        "linux-arm64": "source-parity-native-acceptance-pending"
       },
       "implementation_slices": [
         {
+          "slice": "original-application-lifecycle",
           "sources": [
-            "rewrite/src-tauri/src/desktop.rs"
+            "rewrite/src-tauri/src/main.rs",
+            "rewrite/src-tauri/src/lifecycle.rs",
+            "rewrite/src-tauri/tauri.conf.json",
+            "rewrite/src-tauri/core/src/lifecycle.rs",
+            "rewrite/src-tauri/core/src/startup_file.rs",
+            "rewrite/src/LifecyclePanel.vue",
+            "rewrite/src/lifecycle-settings.ts",
+            "rewrite/src-tauri/src/emby.rs",
+            "rewrite/src-tauri/core/src/incremental.rs"
           ],
           "tests": [
-            "rewrite/src-tauri/core/tests/reading.rs"
+            "rewrite/tests/lifecycle-settings.test.ts",
+            "rewrite/src-tauri/core/tests/lifecycle.rs",
+            "rewrite/src-tauri/src/lifecycle.rs",
+            "rewrite/src-tauri/src/privileged/worker.rs",
+            "rewrite/src-tauri/core/tests/incremental.rs"
           ],
-          "scope": "Owned scan worker and shutdown; all platform lifecycle paths pending",
-          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+          "scope": "The original login-start and silent-login choices are restored without activating imported settings until the user applies them. Native registration is Windows Run, macOS LaunchAgent or Linux desktop autostart; ambiguous writes preserve one operation identity and recover on restart. The first visible Manager window starts maximized as in v4.1.0. With an available tray, minimizing hides the Windows/macOS window and tray menu, left click, double click or second launch restores, unminimizes and focuses that same window; Linux keeps a taskbar-minimized window as its guaranteed restore entry, and a missing tray makes silent login minimize instead of hiding so no window is stranded. The original close action always confirms exit, then synchronously stops scanner, card service and permission helper; every tray, menu-bar or OS quit request first restores the modal owner so its warning confirmation cannot remain behind a hidden window. Cancellation restores the window, while cleanup failure keeps it open and shows a native error dialog with a selected-language or bilingual retry explanation even when no Vue listener is mounted. Native startup and shutdown dialogs translate known backend detail with the same verified built-in or installed language-pack phrase table while preserving structured error fields. Menu and tray entries share the same exit path. Setup failures after an app handle exists now show the original startup-failure explanation as an error dialog in the selected native language when its verified state is available, otherwise bilingual, then end without a resident background process instead of panicking from the build expect. The old rewrite-only background-on-close field remains data-compatible but is not exposed. A current-source macOS ARM64 development run reached native setup, mounted the Vue frontend through real Tauri IPC, completed the synchronous exit path and left no Manager, helper or Vite listener. With a normal current-source primary instance running, a direct second native launch returned successfully without becoming resident while the primary remained alive. These probes do not prove that the existing window visibly focused, or cover confirmation/failure dialogs, silent login, minimize or tray interaction. Local source and state regressions passed; real login sessions, tray/menu visibility, dialogs, permissions, abrupt process loss and other target-platform acceptance remain pending. Incremental-reader shutdown now retries persisted service-scan cancellation even after the reader thread was already joined. A scanner cleanup error no longer skips card-service or permission-helper shutdown; successful owners are released while failed owners remain available for the visible retry path, and multiple failures retain the first structured error plus later details. The ordinary Stop action uses the same aggregation: a scanner failure cannot skip card-service removal, and the failure remains as a visible retry state until the same action completes cleanly. Incremental-reader stop now follows the original eight-second cancellation boundary without losing ownership: a timeout keeps the reader handle and visible retry path, and a later stop joins the completed reader before persisted cancellation. Card publication and lease-renewal owners use the same eight-second boundary: both are signalled before waiting, timed-out owners remain attached with a failed service state, and the display lease is disabled only after both owners have been joined on the original or retry path. Authorization, repair and apply operations now share one owned maintenance gate that rejects a second concurrent transaction and captures the real service phase and legacy-blocked state before work begins: exit confirmation can be shown without waiting on the service mutex, and confirmed exit waits at most 30 seconds before keeping the window open for retry. On Windows the native exit warning restores the v4.1.0 foreground/topmost owner and Cancel-default behavior; macOS and Linux keep their native Tauri dialogs pending real keyboard/focus acceptance.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-parity-local-tests-passed-native-and-platform-acceptance-pending"
         }
       ]
     },
     {
       "id": "TCM-TASK",
       "title": "任务状态与恢复",
-      "contract": "权威任务状态、阶段、范围、进度、历史；暂停/取消/恢复遵循旧行为；重复操作不产生重复副作用。",
-      "negative_paths": "中断、失败重试、任务冲突、退出、日志和状态持久化不一致。",
-      "planned_destination": "application/tasks / task center",
+      "contract": "保留 v4.1.0 的单个当前任务、运行门禁、完成/失败日志和退出时安全取消；重启不恢复旧扫描，重复操作不产生重复副作用。内部状态不得新增用户可见任务中心、暂停或恢复功能。",
+      "negative_paths": "中断、失败重试、任务冲突、退出、日志和状态持久化不一致；崩溃遗留任务不得阻塞下一次启动。",
+      "planned_destination": "application/tasks / current job state",
       "entrypoints": [
         "TCM-E-b23806b2bbda",
         "TCM-E-185e0b20791b",
@@ -590,14 +887,14 @@
         "TCM-E-b34ea016c6c6"
       ],
       "baseline_test_candidates": [],
-      "test_mapping_status": "executed-slice-only-full-group-pending",
-      "new_implementation": "partial",
+      "test_mapping_status": "source-parity-native-acceptance-pending",
+      "new_implementation": "source-parity-native-acceptance-pending",
       "platforms": {
-        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
-        "windows-x64": "unverified",
-        "windows-arm64": "unverified",
-        "linux-x64": "unverified",
-        "linux-arm64": "unverified"
+        "macos-arm64": "source-parity-native-acceptance-pending",
+        "windows-x64": "source-parity-native-acceptance-pending",
+        "windows-arm64": "source-parity-native-acceptance-pending",
+        "linux-x64": "source-parity-native-acceptance-pending",
+        "linux-arm64": "source-parity-native-acceptance-pending"
       },
       "implementation_slices": [
         {
@@ -608,15 +905,44 @@
           "tests": [
             "rewrite/src-tauri/core/tests/reading.rs"
           ],
-          "scope": "Durable scan tasks, operation IDs, progress, pause, resume and cancel; legacy jobs remain pending",
-          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+          "scope": "One serialized current scan/job with durable operation identity, progress and final log. Clean shutdown cancels and joins its owned reader; Store reopen cancels old service-session work and the desktop startup gate retires any remaining unowned scan. Generic internal task states have no v4.1.0 UI entry and do not authorize a new task center, pause or resume feature.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-parity-native-acceptance-pending"
+        },
+        {
+          "slice": "read-only-legacy-history",
+          "sources": [
+            "rewrite/src-tauri/core/src/history.rs",
+            "rewrite/src-tauri/core/src/store/history.rs"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/history.rs"
+          ],
+          "scope": "Internal compatibility access to imported original log/task bytes with checksum validation; never rewrites or resumes old work. The standalone history viewer was removed because it is not a v4.1.0 product entry. Existing diagnostics/task-log presentation must be assessed separately.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "local-tests-passed-native-and-cross-platform-acceptance-pending"
+        },
+        {
+          "slice": "service-incremental-reader",
+          "sources": [
+            "rewrite/src-tauri/core/src/incremental.rs",
+            "rewrite/src-tauri/core/src/store/incremental.rs",
+            "rewrite/src-tauri/src/emby.rs",
+            "rewrite/src/IncrementalPanel.vue"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/incremental.rs"
+          ],
+          "scope": "Service-owned periodic read-only scans, synchronous stop/join, manual queue isolation, crash cancellation, indexed scheduling and legacy interval adaptation; existing CardService/platform helper connection publishers remain the sole publication owners. Long-run and target-platform acceptance remain pending.",
+          "evidence": "docs/rewrite/12-local-completion.md",
+          "status": "source-parity-native-acceptance-pending"
         }
       ]
     },
     {
       "id": "TCM-SCOPE",
       "title": "媒体空间和操作范围",
-      "contract": "Movie/TV 独立根目录和状态；选择、全选/反选、季级选择及当前范围准确；全库从不默认。",
+      "contract": "按 TCM 原版保存媒体目录启用状态、Movie/TV 浏览与当前 NFO 选择；扫描/刷新范围准确。仅原版明确确认的完整重建处理全库，不新增批量勾选或季级选择。",
       "negative_paths": "空目录、越界、符号链接、共享盘离线、目录重叠、路径大小写和不同媒体种类。",
       "planned_destination": "domain/library / library setup",
       "entrypoints": [
@@ -649,25 +975,34 @@
       ],
       "baseline_test_candidates": [],
       "test_mapping_status": "executed-slice-only-full-group-pending",
-      "new_implementation": "partial",
+      "new_implementation": "source-parity-native-acceptance-pending",
       "platforms": {
-        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
-        "windows-x64": "unverified",
-        "windows-arm64": "unverified",
-        "linux-x64": "unverified",
-        "linux-arm64": "unverified"
+        "macos-arm64": "source-parity-native-acceptance-pending",
+        "windows-x64": "source-parity-native-acceptance-pending",
+        "windows-arm64": "source-parity-native-acceptance-pending",
+        "linux-x64": "source-parity-native-acceptance-pending",
+        "linux-arm64": "source-parity-native-acceptance-pending"
       },
       "implementation_slices": [
         {
+          "slice": "original-media-spaces-and-folder-scope",
           "sources": [
             "rewrite/src-tauri/core/src/paths.rs",
-            "rewrite/src/LibraryPanel.vue"
+            "rewrite/src-tauri/core/src/folders.rs",
+            "rewrite/src-tauri/core/src/store/folders.rs",
+            "rewrite/src/LibraryPanel.vue",
+            "rewrite/src/RootSettings.vue"
           ],
           "tests": [
-            "rewrite/src-tauri/core/tests/reading.rs"
+            "rewrite/src-tauri/core/tests/manager_scan.rs",
+            "rewrite/src-tauri/core/tests/reading.rs",
+            "rewrite/tests/catalog-baseline.test.ts",
+            "rewrite/tests/settings-baseline.test.ts",
+            "rewrite/tests/root-editor-baseline.test.ts"
           ],
-          "scope": "Explicit roots and Movie/TV scope; full legacy scope UI pending",
-          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+          "scope": "Movie and TV keep independent catalog/search/selection state within the current run, and refresh submits only the saved enabled roots for that space. Mixed physical roots are traversed once and routed to both spaces; disabled, unknown, unclassified, overlapping and escaped paths never fall back to a whole-library scan. The original directory editor and explicit full rebuild entry are present without added batch or season selection. Local source/fixture regressions pass; real shared-drive behavior and target-platform acceptance remain pending.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-parity-local-tests-passed-native-and-platform-acceptance-pending"
         }
       ],
       "supplemental_evidence": [
@@ -699,14 +1034,14 @@
       "baseline_test_candidates": [
         "windows/tests/catalog_contract.py"
       ],
-      "test_mapping_status": "executed-slice-only-full-group-pending",
-      "new_implementation": "partial",
+      "test_mapping_status": "source-parity-native-acceptance-pending",
+      "new_implementation": "source-parity-native-acceptance-pending",
       "platforms": {
-        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
-        "windows-x64": "unverified",
-        "windows-arm64": "unverified",
-        "linux-x64": "unverified",
-        "linux-arm64": "unverified"
+        "macos-arm64": "source-parity-native-acceptance-pending",
+        "windows-x64": "source-parity-native-acceptance-pending",
+        "windows-arm64": "source-parity-native-acceptance-pending",
+        "linux-x64": "source-parity-native-acceptance-pending",
+        "linux-arm64": "source-parity-native-acceptance-pending"
       },
       "implementation_slices": [
         {
@@ -718,8 +1053,24 @@
           "tests": [
             "rewrite/src-tauri/core/tests/reading.rs"
           ],
-          "scope": "Read index, search, incremental scan and error location; full hierarchy and real library pending",
-          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+          "scope": "Read-only index, movie/TV search and status filtering, complete TV hierarchy, current-session independent selection/expansion state, incremental and forced rebuild scopes, error location and original empty/error states. A corrupt completed index summary is again surfaced as '索引尚不可用' without hiding an independently readable catalog. Real library, native file reveal and target-platform acceptance remain pending.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-parity-native-acceptance-pending"
+        },
+        {
+          "slice": "service-incremental-reader",
+          "sources": [
+            "rewrite/src-tauri/core/src/incremental.rs",
+            "rewrite/src-tauri/core/src/store/incremental.rs",
+            "rewrite/src-tauri/src/emby.rs",
+            "rewrite/src/IncrementalPanel.vue"
+          ],
+          "tests": [
+            "rewrite/src-tauri/core/tests/incremental.rs"
+          ],
+          "scope": "Service-owned periodic read-only scans, synchronous stop/join, manual queue isolation, crash cancellation, indexed scheduling and legacy interval adaptation; existing CardService/platform helper connection publishers remain the sole publication owners. Native helper publication, long-run and target-platform acceptance remain pending.",
+          "evidence": "docs/rewrite/12-local-completion.md",
+          "status": "source-parity-native-acceptance-pending"
         }
       ],
       "supplemental_evidence": [
@@ -732,8 +1083,8 @@
     {
       "id": "TCM-LAYOUT",
       "title": "界面布局与交互",
-      "contract": "保留列设置、排序、面板尺寸、上下文入口和响应式语义；可键盘操作；错误/空状态可见。",
-      "negative_paths": "窄窗口、缩放、长翻译、溢出、遮挡、布局持久化和重置。",
+      "contract": "保留 TCM 原控制台、NFO 列表/预览、设置/弹窗、TV 展开及响应式布局；不套用 ITM 列设置、批量勾选或新增分页；文案和交互与原版一致。",
+      "negative_paths": "窄窗口、缩放、长翻译、溢出、遮挡，以及本次运行内的电影/电视剧独立状态。",
       "planned_destination": "presentation/layout / manager",
       "entrypoints": [
         "TCM-E-92f471634120",
@@ -750,43 +1101,55 @@
         "windows/tests/responsive_layout_regression.js",
         "windows/tests/scrollbar_visibility_contract.py"
       ],
-      "test_mapping_status": "executed-slice-only-full-group-pending",
-      "new_implementation": "partial",
+      "test_mapping_status": "source-parity-focused-tests-and-equal-viewport-geometry-executed-native-pixel-acceptance-pending",
+      "new_implementation": "source-parity-native-pixel-acceptance-pending",
       "platforms": {
-        "macos-arm64": "partial-local-evidence-full-acceptance-pending",
-        "windows-x64": "unverified",
-        "windows-arm64": "unverified",
-        "linux-x64": "unverified",
-        "linux-arm64": "unverified"
+        "macos-arm64": "source-parity-browser-geometry-native-pixel-acceptance-pending",
+        "windows-x64": "source-parity-native-pixel-acceptance-pending",
+        "windows-arm64": "source-parity-native-pixel-acceptance-pending",
+        "linux-x64": "source-parity-native-pixel-acceptance-pending",
+        "linux-arm64": "source-parity-native-pixel-acceptance-pending"
       },
       "implementation_slices": [
         {
           "sources": [
-            "rewrite/src/LibraryPanel.vue"
+            "rewrite/src/App.vue",
+            "rewrite/src/ConsolePanel.vue",
+            "rewrite/src/LibraryPanel.vue",
+            "rewrite/src/CatalogList.vue",
+            "rewrite/src/CatalogPreview.vue",
+            "rewrite/src/SettingsDialog.vue",
+            "rewrite/src/RootSettings.vue",
+            "rewrite/src/IncrementalPanel.vue",
+            "rewrite/src/DiagnosticsPanel.vue",
+            "rewrite/src/LegacyDialog.vue",
+            "rewrite/src/LifecyclePanel.vue",
+            "rewrite/src/LanguagePicker.vue",
+            "rewrite/src/AboutPanel.vue",
+            "rewrite/src/baseline-layout.ts",
+            "rewrite/src/styles/baseline.css",
+            "rewrite/src/styles/product.css",
+            "rewrite/src-tauri/src/manual_update.rs"
           ],
-          "tests": [],
-          "scope": "Read workspace only, incomplete product UI",
-          "evidence": "docs/rewrite/evidence/phase58-checks.json"
+          "tests": [
+            "rewrite/tests/application-refresh.test.ts",
+            "rewrite/tests/catalog-baseline.test.ts",
+            "rewrite/tests/console-baseline.test.ts",
+            "rewrite/tests/language-baseline.test.ts",
+            "rewrite/tests/legacy-baseline.test.ts",
+            "rewrite/tests/lifecycle-settings.test.ts",
+            "rewrite/tests/maintenance-retry.test.ts",
+            "rewrite/tests/root-editor-baseline.test.ts",
+            "rewrite/tests/settings-baseline.test.ts",
+            "rewrite/tests/update-baseline.test.ts"
+          ],
+          "scope": "The retained v4.1.0 control surface is split into Vue components without adding product controls. All 73 stable DOM IDs in windows/web/index.html are present exactly once in the Vue templates. Search, filter, tab, expansion and selected-row state remain independent in the current page session but are not restored across launches, matching the original. The old rewrite-only UI-state backend is retained for compatibility but the product frontend no longer reads or writes it. Settings close/reopen, language picker, legacy prompt, update prompt, confirmations and maintenance buttons retain the original entry points. Structured confirmation-dialog failures now show their actual message, and ambiguous interval saves replay the exact operation instead of silently losing it. The four original About links keep their anchors and locale-specific legal destinations, and now use a fixed native-browser allowlist so they work in the desktop WebView without granting arbitrary URLs. A requested or running task in either media space disables the same global refresh and maintenance actions as the original job gate. While a task runs, the settings poll reads only the single persistent manager job through a lightweight IPC; after it ends, the full diagnostic poll resumes. At the same 863 by 1044 browser viewport, shell, top area, settings modal/content, setup flow, language control and unchanged inputs match the original computed geometry. Remaining computed differences are the reviewed 42px native-select correction, its arrow padding, the 10px root-card rhythm correction and their subpixel flow effects. These browser measurements are source/layout evidence only; native pixel matrices, platform font/form rendering and complete operating-flow acceptance remain pending.",
+          "evidence": "docs/rewrite/15-baseline-only-correction.md",
+          "status": "source-parity-native-pixel-acceptance-pending"
         }
       ]
-    },
-    {
-      "id": "TCM-UNCLASSIFIED",
-      "title": "待逐项语义复核",
-      "contract": "源码已冻结并定位；仍需逐项检查调用方、用户入口和运行时语义，不能计为已验收。",
-      "negative_paths": "不得通过通用分组隐藏遗漏。",
-      "planned_destination": "pending-design",
-      "entrypoints": [],
-      "baseline_test_candidates": [],
-      "test_mapping_status": "candidate-references-not-proof",
-      "new_implementation": "not-implemented",
-      "platforms": {
-        "macos-arm64": "not-implemented",
-        "windows-x64": "not-implemented",
-        "windows-arm64": "not-implemented",
-        "linux-x64": "not-implemented",
-        "linux-arm64": "not-implemented"
-      }
     }
-  ]
+  ],
+  "current_direction": "docs/rewrite/15-baseline-only-correction.md",
+  "scope_rule": "v5.0 is this product v4.1.0 on Rust + Tauri 2 + TypeScript/Vue 3/Vite and the agreed five targets: no added or removed product functionality, UI or operating behavior."
 }

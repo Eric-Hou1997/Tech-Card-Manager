@@ -1,0 +1,83 @@
+name: TCM v5 package preparation
+on:
+  workflow_dispatch:
+  push:
+    branches: [v5.0.0-rewrite]
+    paths:
+      - 'rewrite/**'
+      - 'language-packs/**'
+      - '.github/workflows/tcm-release.yml'
+permissions:
+  contents: read
+concurrency:
+  group: tcm-packages-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            target: aarch64-apple-darwin
+            bundles: dmg
+          - runner: windows-2022
+            target: x86_64-pc-windows-msvc
+            bundles: nsis
+          - runner: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            bundles: nsis
+          - runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: appimage,deb,rpm
+          - runner: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
+            bundles: appimage,deb,rpm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: rewrite/package-lock.json
+      - name: Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf libdbus-1-dev libssl-dev libxdo-dev rpm
+      - name: Locked Rust toolchain
+        run: |
+          rustup toolchain install 1.98.1 --profile minimal --component rustfmt --component clippy --target ${{ matrix.target }}
+          rustup override set 1.98.1
+      - run: python tools/rewrite/inventory.py
+      - name: Relevant source and platform contracts
+        working-directory: rewrite/src-tauri
+        run: |
+          cargo fmt --all --check
+          cargo test --locked -p tcm-core --target ${{ matrix.target }}
+          cargo run --locked -q -p tcm-core --example export_types -- --check ../src/contracts.ts
+      - name: Frontend dependencies
+        working-directory: rewrite
+        run: npm ci
+      - name: Build production packages
+        working-directory: rewrite
+        env:
+          TCM_RELEASE_BUILD: '1'
+        run: npm run tauri build -- --config src-tauri/tauri.release.conf.json --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
+      - name: Check application/helper architecture and collect canonical filenames
+        env:
+          TCM_RELEASE_BUILD: '1'
+        run: python rewrite/tools/release.py --target ${{ matrix.target }} --target-dir rewrite/src-tauri/target --output build/v5-packages
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TCM-v5-${{ matrix.target }}
+          path: build/v5-packages/
+          if-no-files-found: error
+          retention-days: 14
+# Preparation only: no tag, Release, secrets, upload to a Release or runtime acceptance.

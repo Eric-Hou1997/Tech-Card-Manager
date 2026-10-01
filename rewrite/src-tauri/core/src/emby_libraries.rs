@@ -1,9 +1,13 @@
-//! Emby 4.9.5 physical-root discovery. The server database is opened read-only.
+//! Original Manager physical-root query. The server database is opened read-only.
 use crate::{paths, AppError, Result, Space};
 use rusqlite::{Connection, OpenFlags};
 use serde::{Deserialize, Serialize};
 use std::{
     path::{Path, PathBuf},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
     time::{Duration, Instant},
 };
 use ts_rs::TS;
@@ -20,6 +24,8 @@ pub struct MappingSettings {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 pub struct DiscoveredLibrary {
     pub id: String,
+    #[serde(default)]
+    pub parent_id: Option<String>,
     pub name: String,
     pub server_path: String,
     pub local_path: Option<String>,
@@ -27,6 +33,10 @@ pub struct DiscoveredLibrary {
     pub movie_evidence: u32,
     pub series_evidence: u32,
     pub episode_evidence: u32,
+    #[serde(default)]
+    pub evidence: String,
+    #[serde(default)]
+    pub probe_nfos: Option<u32>,
     pub state: String,
     pub issues: Vec<String>,
 }
@@ -118,8 +128,8 @@ pub fn mapped_path(server: &str, mappings: &[PathMapping]) -> Result<PathBuf> {
     Ok(PathBuf::from(server))
 }
 const QUERY: &str = r#"
-WITH RECURSIVE candidates(Id,Name,Path) AS (
- SELECT child.Id,child.Name,child.Path FROM MediaItems child
+WITH RECURSIVE candidates(Id,Name,Path,ParentId) AS (
+ SELECT child.Id,child.Name,child.Path,child.ParentId FROM MediaItems child
  LEFT JOIN MediaItems parent ON parent.Id=child.ParentId
  WHERE child.type=3 AND child.Path IS NOT NULL AND trim(child.Path)<>''
  AND (child.ParentId=2 OR parent.Path IS NULL OR trim(parent.Path)='')
@@ -132,16 +142,20 @@ SELECT c.Id,c.Name,c.Path,
  SUM(CASE WHEN i.type=5 AND lower(COALESCE(i.ProviderIds,'')) LIKE '%imdb=tt%'
  AND(i.ExtraType IS NULL OR trim(CAST(i.ExtraType AS TEXT))='' OR CAST(i.ExtraType AS TEXT)='0') THEN 1 ELSE 0 END),
  SUM(CASE WHEN i.type=6 THEN 1 ELSE 0 END),SUM(CASE WHEN i.type=8 THEN 1 ELSE 0 END),
- SUM(CASE WHEN i.type=5 THEN 1 ELSE 0 END)
+ SUM(CASE WHEN i.type=5 THEN 1 ELSE 0 END),c.ParentId
 FROM candidates c JOIN tree ON tree.RootId=c.Id JOIN MediaItems i ON i.Id=tree.Id
-GROUP BY c.Id,c.Name,c.Path ORDER BY c.Id LIMIT 10001
+GROUP BY c.Id,c.Name,c.Path,c.ParentId ORDER BY c.Id LIMIT 10001
 "#;
-fn probe(root: &Path) -> (bool, bool, Vec<String>) {
+fn probe(root: &Path, cancelled: &AtomicBool) -> (bool, bool, Vec<String>, u32) {
     let started = Instant::now();
     let mut stack = vec![root.to_path_buf()];
     let (mut movie, mut tv, mut count) = (false, false, 0usize);
     let mut issues = Vec::new();
+    let mut checked_nfos = 0;
     while let Some(path) = stack.pop() {
+        if cancelled.load(Ordering::SeqCst) {
+            break;
+        }
         count += 1;
         if count > 10000 || started.elapsed() > Duration::from_secs(5) {
             issues.push("nfo-evidence-probe-incomplete".into());
@@ -166,6 +180,7 @@ fn probe(root: &Path) -> (bool, bool, Vec<String>) {
                 path: root.to_string_lossy().into(),
                 space: Space::Movie,
             };
+            checked_nfos += 1;
             let (_, bytes) = crate::library::read_bytes(&library, &path)?;
             let item = crate::library::parse(&library, &path, &bytes)?;
             movie |= item.kind == "Movie" && !item.imdb.is_empty();
@@ -181,19 +196,25 @@ fn probe(root: &Path) -> (bool, bool, Vec<String>) {
             break;
         }
     }
-    (movie, tv, issues)
+    (movie, tv, issues, checked_nfos)
 }
-pub fn discover(
+pub fn discover(data: &Path, mappings: &[PathMapping]) -> Result<Vec<DiscoveredLibrary>> {
+    discover_with_previous(data, mappings, &[])
+}
+pub fn discover_with_previous(
     data: &Path,
-    version: &str,
     mappings: &[PathMapping],
+    previous: &[DiscoveredLibrary],
 ) -> Result<Vec<DiscoveredLibrary>> {
-    if version != "4.9.5.0" {
-        return Err(AppError::new(
-            "emby-database-version",
-            "Verify the supported Emby version before database discovery",
-        ));
-    }
+    discover_with_control(data, mappings, previous, Arc::new(AtomicBool::new(false)))
+}
+pub fn discover_with_control(
+    data: &Path,
+    mappings: &[PathMapping],
+    previous: &[DiscoveredLibrary],
+    cancelled: Arc<AtomicBool>,
+) -> Result<Vec<DiscoveredLibrary>> {
+    check_cancelled(&cancelled)?;
     if mappings.len() > 100 {
         return Err(AppError::new("path-mapping", "Too many path mappings"));
     }
@@ -207,9 +228,12 @@ pub fn discover(
     connection.busy_timeout(Duration::from_secs(2))?;
     connection.pragma_update(None, "query_only", true)?;
     let started = Instant::now();
+    let query_cancelled = cancelled.clone();
     connection.progress_handler(
         10000,
-        Some(move || started.elapsed() > Duration::from_secs(15)),
+        Some(move || {
+            query_cancelled.load(Ordering::SeqCst) || started.elapsed() > Duration::from_secs(15)
+        }),
     );
     let mut statement = connection
         .prepare(QUERY)
@@ -223,15 +247,19 @@ pub fn discover(
             row.get::<_, u32>(4)?,
             row.get::<_, u32>(5)?,
             row.get::<_, u32>(6)?,
+            row.get::<_, Option<i64>>(7)?.map(|id| id.to_string()),
         ))
     })?;
     let rows = rows
         .collect::<std::result::Result<Vec<_>, _>>()
-        .map_err(|e| failure(e).at(database.display()))?;
+        .map_err(|e| failure(e).at(database.display()));
+    check_cancelled(&cancelled)?;
+    let rows = rows?;
     drop(statement);
     drop(connection);
     let mut output = Vec::new();
-    for (id, name, server_path, movies, series, episodes, videos) in rows {
+    for (id, name, server_path, movies, series, episodes, videos, parent_id) in rows {
+        check_cancelled(&cancelled)?;
         if started.elapsed() > Duration::from_secs(30) {
             return Err(failure(
                 "Discovery exceeded its time budget; narrow the Emby library scope",
@@ -242,6 +270,17 @@ pub fn discover(
         }
         let (mut movie, mut tv) = (movies > 0, series > 0 || episodes > 0);
         let mut issues = Vec::new();
+        let mut evidence = Vec::new();
+        if movies > 0 {
+            evidence.push(format!("IMDb-video={movies}"));
+        }
+        if series > 0 {
+            evidence.push(format!("Series={series}"));
+        }
+        if episodes > 0 {
+            evidence.push(format!("Episode={episodes}"));
+        }
+        let mut probe_nfos = None;
         let local = mapped_path(&server_path, mappings).and_then(|p| paths::checked(&p));
         let local = match local {
             Ok(path) if path.is_dir() => Some(path),
@@ -256,10 +295,32 @@ pub fn discover(
         };
         if !movie && !tv && videos > 0 {
             if let Some(path) = &local {
-                let (a, b, extra) = probe(path);
+                let (a, b, extra, checked) = probe(path, &cancelled);
                 movie = a;
                 tv = b;
                 issues.extend(extra);
+                probe_nfos = Some(checked);
+                if a {
+                    evidence.push("NFO=movie".into());
+                }
+                if b {
+                    evidence.push("NFO=tv".into());
+                }
+                if !a && !b {
+                    evidence.push(format!("NFO-probe={checked}"));
+                }
+            }
+        }
+        if evidence.is_empty() {
+            evidence.push(format!("video-items={videos}"));
+        }
+        // The original reader retains proven classification while a root is
+        // offline. Match the exact server path; a reused database ID is not
+        // evidence that a different physical root has the same media kind.
+        if !movie && !tv && local.is_none() {
+            if let Some(old) = previous.iter().find(|old| old.server_path == server_path) {
+                movie = old.spaces.contains(&Space::Movie);
+                tv = old.spaces.contains(&Space::Tv);
             }
         }
         let mut spaces = Vec::new();
@@ -280,6 +341,7 @@ pub fn discover(
         };
         output.push(DiscoveredLibrary {
             id,
+            parent_id,
             name,
             server_path,
             local_path: local.map(|p| p.to_string_lossy().into()),
@@ -287,9 +349,19 @@ pub fn discover(
             movie_evidence: movies,
             series_evidence: series,
             episode_evidence: episodes,
+            evidence: evidence.join(", "),
+            probe_nfos,
             state: state.into(),
             issues,
         });
     }
+    check_cancelled(&cancelled)?;
     Ok(output)
+}
+pub(crate) fn check_cancelled(cancelled: &AtomicBool) -> Result<()> {
+    if cancelled.load(Ordering::SeqCst) {
+        Err(AppError::new("discovery-cancelled", "任务已取消"))
+    } else {
+        Ok(())
+    }
 }

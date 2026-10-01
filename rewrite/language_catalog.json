@@ -1,0 +1,54 @@
+{
+  "app_version": "v5.0.0",
+  "languages": {
+    "es-ES": {
+      "asset": "TCM-Language-es-ES-r2.zip",
+      "catalog_schema": 1,
+      "message_set_hash": "85dddb117272e71021b8ff784cdf4834644593b83cde2ee678f29358aa8d5ee7",
+      "released_with": "v5.0.0",
+      "revision": 2,
+      "sha256": "20e17227311ac740762c99f38b10a527f8b69bf705d9339246ecd8dce093851f"
+    },
+    "fr-FR": {
+      "asset": "TCM-Language-fr-FR-r2.zip",
+      "catalog_schema": 1,
+      "message_set_hash": "85dddb117272e71021b8ff784cdf4834644593b83cde2ee678f29358aa8d5ee7",
+      "released_with": "v5.0.0",
+      "revision": 2,
+      "sha256": "cc8986a6d7951be29ba0619ce8b35fe1c929807902e8d74c39742a7be023c935"
+    },
+    "ja-JP": {
+      "asset": "TCM-Language-ja-JP-r2.zip",
+      "catalog_schema": 1,
+      "message_set_hash": "85dddb117272e71021b8ff784cdf4834644593b83cde2ee678f29358aa8d5ee7",
+      "released_with": "v5.0.0",
+      "revision": 2,
+      "sha256": "0e8217ea4902b403fdcd84de4605833596c4bdd7590fbfe5bbb8e7595f8f957f"
+    },
+    "ru-RU": {
+      "asset": "TCM-Language-ru-RU-r2.zip",
+      "catalog_schema": 1,
+      "message_set_hash": "85dddb117272e71021b8ff784cdf4834644593b83cde2ee678f29358aa8d5ee7",
+      "released_with": "v5.0.0",
+      "revision": 2,
+      "sha256": "e45ae74a5cd7e220f8d5aeea6431fb396a35b24ab77ea1e8f9c6341d8da43b5d"
+    },
+    "th-TH": {
+      "asset": "TCM-Language-th-TH-r2.zip",
+      "catalog_schema": 1,
+      "message_set_hash": "85dddb117272e71021b8ff784cdf4834644593b83cde2ee678f29358aa8d5ee7",
+      "released_with": "v5.0.0",
+      "revision": 2,
+      "sha256": "3c3145a5f71609b01853b552417b90331ca4dee2569b218cf2c5ec6d1728bdeb"
+    }
+  },
+  "product": "tcm",
+  "schema": 1,
+  "sections": [
+    "web",
+    "core",
+    "engine",
+    "native",
+    "web-card"
+  ]
+}

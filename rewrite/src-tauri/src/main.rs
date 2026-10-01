@@ -1,9 +1,13 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#[allow(dead_code)] // retained validation source; not registered in the product IPC surface
 mod credentials;
 mod desktop;
+mod diagnostics;
+mod dialogs;
 mod emby;
+mod languages;
 mod lifecycle;
-mod migration;
+mod manual_update;
 mod privileged;
 mod update;
 use product_core::services::CredentialStore;
@@ -14,13 +18,22 @@ use std::{
 };
 use tauri::{
     menu::{Menu, MenuItem, Submenu},
-    tray::TrayIconBuilder,
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Manager,
 };
-use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 const PRODUCT: &str = "TCM";
 
+fn prepare_exit(app: &tauri::AppHandle) -> product_core::Result<()> {
+    app.state::<emby::EmbyDesktop>().shutdown()?;
+    app.state::<lifecycle::Lifecycle>()
+        .allow_exit
+        .store(true, std::sync::atomic::Ordering::SeqCst);
+    Ok(())
+}
+
 #[tauri::command]
+#[allow(dead_code)]
 fn runtime_probe(nonce: String) -> Result<Value, String> {
     if nonce.len() > 128 {
         return Err("invalid-nonce".into());
@@ -47,12 +60,13 @@ fn frontend_ready(app: tauri::AppHandle) -> Result<(), String> {
     if std::env::var_os("REWRITE_PROBE_AUTOCLOSE").is_some() {
         std::thread::spawn(move || {
             std::thread::sleep(Duration::from_secs(2));
-            app.exit(0);
+            lifecycle::request_exit(&app);
         });
     }
     Ok(())
 }
 #[tauri::command]
+#[allow(dead_code)]
 async fn directory_probe(app: tauri::AppHandle) -> Result<Value, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let Some(selected) = app.dialog().file().set_title("只读检查目录 / Read-only directory check").blocking_pick_folder() else { return Ok(json!({"status":"cancelled"})); };
@@ -63,6 +77,7 @@ async fn directory_probe(app: tauri::AppHandle) -> Result<Value, String> {
     }).await.map_err(|e|e.to_string())?
 }
 #[tauri::command]
+#[allow(dead_code)]
 fn storage_probe(app: tauri::AppHandle) -> Result<Value, String> {
     let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
@@ -88,6 +103,7 @@ fn storage_probe(app: tauri::AppHandle) -> Result<Value, String> {
     )
 }
 #[tauri::command]
+#[allow(dead_code)]
 async fn credential_probe() -> Result<Value, String> {
     tauri::async_runtime::spawn_blocking(|| {
         let service=format!("io.github.eric-hou1997.{}.validation",PRODUCT.to_lowercase());
@@ -103,6 +119,7 @@ async fn credential_probe() -> Result<Value, String> {
     }).await.map_err(|e|e.to_string())?
 }
 #[tauri::command]
+#[allow(dead_code)]
 async fn network_probe() -> Result<Value, String> {
     let url = "https://tauri.app/";
     let client = reqwest::Client::builder()
@@ -121,7 +138,7 @@ async fn network_probe() -> Result<Value, String> {
 }
 #[tauri::command]
 fn quit_probe(app: tauri::AppHandle) {
-    app.exit(0);
+    lifecycle::request_exit(&app);
 }
 fn restore(app: &tauri::AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
@@ -132,7 +149,52 @@ fn restore(app: &tauri::AppHandle) {
         }
     }
 }
+fn show_startup_error(app: &tauri::AppHandle, error: &str) {
+    let localized = app
+        .try_state::<languages::Languages>()
+        .and_then(|state| languages::snapshot(app, &state).ok());
+    let text = localized
+        .as_ref()
+        .and_then(|snapshot| {
+            languages::native_message(
+                snapshot,
+                "无法打开 Tech Card Manager 可视化界面，程序不会在后台继续运行。",
+                "Tech Card Manager could not open its window and will not continue running in the background.",
+            )
+            .ok()
+        })
+        .unwrap_or_else(|| {
+            "无法打开 Tech Card Manager 可视化界面，程序不会在后台继续运行。\n\nTech Card Manager could not open its window and will not continue running in the background.".into()
+        });
+    let title = localized
+        .as_ref()
+        .and_then(|snapshot| {
+            languages::native_message(
+                snapshot,
+                "Tech Card Manager 启动失败",
+                "Tech Card Manager startup failed",
+            )
+            .ok()
+        })
+        .unwrap_or_else(|| "Tech Card Manager 启动失败 / Startup Failed".into());
+    let detail = languages::backend_message(app, error);
+    let _ = app
+        .dialog()
+        .message(format!("{text}\n\n{detail}"))
+        .title(title)
+        .kind(MessageDialogKind::Error)
+        .blocking_show();
+}
 fn main() {
+    if product_core::lifecycle::ignored_agent_launch(std::env::args_os()) {
+        // Same deprecated entry as 4.1.0. Do not initialize Tauri, forward a
+        // second launch, import data, or recreate an independent resident Agent.
+        let _ = writeln!(
+            std::io::stderr(),
+            "ignored deprecated --agent launch; open the visual Manager instead"
+        );
+        return;
+    }
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             restore(app);
@@ -141,50 +203,62 @@ fn main() {
             }
         }))
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_autostart::init(
-            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
-            Some(vec!["--background"]),
-        ))
         .on_window_event(|window, event| {
             if window.label() == "main" {
                 if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();
                     lifecycle::close_requested(window.app_handle());
                 }
+                #[cfg(not(target_os = "linux"))]
+                if matches!(event, tauri::WindowEvent::Resized(_))
+                    && window.is_minimized().unwrap_or(false)
+                    && window
+                        .app_handle()
+                        .state::<lifecycle::Lifecycle>()
+                        .tray
+                        .load(std::sync::atomic::Ordering::SeqCst)
+                {
+                    if let Err(error) = window.hide() {
+                        eprintln!("window-background: {error}");
+                    }
+                }
             }
         })
         .invoke_handler(tauri::generate_handler![
-            runtime_probe,
             lifecycle::lifecycle_status,
             lifecycle::lifecycle_apply,
             lifecycle::background_window,
             frontend_ready,
-            directory_probe,
-            storage_probe,
-            credential_probe,
-            network_probe,
             quit_probe,
-            migration::migration_plan,
-            migration::migration_apply,
-            migration::migration_result,
             update::update_identity,
-            update::update_status,
-            update::update_check,
-            update::update_install,
-            update::update_cancel,
+            manual_update::check_card_update,
+            languages::language_status,
+            languages::choose_language,
+            languages::restore_language_packs,
+            manual_update::open_card_update,
+            manual_update::open_product_link,
             desktop::configuration,
+            desktop::folder_settings,
+            desktop::save_media_folders,
             desktop::operation_result,
             desktop::add_library_root,
-            desktop::scan_library,
-            desktop::task_control,
+            desktop::choose_library_root,
+            desktop::save_library_roots,
+            emby::scan_library,
+            emby::scan_media_folder,
             desktop::task_history,
+            diagnostics::diagnose,
+            diagnostics::manager_job,
+            dialogs::confirm_product_action,
+            diagnostics::export_diagnostics,
             desktop::task_result,
             desktop::catalog,
             desktop::ui_state,
             desktop::save_ui_state,
             desktop::browse,
-            desktop::tv_catalog,
-            desktop::tv_members,
+            desktop::catalog_members,
+            desktop::catalog_summary,
+            desktop::manager_catalog,
             desktop::inspector,
             emby::emby_select,
             emby::emby_authorize,
@@ -199,57 +273,104 @@ fn main() {
             emby::emby_check_server,
             emby::emby_data_directory,
             emby::emby_status,
+            emby::emby_legacy_components,
+            emby::emby_legacy_operation,
+            emby::emby_migrate_legacy_system,
             emby::emby_plan,
             emby::emby_apply,
+            emby::emby_repair,
             emby::emby_operation,
             emby::emby_start,
+            emby::rebuild_index,
+            emby::refresh_libraries,
             emby::emby_stop,
             emby::emby_service_status,
+            emby::incremental_status,
+            emby::incremental_settings,
+            emby::save_incremental_settings,
             desktop::reveal_item
         ])
         .setup(|app| {
-            app.manage(desktop::Desktop::start(app.handle())?);
-            app.manage(lifecycle::Lifecycle::default());
-            lifecycle::initialize(app.handle());
-            app.manage(update::Updates::default());
-            app.manage(emby::EmbyDesktop::new(
-                app.path().app_data_dir()?.join("emby-backups"),
-            ));
-            app.state::<emby::EmbyDesktop>()
-                .restore(&app.state::<desktop::Desktop>().store)?;
-            let show = MenuItem::with_id(app, "show", "显示窗口 / Show", true, None::<&str>)?;
-            let quit = MenuItem::with_id(app, "quit", "退出 / Quit", true, Some("CmdOrCtrl+Q"))?;
-            // macOS menu bars require top-level submenus. A flat tray menu
-            // cannot also serve as the menu bar: its accelerators stay inactive.
-            let application = Submenu::with_items(app, "TCM", true, &[&show, &quit])?;
-            app.set_menu(Menu::with_items(app, &[&application])?)?;
-            let tray_show = MenuItem::with_id(app, "show", "显示窗口 / Show", true, None::<&str>)?;
-            let tray_quit = MenuItem::with_id(app, "quit", "退出 / Quit", true, None::<&str>)?;
-            let tray_menu = Menu::with_items(app, &[&tray_show, &tray_quit])?;
-            app.on_menu_event(|app, event| match event.id().as_ref() {
-                "show" => restore(app),
-                "quit" => app.exit(0),
-                _ => {}
-            });
-            let mut tray = TrayIconBuilder::new()
-                .menu(&tray_menu)
-                .tooltip("TCM 技术验证");
-            if let Some(icon) = app.default_window_icon() {
-                tray = tray.icon(icon.clone());
+            let result = (|| -> Result<(), Box<dyn std::error::Error>> {
+                app.manage(desktop::Desktop::start(app.handle())?);
+                app.manage(lifecycle::Lifecycle::default());
+                app.manage(languages::Languages::default());
+                app.manage(diagnostics::Diagnostics::default());
+                lifecycle::initialize(app.handle());
+                app.manage(manual_update::ManualUpdates::default());
+                app.manage(emby::EmbyDesktop::new(
+                    app.path().app_data_dir()?.join("emby-backups"),
+                ));
+                emby::initialize(app.handle());
+                let show = MenuItem::with_id(app, "show", "显示窗口 / Show", true, None::<&str>)?;
+                let quit =
+                    MenuItem::with_id(app, "quit", "退出 / Quit", true, Some("CmdOrCtrl+Q"))?;
+                // macOS menu bars require top-level submenus. A flat tray menu
+                // cannot also serve as the menu bar: its accelerators stay inactive.
+                let application = Submenu::with_items(app, "TCM", true, &[&show, &quit])?;
+                app.set_menu(Menu::with_items(app, &[&application])?)?;
+                let tray_show =
+                    MenuItem::with_id(app, "show", "显示窗口 / Show", true, None::<&str>)?;
+                let tray_quit = MenuItem::with_id(app, "quit", "退出 / Quit", true, None::<&str>)?;
+                let tray_menu = Menu::with_items(app, &[&tray_show, &tray_quit])?;
+                app.manage(languages::LanguageMenus(
+                    vec![show.clone(), tray_show.clone()],
+                    vec![quit.clone(), tray_quit.clone()],
+                ));
+                let language =
+                    languages::snapshot(app.handle(), &app.state::<languages::Languages>())?;
+                languages::synchronize_menus(app.handle(), &language)?;
+                app.on_menu_event(|app, event| match event.id().as_ref() {
+                    "show" => restore(app),
+                    "quit" => lifecycle::confirm_exit(app),
+                    _ => {}
+                });
+                let mut tray = TrayIconBuilder::new()
+                    .menu(&tray_menu)
+                    .tooltip("Tech Card Manager")
+                    .on_tray_icon_event(|tray, event| {
+                        if matches!(
+                            event,
+                            TrayIconEvent::Click {
+                                button: MouseButton::Left,
+                                button_state: MouseButtonState::Up,
+                                ..
+                            } | TrayIconEvent::DoubleClick {
+                                button: MouseButton::Left,
+                                ..
+                            }
+                        ) {
+                            restore(tray.app_handle());
+                        }
+                    });
+                if let Some(icon) = app.default_window_icon() {
+                    tray = tray.icon(icon.clone());
+                }
+                match tray.build(app) {
+                    Ok(_) => app
+                        .state::<lifecycle::Lifecycle>()
+                        .tray
+                        .store(true, std::sync::atomic::Ordering::SeqCst),
+                    Err(error) => eprintln!("tray-unavailable: {error}"),
+                }
+                lifecycle::first_window(app.handle())?;
+                report_event("native-setup-complete")?;
+                Ok(())
+            })();
+            if let Err(error) = result {
+                show_startup_error(app.handle(), &error.to_string());
+                return Err(error);
             }
-            match tray.build(app) {
-                Ok(_) => app
-                    .state::<lifecycle::Lifecycle>()
-                    .tray
-                    .store(true, std::sync::atomic::Ordering::SeqCst),
-                Err(error) => eprintln!("tray-unavailable: {error}"),
-            }
-            lifecycle::first_window(app.handle())?;
-            report_event("native-setup-complete")?;
             Ok(())
         })
-        .build(tauri::generate_context!())
-        .expect("validation application setup failed");
+        .build(tauri::generate_context!());
+    let app = match app {
+        Ok(app) => app,
+        Err(error) => {
+            eprintln!("application-setup: {error}");
+            return;
+        }
+    };
     app.run(|handle, event| {
         if let tauri::RunEvent::ExitRequested { api, .. } = &event {
             if !handle
@@ -258,7 +379,7 @@ fn main() {
                 .load(std::sync::atomic::Ordering::SeqCst)
             {
                 api.prevent_exit();
-                lifecycle::request_exit(handle);
+                lifecycle::confirm_exit(handle);
             }
         }
         #[cfg(target_os = "macos")]
@@ -269,19 +390,9 @@ fn main() {
             if let Err(error) = handle.state::<emby::EmbyDesktop>().shutdown() {
                 eprintln!("Emby shutdown failed: {error}");
             }
-            handle.state::<desktop::Desktop>().shutdown();
             if let Err(e) = report_event("process-exit") {
                 eprintln!("{e}");
             }
         }
     });
-}
-
-fn prepare_update_exit(app: &tauri::AppHandle) -> product_core::Result<()> {
-    app.state::<emby::EmbyDesktop>().shutdown()?;
-    app.state::<desktop::Desktop>().shutdown();
-    app.state::<lifecycle::Lifecycle>()
-        .allow_exit
-        .store(true, std::sync::atomic::Ordering::SeqCst);
-    Ok(())
 }

@@ -15,7 +15,11 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
-const JOURNAL: &str = "/var/lib/tech-card-manager-validation";
+const JOURNAL: &str = if crate::OFFICIAL_RELEASE {
+    "/var/lib/tech-card-manager"
+} else {
+    "/var/lib/tech-card-manager-validation"
+};
 const FILES: &[&str] = &[
     "index.html",
     "technical-specs-card.js",
@@ -58,7 +62,7 @@ fn tree(path: &Path, uid: u32) -> Result<()> {
     }
     Ok(())
 }
-fn journal(root: &Path, uid: u32) -> Result<PathBuf> {
+pub(crate) fn journal(root: &Path, uid: u32) -> Result<PathBuf> {
     let parent = root
         .parent()
         .ok_or_else(|| denied("Journal parent missing"))?;
@@ -87,7 +91,7 @@ fn journal(root: &Path, uid: u32) -> Result<PathBuf> {
     }
     Ok(root.to_owned())
 }
-fn validate_target(web: &Path) -> Result<()> {
+pub(crate) fn validate_target(web: &Path) -> Result<()> {
     tree(web, 0)?;
     for file in FILES {
         let target = web.join(file);
@@ -131,7 +135,7 @@ fn initialize(args: &[String]) -> Result<(Session, PathBuf)> {
         .canonicalize()
         .map_err(denied)?;
     let manager = fs::read_link(format!("/proc/{parent}/exe")).map_err(denied)?;
-    if manager.file_name().and_then(|s| s.to_str()) != Some("tcm-validation")
+    if manager.file_name().and_then(|s| s.to_str()) != Some(crate::MANAGER_BINARY_NAME)
         || manager.parent() != own.parent()
     {
         return Err(denied("Helper must be launched by its packaged Manager"));

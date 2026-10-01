@@ -23,6 +23,8 @@
 
 ---
 
+v5.0.0 仅迁移技术栈与系统适配，目标是保留 v4.1.0 的功能、界面和操作。TCM 仍只读 NFO、管理 Emby 卡片并手动更新，没有 AI。真实 Emby、完整原生界面/操作和 Windows/Linux 运行验收尚未完成；源码检查与制包不代表这些验收通过。现有截图作为原界面参照。
+
 ## 🎬 项目简介
 
 **Tech Card Manager（TCM）** 用于把已经存在于媒体 NFO 中的 **Technical Specifications（影视技术规格）** 带到 Emby 的实际浏览界面中。
@@ -109,7 +111,7 @@ Web Card 的维护与媒体 NFO 是两个完全独立的操作域。
 
 TCM 可以维护 Emby Web 集成文件，但**不会因此修改媒体 NFO**。
 
-Manager 可在设置中即时切换简体中文、繁體中文与 English (United States)，不会重载页面或清空当前界面状态。法语、俄语、日语、西班牙语和泰语以 `v4.1.0` GitHub Release 的独立语言包提供，下载并验证后才能加载。Emby Web Card 使用独立的语言注册表；未安装或不支持的 Emby 语言回退简体中文。`Camera`、`Sound mix` 等 Technical Specs 字段键和数据结构不会随显示语言改变。
+Manager 可在设置中即时切换简体中文、繁體中文与 English (United States)，不会重载页面或清空当前界面状态。法语、俄语、日语、西班牙语和泰语以 `v5.0.0` GitHub Release 的独立语言包提供，下载并验证后才能加载。Emby Web Card 使用独立的语言注册表；未安装或不支持的 Emby 语言回退简体中文。`Camera`、`Sound mix` 等 Technical Specs 字段键和数据结构不会随显示语言改变。
 
 ---
 
@@ -165,11 +167,11 @@ TCM 的 Manager 界面不仅负责启动服务，也可以直接浏览已经建�
 
 ---
 
-### 🪟 Windows 常驻与系统托盘
+### 🪟 常驻与系统托盘
 
 当前正式实现面向：
 
-**Windows x64**
+**macOS ARM64 / Windows x64, ARM64 / Linux x64, ARM64**
 
 启动 Tech Card Manager 后，Manager 和本地服务一起运行。
 
@@ -495,58 +497,23 @@ TCM 保留对部分旧组件、旧 Web Patch 和历史安装痕迹的兼容识�
 
 ## 🧩 当前架构
 
-当前 Windows 实现主要由以下部分组成：
+v5 使用 Rust + Tauri 2 与 TypeScript + Vue 3/Vite。原 v4 Windows 源码和发行输入保留在 `windows/` 与 `packaging/`；v5 源码位于 `rewrite/`。仓库仍按产品组织。
 
 ```text
-Windows GUI / Native Integration
+Tauri 2 / Native Integration
           +
-        Go Core
+       Rust Core
           +
-      Local Web UI
-          +
-   PowerShell Engine
-          +
-Tray / Browser Integration
+TypeScript / Vue 3 / Vite
           ↓
      Emby Web Card
 ```
-
-Repository 按**产品**组织，而不是永久按照操作系统组织。
-
-当前正式支持 Windows x64，未来计划增加其他操作系统实现。
 
 ---
 
 ## 💻 当前运行环境
 
-目前正式维护的平台：
-
-**Windows x64**
-
-当前产品与发布流程重点围绕以下环境：
-
-* Windows x64
-* Windows PowerShell 5.1
-* Windows UAC
-* Windows 系统托盘
-* 浏览器加载
-* Emby Server Web UI
-
-需要注意：
-
-**源码能够编译，不代表真实平台行为已经得到验证。**
-
-例如下面这些能力仍然需要实际 Windows / Emby 环境进行验收：
-
-* UAC
-* 托盘生命周期
-* 登录启动
-* 浏览器加载
-* Emby DOM
-* Web Card 安装
-* Web Card 删除
-* Web Card 恢复
-* 应用退出后的资源清理
+v5 制包覆盖 macOS ARM64、Windows x64/ARM64、Linux x64/ARM64，共五个目标、九个包，不提供 macOS Intel。macOS 最低版本为 12.0；Windows 使用 WebView2，NSIS 包含离线安装器；Linux 使用 WebKitGTK 4.1、GTK 3、托盘库及需要提权时的 pkexec。没有新增 PowerShell 运行依赖。完整真实平台与 Emby 验收仍待执行，包括权限、托盘、登录启动、客户端加载、卡片安装/移除/恢复和退出清理。macOS 包仅临时签名，未做 Apple 公证；Windows 包未做发行证书签名。
 
 ---
 
@@ -554,31 +521,25 @@ Repository 按**产品**组织，而不是永久按照操作系统组织。
 
 ### 1. 下载
 
-前往：
+从 [GitHub Releases](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases) 下载与系统、应用架构匹配的安装包。v5.0.0 包文件名如下；Setup.exe 是安装器，AppImage 是可运行文件。
 
-[**GitHub Releases →**](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases)
-
-项目不单独提供裸 `.exe` Release。
-
-当前正式安装包为：
-
-```text
-TCM-v4.1.0-Windows-x64-EXE.zip
-```
+| 系统 | 架构 | 安装包 |
+| --- | --- | --- |
+| macOS | ARM64 | `TCM-v5.0.0-MacOS-AArch64.dmg` |
+| Windows | x64 | `TCM-v5.0.0-Windows-x64-Setup.exe` |
+| Windows | ARM64 | `TCM-v5.0.0-Windows-AArch64-Setup.exe` |
+| Linux | x64 | `TCM-v5.0.0-Linux-x64.AppImage` |
+| Linux | x64 | `TCM-v5.0.0-Linux-x64.deb` |
+| Linux | x64 | `TCM-v5.0.0-Linux-x64.rpm` |
+| Linux | ARM64 | `TCM-v5.0.0-Linux-AArch64.AppImage` |
+| Linux | ARM64 | `TCM-v5.0.0-Linux-AArch64.deb` |
+| Linux | ARM64 | `TCM-v5.0.0-Linux-AArch64.rpm` |
 
 ---
 
-### 2. 完整解压
+### 2. 安装应用
 
-请先把 ZIP 完整解压到一个固定目录。
-
-然后运行其中的：
-
-```text
-Tech-Card-Manager.exe
-```
-
-不要直接在压缩包内部运行程序。
+macOS：打开 DMG，将 Tech Card Manager.app 放入 Applications。Windows：运行对应架构的 NSIS Setup.exe。Linux：使用发行版包管理器安装 DEB/RPM，或给 AppImage 执行权限后运行。升级前从菜单栏或托盘完全退出应用。应用数据保存于系统用户数据目录；保留旧 Portable 的 `data`、`logs`、`backup`、`runtime`、`updates` 及其他原文件，不删除原目录。旧数据迁移按应用内清单确认，不改写 NFO。
 
 ---
 
@@ -623,7 +584,7 @@ NFO
 
 根据 Manager 中的状态与提示完成 Emby Web Card 的安装或维护。
 
-涉及 Emby Web 文件修改时，Windows 可能要求管理员权限。
+修改 Emby Web 文件时，Windows 使用 UAC，macOS 使用系统管理员授权，Linux 使用 pkexec。先核对维护清单，再确认操作；拒绝授权不会改写媒体 NFO。
 
 ---
 
@@ -639,39 +600,7 @@ Manager 可以最小化到托盘，不需要一直显示在桌面。
 
 ## 🔄 更新方式
 
-TCM 可以在设置页检查 GitHub 官方 Release。
-
-当前 Portable 版本**不会自动替换正在运行的 EXE**。
-
-推荐更新方式：
-
-```text
-检查新版本
-    ↓
-打开 GitHub Release
-    ↓
-下载新的 ZIP
-    ↓
-从托盘完全退出 TCM
-    ↓
-解压新版本
-    ↓
-替换程序文件
-    ↓
-保留数据目录 / 配置
-    ↓
-重新启动
-    ↓
-验证运行状态
-```
-
-Release 同时提供：
-
-```text
-TCM-v4.1.0-Windows-x64-EXE-SHA256SUMS.txt
-```
-
-用于验证下载包完整性。
+设置页保留原检查更新、内嵌下载确认与打开系统浏览器的手动流程。它按当前安装渠道选择 DMG、NSIS、AppImage、DEB 或 RPM，不自动安装或替换应用。下载匹配包 → 完全退出 → 安装或替换 → 保留用户数据与备份 → 重启 → 核对运行状态。DEB/RPM 使用系统包管理器升级。发行附件提供 `TCM-v5.0.0-SHA256SUMS.txt`；先核对下载文件摘要。
 
 ---
 
@@ -761,8 +690,8 @@ main
 当前已经提供：
 
 * 完整公开源码
-* Windows x64 Portable GUI
-* v4.1.0 Release
+* Tauri 2 GUI (macOS ARM64 / Windows x64, ARM64 / Linux x64, ARM64)
+* v5.0.0 Release
 * SHA-256 校验文件
 * 只读 NFO 索引
 * Emby Technical Specifications Web Card
@@ -806,23 +735,13 @@ main
 
 ### 持续推进
 
-* [ ] 完善 Emby Technical Specifications Card 展示效果
-* [ ] 改进不同媒体类型的兼容处理
-* [ ] 改进不同 Emby 页面结构的兼容性
-* [ ] 加强不同 Emby Web UI / DOM 版本适配
-* [ ] 完善索引错误定位
-* [ ] 完善错误恢复体验
-* [ ] 完善历史组件迁移流程
-* [ ] 完善历史组件回滚能力
-* [ ] 增加更多真实 Windows / Emby 回归测试
-* [ ] 完善 Manager 状态可视化
-* [ ] 完善设置体验
-* [ ] 改进 Portable 更新体验
-* [ ] 持续完善 `AGENTS.md`
-* [ ] 持续完善 Coding Agent Context
-* [ ] 探索其他操作系统支持，同时保持 TCM 的只读产品边界
+当前 v5 范围仅为原功能迁移与平台适配。
 
-Roadmap 会随着项目开发和实际使用反馈继续调整。
+* [ ] 完成真实 Emby 卡片安装、显示、撤除与失败恢复验收
+* [ ] 完成原生界面、弹窗、操作与像素对照
+* [ ] 完成五目标真实系统运行与安装/升级/卸载验收
+
+上述未验收项不会因构建成功而勾选；不以 v5 为由新增功能。
 
 ---
 

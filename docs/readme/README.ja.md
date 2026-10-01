@@ -23,6 +23,8 @@
 
 ---
 
+v5.0.0 は技術スタックとシステム統合のみを変更し、v4.1.0 の機能、画面、操作の維持を目標とします。TCM は引き続き NFO の読み取り、Emby カード管理、手動更新を行い、AI はありません。実際の Emby、原生画面と操作全体、および Windows/Linux の実行検証は未完了です。ソース検査やパッケージ生成で合格とはしません。既存のスクリーンショットは元の画面の参考です。
+
 ## 🎬 概要
 
 **Tech Card Manager (TCM)** は、メディアの NFO ファイルに既に存在する **Technical Specifications** を、実際の Emby 閲覧体験へ取り込みます。
@@ -107,7 +109,7 @@ Web Card の保守とメディア NFO データは、完全に別の操作領域
 
 TCM は Emby Web 統合ファイルを保守できますが、**その処理の一部としてメディア NFO を変更することはありません**。
 
-Manager は現在の UI 状態を再読み込み・消去せず、簡体字中国語、繁体字中国語、英語（米国）を即座に切り替えられます。フランス語、ロシア語、日本語、スペイン語、タイ語は `v4.1.0` GitHub Release の個別アセットで、ダウンロードと検証後にのみ読み込まれます。Emby Web Card には独立したロケールレジストリがあり、未インストールまたは非対応の Emby ロケールは簡体字中国語へフォールバックします。`Camera` や `Sound mix` などの Technical Specs キーと基礎データ構造は、表示言語によって変わりません。
+Manager は現在の UI 状態を再読み込み・消去せず、簡体字中国語、繁体字中国語、英語（米国）を即座に切り替えられます。フランス語、ロシア語、日本語、スペイン語、タイ語は `v5.0.0` GitHub Release の個別アセットで、ダウンロードと検証後にのみ読み込まれます。Emby Web Card には独立したロケールレジストリがあり、未インストールまたは非対応の Emby ロケールは簡体字中国語へフォールバックします。`Camera` や `Sound mix` などの Technical Specs キーと基礎データ構造は、表示言語によって変わりません。
 
 ---
 
@@ -163,11 +165,11 @@ TCM Manager はサービス開始だけでなく、構築済みのメディア�
 
 ---
 
-### 🪟 Windows 常駐とシステムトレイ
+### 🪟 常駐とシステムトレイ
 
 現在の公式実装の対象：
 
-**Windows x64**
+**macOS ARM64 / Windows x64, ARM64 / Linux x64, ARM64**
 
 Tech Card Manager を起動すると、Manager とローカルサービスが一緒に実行されます。
 
@@ -491,58 +493,23 @@ TCM が旧コンポーネントの所有権を確実に判定できない場合�
 
 ## 🧩 現在のアーキテクチャ
 
-現在の Windows 実装は主に次で構成されます。
+v5 は Rust + Tauri 2 と TypeScript + Vue 3/Vite を使用します。v4 Windows の元ソースとリリース入力は `windows/` と `packaging/` に保持し、v5 ソースは `rewrite/` にあります。リポジトリは引き続き製品ごとに構成します。
 
 ```text
-Windows GUI / ネイティブ統合
+Tauri 2 / Native Integration
           +
-        Go Core
+       Rust Core
           +
-      ローカル Web UI
-          +
-   PowerShell Engine
-          +
-トレイ / ブラウザー統合
+TypeScript / Vue 3 / Vite
           ↓
      Emby Web Card
 ```
-
-リポジトリはオペレーティングシステムではなく **製品** を中心に構成されています。
-
-現在は Windows x64 をサポートし、将来は他の OS 実装も計画しています。
 
 ---
 
 ## 💻 現在の実行環境
 
-現在保守されているプラットフォーム：
-
-**Windows x64**
-
-現在の製品と Release ワークフローは次の環境を対象とします。
-
-* Windows x64
-* Windows PowerShell 5.1
-* Windows UAC
-* Windows システムトレイ
-* ブラウザー読み込み
-* Emby Server Web UI
-
-重要：
-
-**ソースのコンパイル成功は、実環境での動作を証明しません。**
-
-次の機能は実際の Windows / Emby 環境で検証する必要があります。
-
-* UAC
-* トレイのライフサイクル
-* ログイン起動
-* ブラウザー読み込み
-* Emby DOM 動作
-* Web Card インストール
-* Web Card 削除
-* Web Card 復旧
-* アプリ終了後のリソース解放
+v5 のパッケージ対象は macOS ARM64、Windows x64/ARM64、Linux x64/ARM64 の 5 対象、9 パッケージで、macOS Intel は含みません。macOS は 12.0 以上です。Windows は WebView2 を使い、NSIS はオフラインインストーラーを含みます。Linux は WebKitGTK 4.1、GTK 3、トレイライブラリと権限昇格時の pkexec を使います。PowerShell の新しい実行依存は追加しません。実機と Emby の検証は未完了で、権限、トレイ、ログイン起動、クライアント読み込み、カードのインストール/削除/復旧、終了時清掃を含みます。macOS はアドホック署名のみで Apple 公証はありません。Windows は配布証明書で署名していません。
 
 ---
 
@@ -550,31 +517,25 @@ Windows GUI / ネイティブ統合
 
 ### 1. ダウンロード
 
-次のページを開きます。
+[GitHub Releases](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases) から OS とアプリのアーキテクチャに合うパッケージを取得してください。v5.0.0 のファイル名は以下のとおりです。Setup.exe はインストーラー、AppImage は実行ファイルです。
 
-[**GitHub Releases →**](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases)
-
-本プロジェクトは単体の裸の `.exe` を Release アセットとして公開しません。
-
-現在の公式パッケージ：
-
-```text
-TCM-v4.1.0-Windows-x64-EXE.zip
-```
+| システム | アーキテクチャ | パッケージ |
+| --- | --- | --- |
+| macOS | ARM64 | `TCM-v5.0.0-MacOS-AArch64.dmg` |
+| Windows | x64 | `TCM-v5.0.0-Windows-x64-Setup.exe` |
+| Windows | ARM64 | `TCM-v5.0.0-Windows-AArch64-Setup.exe` |
+| Linux | x64 | `TCM-v5.0.0-Linux-x64.AppImage` |
+| Linux | x64 | `TCM-v5.0.0-Linux-x64.deb` |
+| Linux | x64 | `TCM-v5.0.0-Linux-x64.rpm` |
+| Linux | ARM64 | `TCM-v5.0.0-Linux-AArch64.AppImage` |
+| Linux | ARM64 | `TCM-v5.0.0-Linux-AArch64.deb` |
+| Linux | ARM64 | `TCM-v5.0.0-Linux-AArch64.rpm` |
 
 ---
 
-### 2. ZIP を完全に展開
+### 2. アプリをインストール
 
-まず ZIP 全体を固定ディレクトリへ展開します。
-
-次に実行します。
-
-```text
-Tech-Card-Manager.exe
-```
-
-圧縮アーカイブ内から直接実行しないでください。
+macOS：DMG を開き、Tech Card Manager.app を Applications に移動します。Windows：対象アーキテクチャの NSIS Setup.exe を実行します。Linux：ディストリビューションのパッケージ管理で DEB/RPM をインストールするか、AppImage に実行権限を付けて起動します。更新前にメニューバーまたはトレイから完全に終了してください。アプリデータはシステムのユーザーデータ領域に保存します。旧 Portable の `data`、`logs`、`backup`、`runtime`、`updates` とすべての元ファイルを保持し、元フォルダーを削除しないでください。旧データ移行はアプリ内一覧で確認し、NFO は書き換えません。
 
 ---
 
@@ -619,7 +580,7 @@ NFO
 
 Manager の状態と案内に従い、Emby Web Card をインストールまたは保守します。
 
-Emby Web ファイルの変更時、Windows が管理者権限を求める場合があります。
+Emby Web ファイルの保守には Windows の UAC、macOS のシステム管理者承認、Linux の pkexec を使います。保守一覧を確認してから承認してください。承認を拒否してもメディア NFO は書き換えません。
 
 ---
 
@@ -635,37 +596,7 @@ Manager はトレイへ最小化でき、デスクトップ上に表示してお
 
 ## 🔄 更新
 
-TCM は設定ページから公式 GitHub Releases を確認できます。
-
-現在の Portable ビルドは **実行中の EXE を自動置換しません**。
-
-推奨更新フロー：
-
-```text
-新バージョンを確認
-    ↓
-GitHub Release を開く
-    ↓
-新しい ZIP をダウンロード
-    ↓
-トレイから TCM を完全終了
-    ↓
-新バージョンを展開
-    ↓
-プログラムファイルを置換
-    ↓
-既存のデータディレクトリ / 設定を保持
-    ↓
-再起動
-    ↓
-実行状態を確認
-```
-
-Release はパッケージ整合性検証用に次も提供します。
-
-```text
-TCM-v4.1.0-Windows-x64-EXE-SHA256SUMS.txt
-```
+設定は元の手動フローを維持します：更新確認、画面内ダウンロード確認、システムブラウザー起動です。インストール方式に応じ DMG、NSIS、AppImage、DEB、RPM を選び、自動インストールや自動置換は行いません。該当パッケージ取得 → 完全終了 → インストールまたは置換 → ユーザーデータとバックアップ保持 → 再起動 → 状態確認。DEB/RPM はシステムのパッケージ管理で更新します。リリースは `TCM-v5.0.0-SHA256SUMS.txt` を含み、先にダウンロードのハッシュを確認してください。
 
 ---
 
@@ -753,8 +684,8 @@ main
 現在利用可能：
 
 * 完全な公開ソースコード
-* Windows x64 Portable GUI
-* v4.1.0 Release
+* Tauri 2 GUI (macOS ARM64 / Windows x64, ARM64 / Linux x64, ARM64)
+* v5.0.0 Release
 * SHA-256 チェックサムファイル
 * 読み取り専用 NFO インデックス
 * Emby Technical Specifications Web Card
@@ -798,23 +729,13 @@ main
 
 ### 進行中
 
-* [ ] Emby Technical Specifications Card 表示を改善
-* [ ] メディア種別間の互換性を改善
-* [ ] 異なる Emby ページ構造への互換性を改善
-* [ ] Emby Web UI / DOM バージョン間の互換性を改善
-* [ ] インデックスエラーのローカライズを改善
-* [ ] エラー復旧を改善
-* [ ] 旧コンポーネント移行を改善
-* [ ] 旧コンポーネントのロールバックを改善
-* [ ] 実際の Windows / Emby 回帰テストを追加
-* [ ] Manager 状態表示を改善
-* [ ] 設定 UX を改善
-* [ ] Portable 更新体験を改善
-* [ ] `AGENTS.md` を継続的に改善
-* [ ] Coding Agent Context を継続的に改善
-* [ ] TCM の読み取り専用製品境界を維持しつつ他の OS 対応を検討
+現在の v5 範囲は既存機能とプラットフォーム移行に限定します。
 
-ロードマップはプロジェクトの開発と実際のフィードバックに応じて更新されます。
+* [ ] 実際の Emby でカードのインストール、表示、削除、失敗復旧を検証
+* [ ] 原生画面、ダイアログ、操作、ピクセルを元の版と比較
+* [ ] 5 対象の実機で実行とインストール/更新/削除を検証
+
+ビルド成功では未検証項目を完了としません。v5 は新機能の許可ではありません。
 
 ---
 

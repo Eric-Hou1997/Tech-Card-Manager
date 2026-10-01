@@ -23,6 +23,8 @@ Read-only NFO indexing and Technical Specifications card management for **Emby S
 
 ---
 
+v5.0.0 changes only the technology stack and platform integration, aiming to preserve v4.1.0 functionality, UI and operation. TCM still reads NFO files, manages Emby cards and updates manually, without AI. Real Emby, complete native UI/operation and Windows/Linux runtime acceptance remain incomplete; source checks and packages do not prove them. Existing screenshots are references for the original UI.
+
 ## 🎬 About
 
 **Tech Card Manager (TCM)** brings **Technical Specifications** that already exist in media NFO files into the actual Emby browsing experience.
@@ -109,7 +111,7 @@ Web Card maintenance and media NFO data are two completely separate operation do
 
 TCM may maintain Emby Web integration files, but **it does not modify media NFO files as part of that process**.
 
-The Manager can switch instantly among Simplified Chinese, Traditional Chinese, and English (United States) without reloading or clearing current UI state. French, Russian, Japanese, Spanish, and Thai are separate assets on the `v4.1.0` GitHub Release and load only after download and verification. The Emby Web Card has an independent locale registry; uninstalled or unsupported Emby locales fall back to Simplified Chinese. Technical Specs keys such as `Camera` and `Sound mix`, and the underlying data structure, never change with the display language.
+The Manager can switch instantly among Simplified Chinese, Traditional Chinese, and English (United States) without reloading or clearing current UI state. French, Russian, Japanese, Spanish, and Thai are separate assets on the `v5.0.0` GitHub Release and load only after download and verification. The Emby Web Card has an independent locale registry; uninstalled or unsupported Emby locales fall back to Simplified Chinese. Technical Specs keys such as `Camera` and `Sound mix`, and the underlying data structure, never change with the display language.
 
 ---
 
@@ -165,11 +167,11 @@ When an error occurs, TCM keeps as much useful diagnostic information as practic
 
 ---
 
-### 🪟 Windows Residency and System Tray
+### 🪟 Residency and System Tray
 
 The current official implementation targets:
 
-**Windows x64**
+**macOS ARM64 / Windows x64, ARM64 / Linux x64, ARM64**
 
 When Tech Card Manager starts, the Manager and local service run together.
 
@@ -493,58 +495,23 @@ If TCM cannot reliably determine ownership of a legacy component, it stops rathe
 
 ## 🧩 Current Architecture
 
-The current Windows implementation is mainly composed of:
+v5 uses Rust + Tauri 2 and TypeScript + Vue 3/Vite. Original v4 Windows source and release inputs remain in `windows/` and `packaging/`; v5 source is in `rewrite/`. The repository remains organized by product.
 
 ```text
-Windows GUI / Native Integration
+Tauri 2 / Native Integration
           +
-        Go Core
+       Rust Core
           +
-      Local Web UI
-          +
-   PowerShell Engine
-          +
-Tray / Browser Integration
+TypeScript / Vue 3 / Vite
           ↓
      Emby Web Card
 ```
-
-The repository is organized by **product**, not permanently by operating system.
-
-Windows x64 is currently supported, with additional operating-system implementations planned for the future.
 
 ---
 
 ## 💻 Current Runtime Environment
 
-The currently maintained platform is:
-
-**Windows x64**
-
-The current product and Release workflow focus on environments including:
-
-* Windows x64
-* Windows PowerShell 5.1
-* Windows UAC
-* Windows system tray
-* Browser loading
-* Emby Server Web UI
-
-Important:
-
-**Successful source compilation does not prove real-platform behavior.**
-
-The following capabilities still require validation in actual Windows / Emby environments:
-
-* UAC
-* Tray lifecycle
-* Login startup
-* Browser loading
-* Emby DOM behavior
-* Web Card installation
-* Web Card removal
-* Web Card recovery
-* Resource cleanup after application exit
+v5 packaging covers macOS ARM64, Windows x64/ARM64 and Linux x64/ARM64: five targets and nine packages, without macOS Intel. macOS requires 12.0 or newer. Windows uses WebView2; NSIS includes its offline installer. Linux uses WebKitGTK 4.1, GTK 3, tray libraries and pkexec when elevation is needed. No new PowerShell runtime dependency is introduced. Full real-platform and Emby acceptance remains pending, including permissions, tray lifecycle, login startup, client loading, card installation/removal/recovery and exit cleanup. macOS packages are ad hoc signed and not Apple notarized; Windows packages have no distribution certificate signature.
 
 ---
 
@@ -552,31 +519,25 @@ The following capabilities still require validation in actual Windows / Emby env
 
 ### 1. Download
 
-Go to:
+Download a package matching your OS and application architecture from [GitHub Releases](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases). v5.0.0 filenames are listed below. Setup.exe is an installer; AppImage is an executable file.
 
-[**GitHub Releases →**](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases)
-
-The project does not publish a standalone bare `.exe` as a Release asset.
-
-The current official package is:
-
-```text
-TCM-v4.1.0-Windows-x64-EXE.zip
-```
+| System | Architecture | Package |
+| --- | --- | --- |
+| macOS | ARM64 | `TCM-v5.0.0-MacOS-AArch64.dmg` |
+| Windows | x64 | `TCM-v5.0.0-Windows-x64-Setup.exe` |
+| Windows | ARM64 | `TCM-v5.0.0-Windows-AArch64-Setup.exe` |
+| Linux | x64 | `TCM-v5.0.0-Linux-x64.AppImage` |
+| Linux | x64 | `TCM-v5.0.0-Linux-x64.deb` |
+| Linux | x64 | `TCM-v5.0.0-Linux-x64.rpm` |
+| Linux | ARM64 | `TCM-v5.0.0-Linux-AArch64.AppImage` |
+| Linux | ARM64 | `TCM-v5.0.0-Linux-AArch64.deb` |
+| Linux | ARM64 | `TCM-v5.0.0-Linux-AArch64.rpm` |
 
 ---
 
-### 2. Extract the ZIP Completely
+### 2. Install the Application
 
-Extract the entire ZIP into a fixed directory first.
-
-Then run:
-
-```text
-Tech-Card-Manager.exe
-```
-
-Do not run the application directly from inside the compressed archive.
+macOS: open the DMG and move Tech Card Manager.app into Applications. Windows: run the NSIS Setup.exe for your architecture. Linux: install DEB/RPM through your distribution package manager, or grant the AppImage execute permission and run it. Fully exit through the menu bar or tray before upgrading. Application data is stored in the system user-data directory. Preserve the old Portable `data`, `logs`, `backup`, `runtime`, `updates` and all other original files; do not delete the old directory. Confirm legacy-data migration using the application checklist; NFO files are not rewritten.
 
 ---
 
@@ -621,7 +582,7 @@ The process does not write index data back to NFO files.
 
 Follow the status and instructions shown in the Manager to install or maintain the Emby Web Card.
 
-Windows may request administrator privileges when Emby Web files need to be modified.
+Emby Web file maintenance uses UAC on Windows, system administrator authorization on macOS and pkexec on Linux. Review the maintenance list before confirming. Refusing authorization does not rewrite media NFO files.
 
 ---
 
@@ -637,39 +598,7 @@ The Manager can be minimized to the tray and does not need to remain visible on 
 
 ## 🔄 Updating
 
-TCM can check GitHub official Releases from the settings page.
-
-The current Portable build **does not automatically replace the running EXE**.
-
-Recommended update workflow:
-
-```text
-Check for New Version
-    ↓
-Open GitHub Release
-    ↓
-Download New ZIP
-    ↓
-Fully Exit TCM from the Tray
-    ↓
-Extract New Version
-    ↓
-Replace Program Files
-    ↓
-Keep Existing Data Directory / Configuration
-    ↓
-Restart
-    ↓
-Verify Runtime Status
-```
-
-The Release also provides:
-
-```text
-TCM-v4.1.0-Windows-x64-EXE-SHA256SUMS.txt
-```
-
-for package-integrity verification.
+Settings retain the original manual workflow: check updates, confirm the inline download prompt and open the system browser. The app selects DMG, NSIS, AppImage, DEB or RPM for the installed channel and does not install updates or replace itself automatically. Download the matching package → fully exit → install or replace → preserve user data and backups → restart → verify running state. Upgrade DEB/RPM through the system package manager. Release assets include `TCM-v5.0.0-SHA256SUMS.txt`; verify the downloaded file digest first.
 
 ---
 
@@ -757,8 +686,8 @@ main
 Currently available:
 
 * Complete public source code
-* Windows x64 Portable GUI
-* v4.1.0 Release
+* Tauri 2 GUI (macOS ARM64 / Windows x64, ARM64 / Linux x64, ARM64)
+* v5.0.0 Release
 * SHA-256 checksum file
 * Read-only NFO indexing
 * Emby Technical Specifications Web Card
@@ -802,23 +731,13 @@ Currently available:
 
 ### In Progress
 
-* [ ] Improve Emby Technical Specifications Card presentation
-* [ ] Improve compatibility across media types
-* [ ] Improve compatibility across different Emby page structures
-* [ ] Improve compatibility across Emby Web UI / DOM versions
-* [ ] Improve index error localization
-* [ ] Improve error recovery
-* [ ] Improve legacy component migration
-* [ ] Improve legacy component rollback
-* [ ] Add more real Windows / Emby regression tests
-* [ ] Improve Manager status visualization
-* [ ] Improve settings UX
-* [ ] Improve the Portable update experience
-* [ ] Continue improving `AGENTS.md`
-* [ ] Continue improving Coding Agent Context
-* [ ] Explore support for additional operating systems while preserving TCM's read-only product boundary
+The current v5 scope is limited to existing functionality and platform migration.
 
-The Roadmap will continue to evolve based on project development and real-world feedback.
+* [ ] Accept real Emby card installation, display, removal and failure recovery
+* [ ] Compare native UI, dialogs, operation and pixels with the original
+* [ ] Accept real-system operation and install/upgrade/uninstall on all five targets
+
+Build success does not complete these pending checks. v5 does not authorize new features.
 
 ---
 

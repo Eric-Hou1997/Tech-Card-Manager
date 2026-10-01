@@ -60,6 +60,170 @@ fn install(session: &mut Session) -> String {
     plan.fingerprint
 }
 #[test]
+fn helper_requires_a_matching_completed_index_before_enabling_display() {
+    let (_temp, web, _backup, mut session) = fixture();
+    install(&mut session);
+    let Outcome::Service(started) = session
+        .dispatch(request(
+            3,
+            Command::Start {
+                session: "waiting".into(),
+            },
+        ))
+        .unwrap()
+        .outcome
+    else {
+        panic!("service")
+    };
+    assert!(!started.lease.unwrap().enabled);
+    let fingerprint = emby::index_fingerprint(&index()).unwrap();
+    for (sequence, expected, enabled) in [
+        (4, Some("wrong".to_owned()), false),
+        (5, Some(fingerprint), true),
+        (6, None, false),
+    ] {
+        let Outcome::Service(state) = session
+            .dispatch(request(
+                sequence,
+                Command::IndexCurrent {
+                    fingerprint: expected,
+                },
+            ))
+            .unwrap()
+            .outcome
+        else {
+            panic!("lease")
+        };
+        assert_eq!(state.lease.unwrap().enabled, enabled);
+        let actual: emby::Lease =
+            serde_json::from_slice(&fs::read(web.join("technical-specs-runtime.json")).unwrap())
+                .unwrap();
+        assert_eq!(actual.enabled, enabled);
+    }
+    let read_lease = || {
+        serde_json::from_slice::<emby::Lease>(
+            &fs::read(web.join("technical-specs-runtime.json")).unwrap(),
+        )
+        .unwrap()
+    };
+    let previous = read_lease().sequence;
+    std::thread::sleep(std::time::Duration::from_millis(2200));
+    assert!(!read_lease().enabled);
+    assert!(
+        read_lease().sequence > previous,
+        "withholding display must keep the session owner alive"
+    );
+    session
+        .dispatch(request(
+            7,
+            Command::IndexCurrent {
+                fingerprint: Some(emby::index_fingerprint(&index()).unwrap()),
+            },
+        ))
+        .unwrap();
+    let previous = read_lease().sequence;
+    std::thread::sleep(std::time::Duration::from_millis(2200));
+    assert!(read_lease().enabled);
+    assert!(
+        read_lease().sequence > previous,
+        "resumed display must keep renewing"
+    );
+    let Outcome::Service(stopped) = session
+        .dispatch(request(8, Command::Stop {}))
+        .unwrap()
+        .outcome
+    else {
+        panic!("stop")
+    };
+    assert_eq!(stopped.phase, "stopped");
+    assert!(!stopped.lease.unwrap().enabled);
+}
+#[test]
+fn helper_indexes_before_web_setup_and_repairs_without_restarting_the_session() {
+    let (_temp, web, _backup, mut session) = fixture();
+    let original = fs::read(web.join("index.html")).unwrap();
+    let original_nfo = fs::read(web.join("untouched.nfo")).unwrap();
+    let Outcome::Service(started) = session
+        .dispatch(request(
+            1,
+            Command::Start {
+                session: "index-only".into(),
+            },
+        ))
+        .unwrap()
+        .outcome
+    else {
+        panic!("start");
+    };
+    assert_eq!(started.phase, "starting");
+    let published = index();
+    assert!(matches!(
+        session
+            .dispatch(request(
+                2,
+                Command::Publish {
+                    index: published.clone()
+                }
+            ))
+            .unwrap()
+            .outcome,
+        Outcome::Published(true)
+    ));
+    let fingerprint = emby::index_fingerprint(&published).unwrap();
+    let Outcome::Service(running) = session
+        .dispatch(request(
+            3,
+            Command::IndexCurrent {
+                fingerprint: Some(fingerprint),
+            },
+        ))
+        .unwrap()
+        .outcome
+    else {
+        panic!("running");
+    };
+    assert_eq!(running.phase, "running");
+    assert_eq!(fs::read(web.join("index.html")).unwrap(), original);
+    assert!(!web.join("technical-specs-card.js").exists());
+    let data = fs::read(web.join("technical-specs-data.json")).unwrap();
+    assert!(
+        matches!(session.dispatch(request(4, Command::Repair { id: "repair".into() })).unwrap().outcome, Outcome::Applied(status) if status.healthy)
+    );
+    let Outcome::Status { service: after, .. } = session
+        .dispatch(request(5, Command::Status {}))
+        .unwrap()
+        .outcome
+    else {
+        panic!("status");
+    };
+    assert_eq!(after.phase, "running");
+    assert_eq!(after.last_started_at, running.last_started_at);
+    assert_eq!(after.lease.unwrap().session_id, "index-only");
+    assert_eq!(
+        fs::read(web.join("technical-specs-data.json")).unwrap(),
+        data
+    );
+    let Outcome::Service(stopped) = session
+        .dispatch(request(6, Command::Stop {}))
+        .unwrap()
+        .outcome
+    else {
+        panic!("stop");
+    };
+    assert_eq!(stopped.phase, "stopped");
+    assert!(!stopped.lease.unwrap().enabled);
+    fs::remove_file(web.join("technical-specs-data.json")).unwrap();
+    session
+        .dispatch(request(7, Command::Publish { index: published }))
+        .unwrap();
+    assert_eq!(
+        fs::read(web.join("technical-specs-data.json")).unwrap(),
+        data
+    );
+    session.dispatch(request(8, Command::Close {})).unwrap();
+    assert_eq!(fs::read(web.join("untouched.nfo")).unwrap(), original_nfo);
+}
+#[test]
 fn fixed_target_plan_apply_replay_and_restart_preserve_original_files() {
     let (_temp, web, backup, mut session) = fixture();
     let before = fs::read(web.join("index.html")).unwrap();
@@ -139,6 +303,63 @@ fn fixed_target_plan_apply_replay_and_restart_preserve_original_files() {
             .outcome,
         Outcome::Applied(_)
     ));
+}
+
+#[test]
+fn helper_adoption_binds_the_review_and_rejects_replaced_confirmation() {
+    let (_temp, web, _backup, mut session) = fixture();
+    let original = fs::read_to_string(web.join("index.html")).unwrap();
+    fs::write(web.join("index.html"),original.replace("</body>","<!-- IMDbTechManager WebPatch BEGIN --><script src=\"technical-specs-card.js?v=4.1.0\"></script><!-- IMDbTechManager WebPatch END --></body>")).unwrap();
+    fs::write(
+        web.join("technical-specs-card.js"),
+        include_bytes!("../../../web-card/technical-specs-card.js"),
+    )
+    .unwrap();
+    let Outcome::Status { integration, .. } = session
+        .dispatch(request(1, Command::Status {}))
+        .unwrap()
+        .outcome
+    else {
+        panic!("status")
+    };
+    let reviewed = integration.legacy_patch.unwrap().fingerprint;
+    let command = Command::PlanAdoption {
+        id: "reviewed".into(),
+        reviewed: reviewed.clone(),
+        index: index(),
+    };
+    let Outcome::Plan(plan) = session
+        .dispatch(request(2, command.clone()))
+        .unwrap()
+        .outcome
+    else {
+        panic!("plan")
+    };
+    let Outcome::Plan(replayed) = session.dispatch(request(2, command)).unwrap().outcome else {
+        panic!("replay")
+    };
+    assert_eq!(plan.fingerprint, replayed.fingerprint);
+    let changed = session
+        .dispatch(request(
+            3,
+            Command::PlanAdoption {
+                id: plan.id.clone(),
+                reviewed: "different".into(),
+                index: index(),
+            },
+        ))
+        .unwrap();
+    assert!(matches!(changed.outcome,Outcome::Failed(error) if error.code=="operation-conflict"));
+    let applied = session
+        .dispatch(request(
+            4,
+            Command::Apply {
+                id: plan.id,
+                fingerprint: plan.fingerprint,
+            },
+        ))
+        .unwrap();
+    assert!(matches!(applied.outcome,Outcome::Applied(status) if status.healthy));
 }
 #[test]
 fn protocol_rejects_arbitrary_paths_scripts_unknown_actions_and_unbounded_frames() {
@@ -488,4 +709,78 @@ fn mismatched_responses_close_channel_and_do_not_send_a_second_request() {
         assert!(client.request(Command::Close {}).is_err());
         assert_eq!(*written.borrow(), first);
     }
+}
+
+#[test]
+fn helper_web_repair_keeps_running_session_and_does_not_publish_a_new_index() {
+    let (_temp, web, _backup, mut session) = fixture();
+    install(&mut session);
+    let started = session
+        .dispatch(request(
+            3,
+            Command::Start {
+                session: "same-session".into(),
+            },
+        ))
+        .unwrap();
+    let Outcome::Service(started) = started.outcome else {
+        panic!("start failed")
+    };
+    assert_eq!(started.phase, "starting");
+    assert!(started.last_started_at.is_none());
+    let Outcome::Service(started) = session
+        .dispatch(request(
+            4,
+            Command::IndexCurrent {
+                fingerprint: Some(emby::index_fingerprint(&index()).unwrap()),
+            },
+        ))
+        .unwrap()
+        .outcome
+    else {
+        panic!("enable failed")
+    };
+    assert_eq!(started.phase, "running");
+    assert!(started.last_started_at.is_some());
+    let data = fs::read(web.join("technical-specs-data.json")).unwrap();
+    let nfo = fs::read(web.join("untouched.nfo")).unwrap();
+    let repair = request(
+        5,
+        Command::Repair {
+            id: "repair-web".into(),
+        },
+    );
+    let repaired = session.dispatch(repair.clone()).unwrap();
+    assert!(matches!(repaired.outcome,Outcome::Applied(ref value) if value.healthy));
+    assert!(matches!(
+        session.dispatch(repair).unwrap().outcome,
+        Outcome::Applied(_)
+    ));
+    let status = session.dispatch(request(6, Command::Status {})).unwrap();
+    let Outcome::Status { service, .. } = status.outcome else {
+        panic!("status failed")
+    };
+    assert_eq!(service.phase, "running");
+    assert_eq!(service.last_started_at, started.last_started_at);
+    assert_eq!(
+        service.lease.unwrap().session_id,
+        started.lease.unwrap().session_id
+    );
+    assert_eq!(
+        fs::read(web.join("technical-specs-data.json")).unwrap(),
+        data
+    );
+    assert_eq!(fs::read(web.join("untouched.nfo")).unwrap(), nfo);
+    let receipt = session
+        .dispatch(request(
+            7,
+            Command::Operation {
+                id: "repair-web".into(),
+            },
+        ))
+        .unwrap();
+    assert!(
+        matches!(receipt.outcome,Outcome::Operation(ref plan) if plan.phase=="committed"&&plan.action=="repair-web")
+    );
+    session.dispatch(request(8, Command::Close {})).unwrap();
 }

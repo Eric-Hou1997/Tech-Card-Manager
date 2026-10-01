@@ -1,0 +1,36 @@
+{
+  "status": "source-only-windows-runtime-unverified",
+  "date": "2026-09-12",
+  "source_sha256": {
+    "rewrite/src-tauri/core/src/windows_arguments.rs": "6d13e6efecd459163ea540dcf30a7c362ba4bd3f65274ef5c32b5cc7da5714e2",
+    "rewrite/src-tauri/core/src/windows_transport.rs": "d93d1da46d2da657b1bc381f8fd20f1d5f7f7d3a5eca8a5e1772bf46c679b37b",
+    "rewrite/src-tauri/core/src/windows_security.rs": "81842080660f1d818a4cbfbd75c0b2d818553c53bc820eb1913d346ac7ff3414",
+    "rewrite/src-tauri/core/src/windows_authorization.rs": "982e15c59bf6ca0e3ad6c3d36b097c7e540c26f9148a07dc0126e34c2beecef7",
+    "rewrite/src-tauri/core/src/maintenance_windows.rs": "cd1156c1d78359ced990bd79648d8e8d128123140c3997d31bd990d83f828d08",
+    "rewrite/src-tauri/core/src/bin/tcm-maintenance-helper.rs": "31aab5ce939f67dfb9a091bfbf9537f5194171d34c695b140e00ebbf5e929f0e",
+    "rewrite/src-tauri/core/Cargo.toml": "d658f4db3dbc12300a95fde63b879404e4fa4f654499c875ef4f0f80c959219d",
+    "rewrite/src-tauri/src/privileged.rs": "4556aa81da556376a48b93122a219b6bf631fc6808e59e767b37f10a1448cab2",
+    "rewrite/src-tauri/src/privileged/worker.rs": "5c9bd224f96f1269983b0d3401695bf955430157f36252ade099c16e8125ef73",
+    "rewrite/src-tauri/src/privileged/windows.rs": "af8f05b929066339f43d2f52235c9f385cd362da57268c380f4e59cdc62dc7ba",
+    "rewrite/src-tauri/src/privileged/linux.rs": "bef7f7dc712da702a7c06da29cb43065d50d6330cb377d0aa11652ffe481f98c",
+    "rewrite/tools/build-helper.mjs": "fe66d5056e5c736c4a95ffa35f0c9c301014e147ec35bb3173502e3d7a609d0f",
+    "rewrite/src-tauri/tauri.windows.conf.json": "dbb955e8e0449e73bf8210ac7dd9d6bc93d972f3dd890062be45103647d5bad5"
+  },
+  "host_executed": {
+    "windows_arguments": 1,
+    "linux_authorization_cleanup": 2,
+    "shared_publication_cleanup": 2
+  },
+  "windows_runtime_tests": {
+    "passed": 0,
+    "normal_tests_not_run": 5,
+    "administrator_test_not_run": 1
+  },
+  "windows_build": "blocked-missing-windows-sdk-C-headers",
+  "windows_metadata_checks": [
+    "x86_64-pc-windows-msvc",
+    "aarch64-pc-windows-msvc"
+  ],
+  "metadata_limit": "External temporary harness omitted SQLite C compilation/linking via in_gecko; no product build configuration enables this mode. Metadata success is not build or runtime evidence.",
+  "acceptance": "docs/rewrite/13-windows-maintenance.md"
+}

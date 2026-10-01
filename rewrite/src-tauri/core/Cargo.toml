@@ -1,6 +1,6 @@
 [package]
 name = "tcm-core"
-version = "4.1.0"
+version = "5.0.0"
 edition = "2021"
 license = "Apache-2.0"
 authors = ["侯雁泽"]
@@ -10,6 +10,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
 roxmltree = "0.21"
+encoding_rs = "=0.8.35"
 rusqlite = { version = "0.37", features = ["bundled", "hooks"] }
 ts-rs = { version = "11", features = ["serde-json-impl"] }
 regex = "1"
@@ -22,6 +23,11 @@ minisign-verify = "0.2.5"
 tar = "0.4"
 flate2 = "1"
 plist = "1"
+zip = { version = "=4.6.1", default-features = false, features = ["deflate-flate2"] }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "=0.61.3", features = ["Win32_Foundation", "Win32_System_Com", "Win32_System_Ole", "Win32_System_TaskScheduler", "Win32_System_Variant"] }
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_Security_Cryptography", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_System_Pipes", "Win32_System_Threading", "Win32_System_Diagnostics_ToolHelp", "Win32_System_Com", "Win32_System_Registry", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }

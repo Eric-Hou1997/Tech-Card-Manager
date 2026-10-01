@@ -1,3 +1,14 @@
+mod catalog_summary;
+mod discovery;
+mod emby_diagnostic_import;
+mod history;
+mod index_summary;
+mod jobs;
+mod languages;
+mod legacy_agent;
+mod legacy_migration;
+mod legacy_startup;
+mod startup_migration;
 use crate::{contracts::*, hash, library, paths};
 use rusqlite::{params, Connection, OptionalExtension};
 use std::{
@@ -46,7 +57,7 @@ impl Store {
         let connection = Connection::open(path)?;
         connection.busy_timeout(std::time::Duration::from_secs(5))?;
         let version: u32 = connection.pragma_query_value(None, "user_version", |r| r.get(0))?;
-        if version > 3 {
+        if version > 7 {
             return Err(AppError::new(
                 "newer-database",
                 "Database belongs to a newer application; refusing downgrade",
@@ -60,6 +71,8 @@ impl Store {
           CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY, fingerprint TEXT NOT NULL, body TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS items (id TEXT PRIMARY KEY, root_id TEXT NOT NULL, seen_task TEXT NOT NULL, body TEXT NOT NULL);
           CREATE INDEX IF NOT EXISTS items_root ON items(root_id);
+          CREATE TABLE IF NOT EXISTS ignored_nfo (id TEXT PRIMARY KEY, root_id TEXT NOT NULL, seen_task TEXT NOT NULL, source_hash TEXT NOT NULL, parser_revision INTEGER NOT NULL);
+          CREATE INDEX IF NOT EXISTS ignored_nfo_root ON ignored_nfo(root_id);
           CREATE TABLE IF NOT EXISTS legacy_artifacts(import_id TEXT NOT NULL, path TEXT NOT NULL, category TEXT NOT NULL, sha256 TEXT NOT NULL, body BLOB NOT NULL, PRIMARY KEY(import_id,path));
           CREATE TABLE IF NOT EXISTS preferences(key TEXT PRIMARY KEY, body TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS catalog_revision(id INTEGER PRIMARY KEY CHECK(id=1), value INTEGER NOT NULL CHECK(value>=0 AND typeof(value)='integer'));
@@ -68,7 +81,27 @@ impl Store {
           CREATE TRIGGER IF NOT EXISTS catalog_update AFTER UPDATE OF body ON items WHEN OLD.body<>NEW.body BEGIN UPDATE catalog_revision SET value=value+1 WHERE id=1; END;
           CREATE TRIGGER IF NOT EXISTS catalog_delete AFTER DELETE ON items BEGIN UPDATE catalog_revision SET value=value+1 WHERE id=1; END;
           CREATE INDEX IF NOT EXISTS tasks_state ON tasks(json_extract(body,'$.state'));
-          PRAGMA user_version=3; COMMIT;")?;
+          CREATE INDEX IF NOT EXISTS tasks_schedule ON tasks(json_extract(body,'$.state'),json_extract(body,'$.service_session'));
+          COMMIT;")?;
+        if version < 7 {
+            let has_modified_unix = {
+                let mut columns = connection.prepare("PRAGMA table_info(legacy_artifacts)")?;
+                let names = columns
+                    .query_map([], |row| row.get::<_, String>(1))?
+                    .collect::<std::result::Result<Vec<_>, _>>()?;
+                names.iter().any(|name| name == "modified_unix")
+            };
+            if has_modified_unix {
+                connection.pragma_update(None, "user_version", 7)?;
+            } else {
+                connection.execute_batch(
+                    "BEGIN IMMEDIATE;
+                     ALTER TABLE legacy_artifacts ADD COLUMN modified_unix INTEGER;
+                     PRAGMA user_version=7;
+                     COMMIT;",
+                )?;
+            }
+        }
         let store = Self {
             connection: Mutex::new(connection),
             worker: Mutex::new(()),
@@ -76,11 +109,15 @@ impl Store {
             maintenance: std::sync::atomic::AtomicBool::new(false),
         };
         for mut task in store.tasks()? {
-            if matches!(task.state, TaskState::Running) {
+            if task.service_session.is_some() && !task.state.terminal() {
+                task.state = TaskState::Cancelled;
+                store.save_task(&task)?;
+            } else if matches!(task.state, TaskState::Running) {
                 task.state = TaskState::Interrupted;
                 store.save_task(&task)?;
             }
         }
+        store.recover_manager_job()?;
         Ok(store)
     }
     fn db(&self) -> Result<MutexGuard<'_, Connection>> {
@@ -112,7 +149,16 @@ impl Store {
                 )),
             };
         }
-        let plan = crate::migration::prepare(id, &source, kind, &self.configuration()?)?;
+        let mut plan = crate::migration::prepare(id, &source, kind, &self.configuration()?)?;
+        if let Some(settings) = plan.incremental.as_mut() {
+            let current = self.incremental_settings()?;
+            settings.revision = current.revision;
+            plan.fingerprint = hash(&serde_json::to_vec(&(
+                &plan.fingerprint,
+                &current,
+                &settings,
+            ))?);
+        }
         let db = self.db()?;
         self.writable()?;
         if db.query_row(
@@ -173,23 +219,84 @@ impl Store {
                 }
             }
         }
-        let (configuration, pending_roots) =
+        let (mut configuration, mut pending_roots) =
             crate::migration::merged_configuration(&plan, &current)?;
+        if let Some(settings) = &plan.incremental {
+            let current = tx
+                .query_row(
+                    "SELECT body FROM preferences WHERE key='incremental-settings'",
+                    [],
+                    |row| row.get::<_, String>(0),
+                )
+                .optional()?
+                .map(|s| serde_json::from_str::<crate::incremental::IncrementalSettings>(&s))
+                .transpose()?
+                .unwrap_or_default();
+            if current.revision != settings.revision {
+                return Err(AppError::new(
+                    "migration-settings-conflict",
+                    "Incremental settings changed after review; prepare a new migration",
+                ));
+            }
+            settings.validate()?;
+            let mut next = settings.clone();
+            next.revision = next.revision.checked_add(1).ok_or_else(|| {
+                AppError::new(
+                    "revision-overflow",
+                    "Incremental settings revision exhausted",
+                )
+            })?;
+            tx.execute("INSERT INTO preferences(key,body) VALUES('incremental-settings',?1) ON CONFLICT(key) DO UPDATE SET body=excluded.body", [serde_json::to_string(&next)?])?;
+        }
         let mut preferences = std::collections::BTreeMap::new();
         let mut total = 0u64;
         for file in &plan.files {
             let data = crate::migration::read_snapshot(Path::new(&plan.source), file)?;
             if file.category == "configuration" {
-                if let Ok(value) = serde_json::from_slice::<serde_json::Value>(&data) {
+                if let Ok(value) = serde_json::from_slice::<serde_json::Value>(
+                    data.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(&data),
+                ) {
                     preferences.insert(file.relative.clone(), value);
                 }
             }
-            tx.execute("INSERT INTO legacy_artifacts(import_id,path,category,sha256,body) VALUES(?1,?2,?3,?4,?5)",params![id,file.relative,file.category,file.hash,data])?;
+            tx.execute("INSERT INTO legacy_artifacts(import_id,path,category,sha256,body,modified_unix) VALUES(?1,?2,?3,?4,?5,?6)",params![id,file.relative,file.category,file.hash,data,file.modified_unix])?;
             total = total
                 .checked_add(file.bytes)
                 .ok_or_else(|| AppError::new("migration-size", "Import byte count overflow"))?;
         }
         let preference_key = format!("legacy:{}", plan.source_kind);
+        if plan.source_kind.starts_with("tcm-") {
+            if let Some(settings) = crate::migration::tcm_application_settings(&preferences)? {
+                let already_chosen = tx.query_row("SELECT EXISTS(SELECT 1 FROM preferences WHERE key='lifecycle-settings' OR (key='lifecycle-pending' AND body<>'null'))", [], |row| row.get::<_, bool>(0))?;
+                if !already_chosen {
+                    // Persist the historical request, not a fabricated native
+                    // registration receipt. No system startup action runs here.
+                    tx.execute(
+                        "INSERT INTO preferences(key,body) VALUES('lifecycle-settings',?1)",
+                        [serde_json::to_string(&settings)?],
+                    )?;
+                }
+            }
+        }
+        let previous_folders = tx
+            .query_row(
+                "SELECT body FROM preferences WHERE key='media-folders'",
+                [],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?
+            .map(|body| serde_json::from_str(&body))
+            .transpose()?;
+        if let Some(folders) = crate::migration::tcm_folder_settings(
+            &plan,
+            &preferences,
+            &current,
+            &mut configuration,
+            &mut pending_roots,
+            previous_folders,
+        )? {
+            tx.execute("INSERT INTO preferences(key,body) VALUES('media-folders',?1) ON CONFLICT(key) DO UPDATE SET body=excluded.body", [serde_json::to_string(&folders)?])?;
+        }
         tx.execute("INSERT INTO preferences(key,body) VALUES(?1,?2) ON CONFLICT(key) DO UPDATE SET body=excluded.body",params![preference_key,serde_json::to_string(&crate::migration::normalized_preferences(&preferences))?])?;
         tx.execute("INSERT INTO configuration(id,body) VALUES(1,?1) ON CONFLICT(id) DO UPDATE SET body=excluded.body",[serde_json::to_string(&configuration)?])?;
         let receipt = crate::migration::MigrationReceipt {
@@ -431,6 +538,19 @@ impl Store {
             .map(|s| serde_json::from_str(&s))
             .transpose()?
             .unwrap_or_default();
+        value = Self::write_configuration(&tx, &current, value)?;
+        tx.execute(
+            "INSERT INTO operations VALUES(?1,?2,?3)",
+            params![operation_id, fingerprint, serde_json::to_string(&value)?],
+        )?;
+        tx.commit()?;
+        Ok(value)
+    }
+    fn write_configuration(
+        tx: &rusqlite::Transaction<'_>,
+        current: &Configuration,
+        mut value: Configuration,
+    ) -> Result<Configuration> {
         if current.revision != value.revision {
             return Err(AppError::new(
                 "configuration-conflict",
@@ -454,12 +574,10 @@ impl Store {
         })?;
         let serialized = serde_json::to_string(&value)?;
         tx.execute("INSERT INTO configuration VALUES(1,?1) ON CONFLICT(id) DO UPDATE SET body=excluded.body",[&serialized])?;
-        tx.execute(
-            "INSERT INTO operations VALUES(?1,?2,?3)",
-            params![operation_id, fingerprint, serialized],
-        )?;
         let keep: Vec<String> = value.roots.iter().map(|r| r.id.clone()).collect();
-        let mut stmt = tx.prepare("SELECT DISTINCT root_id FROM items")?;
+        let mut stmt = tx.prepare(
+            "SELECT root_id FROM items UNION SELECT root_id FROM ignored_nfo ORDER BY root_id",
+        )?;
         let old = stmt
             .query_map([], |r| r.get::<_, String>(0))?
             .collect::<std::result::Result<Vec<_>, _>>()?;
@@ -469,10 +587,10 @@ impl Store {
                 || current.roots.iter().find(|r| r.id == root)
                     != value.roots.iter().find(|r| r.id == root)
             {
-                tx.execute("DELETE FROM items WHERE root_id=?1", [root])?;
+                tx.execute("DELETE FROM items WHERE root_id=?1", [&root])?;
+                tx.execute("DELETE FROM ignored_nfo WHERE root_id=?1", [&root])?;
             }
         }
-        tx.commit()?;
         Ok(value)
     }
     fn operation(&self, id: &str, fingerprint: &str) -> Result<Option<String>> {
@@ -494,6 +612,13 @@ impl Store {
         }
     }
     pub fn submit(&self, request: ScanRequest) -> Result<Task> {
+        self.submit_context(request, None)
+    }
+    fn submit_context(
+        &self,
+        request: ScanRequest,
+        service_session: Option<String>,
+    ) -> Result<Task> {
         valid_id(&request.operation_id)?;
         if request.root_ids.is_empty() {
             return Err(AppError::new(
@@ -501,7 +626,11 @@ impl Store {
                 "Explicitly select library roots",
             ));
         }
-        let fingerprint = hash(serde_json::to_string(&request)?.as_bytes());
+        let fingerprint = if let Some(session) = &service_session {
+            hash(&serde_json::to_vec(&("service-scan", &request, session))?)
+        } else {
+            hash(serde_json::to_string(&request)?.as_bytes())
+        };
         if let Some((old, body)) = self
             .db()?
             .query_row(
@@ -538,6 +667,8 @@ impl Store {
             roots.push(root.clone());
         }
         let task = Task {
+            force_parse: false,
+            service_session,
             id: request.operation_id.clone(),
             state: TaskState::Requested,
             locale: config.locale,
@@ -587,6 +718,7 @@ impl Store {
                 "Task ID already belongs to another operation",
             ));
         }
+        jobs::require_no_diagnostic(&db)?;
         db.execute(
             "INSERT INTO tasks VALUES(?1,?2,?3)",
             params![task.id, fingerprint, serde_json::to_string(&task)?],
@@ -652,6 +784,12 @@ impl Store {
         let body: String =
             tx.query_row("SELECT body FROM tasks WHERE id=?1", [id], |r| r.get(0))?;
         let mut task: Task = serde_json::from_str(&body)?;
+        if task.service_session.is_some() {
+            return Err(AppError::new(
+                "service-owned-task",
+                "Stop the card service to stop its incremental checks",
+            ));
+        }
         let valid = match state {
             TaskState::Paused => matches!(task.state, TaskState::Requested | TaskState::Running),
             TaskState::Cancelled => !task.state.terminal(),
@@ -1015,6 +1153,32 @@ impl Store {
             revision: state.revision,
         })
     }
+    /// Explicit "select all/invert" uses the complete filtered result, not the
+    /// currently rendered page. Reading identifiers never starts a batch task.
+    pub fn catalog_members(
+        &self,
+        space: Space,
+        view: crate::ui::LibraryView,
+    ) -> Result<Vec<String>> {
+        crate::ui::UiState {
+            movie: view.clone(),
+            ..Default::default()
+        }
+        .validate()?;
+        let mut items: Vec<_> = self
+            .all_items()?
+            .into_iter()
+            .filter(|item| crate::ui::matches(item, &space, &view))
+            .collect();
+        if items.len() > 100_000 {
+            return Err(AppError::new(
+                "view-state-limit",
+                "Narrow the selection to at most 100000 items",
+            ));
+        }
+        crate::ui::sort(&mut items, &view);
+        Ok(items.into_iter().map(|item| item.id).collect())
+    }
     pub fn browse(&self, space: Space, view: crate::ui::LibraryView) -> Result<CatalogPage> {
         let mut items: Vec<_> = self
             .all_items()?
@@ -1067,19 +1231,42 @@ impl Store {
         Ok(serde_json::from_str(&body)?)
     }
     fn checkpoint(&self, id: &str, stop: &impl Fn() -> bool) -> Result<bool> {
-        if stop() {
-            let mut task = self.task(id)?;
-            if task.state == TaskState::Running {
-                task.state = TaskState::Interrupted;
-                self.save_task(&task)?;
-            }
-            return Ok(false);
+        let stopping = stop();
+        let mut db = self.db()?;
+        let tx = db.transaction()?;
+        let body: String =
+            tx.query_row("SELECT body FROM tasks WHERE id=?1", [id], |r| r.get(0))?;
+        let mut task: Task = serde_json::from_str(&body)?;
+        if stopping && task.state == TaskState::Running {
+            task.state = TaskState::Interrupted;
+            tx.execute(
+                "UPDATE tasks SET body=?2 WHERE id=?1",
+                params![id, serde_json::to_string(&task)?],
+            )?;
         }
-        Ok(self.task(id)?.state == TaskState::Running)
+        tx.commit()?;
+        Ok(!stopping && task.state == TaskState::Running)
     }
     // Called by exactly one owned worker. Pause/cancel apply between bounded file reads.
     pub fn run_next(
         &self,
+        stop: impl Fn() -> bool,
+        progress: impl Fn(&Task),
+    ) -> Result<Option<Task>> {
+        self.run_next_context(None, false, stop, progress)
+    }
+    pub(crate) fn run_service_scan(
+        &self,
+        session: &str,
+        stop: impl Fn() -> bool,
+        progress: impl Fn(&Task),
+    ) -> Result<Option<Task>> {
+        self.run_next_context(Some(session), false, stop, progress)
+    }
+    fn run_next_context(
+        &self,
+        session: Option<&str>,
+        force_parse: bool,
         stop: impl Fn() -> bool,
         progress: impl Fn(&Task),
     ) -> Result<Option<Task>> {
@@ -1089,16 +1276,7 @@ impl Store {
         let task = {
             let mut db = self.db()?;
             let tx = db.transaction()?;
-            let mut stmt = tx.prepare("SELECT body FROM tasks ORDER BY rowid")?;
-            let mut selected = None;
-            for row in stmt.query_map([], |r| r.get::<_, String>(0))? {
-                let t: Task = serde_json::from_str(&row?)?;
-                if t.state == TaskState::Requested {
-                    selected = Some(t);
-                    break;
-                }
-            }
-            drop(stmt);
+            let selected = tx.query_row("SELECT body FROM tasks WHERE json_extract(body,'$.state')='requested' AND json_extract(body,'$.service_session') IS ?1 AND COALESCE(json_extract(body,'$.force_parse'),0)=?2 ORDER BY rowid LIMIT 1", params![session,force_parse], |row| row.get::<_, String>(0)).optional()?.map(|body|serde_json::from_str::<Task>(&body)).transpose()?;
             let Some(mut task) = selected else {
                 return Ok(None);
             };
@@ -1117,14 +1295,27 @@ impl Store {
             task
         };
         progress(&task);
+        let libraries = index_summary::capture_libraries(&self.configuration()?);
+        let mut scan_stats = crate::diagnostics::ScanStats::default();
+        let mut xml_errors = Vec::new();
         let scan_id = format!("{}:{}", task.id, task.attempt);
-        for root in &task.roots {
+        let physical_roots = index_summary::physical_roots(&*self.db()?, &task)?;
+        for targets in &physical_roots {
+            let root = &targets[0];
+            if libraries
+                .iter()
+                .any(|library| library.path == root.path && library.online)
+            {
+                scan_stats.online_roots_scanned += 1;
+            }
             let mut stack = vec![std::path::PathBuf::from(&root.path)];
             let mut root_failed = false;
             while let Some(path) = stack.pop() {
                 if !self.checkpoint(&task.id, &stop)? {
                     return Ok(Some(self.task(&task.id)?));
                 }
+                let mut xml_attempt = false;
+                let mut xml_stamp = String::new();
                 let result = paths::within(Path::new(&root.path), &path).and_then(|real| {
                     if real.is_dir() {
                         for entry in std::fs::read_dir(&real)
@@ -1146,31 +1337,101 @@ impl Store {
                     {
                         return Ok(None);
                     }
+                    xml_attempt = true;
+                    scan_stats.nfo_seen += 1;
+                    scan_stats.nfo_reparsed += 1;
                     let (real, raw) = library::read_bytes(root, &real)?;
-                    let previous = self.item(&hash(real.to_string_lossy().as_bytes()));
-                    let item = match previous {
+                    let content_hash = hash(&raw);
+                    xml_stamp = format!("sha256:{content_hash}");
+                    let item_id = hash(real.to_string_lossy().as_bytes());
+                    let previous = self.item(&item_id);
+                    let ignored = self
+                        .db()?
+                        .query_row(
+                            "SELECT root_id,source_hash,parser_revision FROM ignored_nfo WHERE id=?1",
+                            [&item_id],
+                            |row| {
+                                Ok((
+                                    row.get::<_, String>(0)?,
+                                    row.get::<_, String>(1)?,
+                                    row.get::<_, u32>(2)?,
+                                ))
+                            },
+                        )
+                        .optional()?;
+                    if !task.force_parse
+                        && ignored.is_some_and(|(root_id, source_hash, parser_revision)| {
+                            parser_revision == library::PARSER_REVISION
+                                && source_hash == content_hash
+                                && targets.iter().any(|target| target.id == root_id)
+                        })
+                    {
+                        scan_stats.nfo_reparsed -= 1;
+                        self.db()?.execute(
+                            "UPDATE ignored_nfo SET seen_task=?2 WHERE id=?1",
+                            params![item_id, scan_id],
+                        )?;
+                        return Ok(None);
+                    }
+                    let mut item = match previous {
                         Ok(item)
-                            if item.parser_revision == library::PARSER_REVISION
-                                && item.source_hash == hash(&raw)
+                            if !task.force_parse
+                                && item.parser_revision == library::PARSER_REVISION
+                                && item.source_hash == content_hash
                                 && item.error.is_none()
-                                && item.root_id == root.id
-                                && item.space == root.space =>
+                                && targets.iter().any(|target| {
+                                    item.root_id == target.id && item.space == target.space
+                                }) =>
                         {
+                            scan_stats.nfo_reparsed -= 1;
                             item
                         }
-                        _ => library::parse(root, &real, &raw)?,
+                        _ => match library::parse(root, &real, &raw) {
+                            Ok(item) => {
+                                self.db()?
+                                    .execute("DELETE FROM ignored_nfo WHERE id=?1", [&item_id])?;
+                                item
+                            }
+                            // The v4 reader treats a valid XML document for an
+                            // unrelated media type as a successful, empty read.
+                            // It is not an XML error and any older cached item
+                            // for this path is pruned at the end of the scan.
+                            Err(error) if error.code == "unsupported-nfo" => {
+                                self.db()?.execute(
+                                    "INSERT INTO ignored_nfo VALUES(?1,?2,?3,?4,?5) ON CONFLICT(id) DO UPDATE SET root_id=excluded.root_id,seen_task=excluded.seen_task,source_hash=excluded.source_hash,parser_revision=excluded.parser_revision",
+                                    params![item_id, root.id, scan_id, content_hash, library::PARSER_REVISION],
+                                )?;
+                                return Ok(None);
+                            }
+                            Err(error) => return Err(error),
+                        },
                     };
-                    let relevant = match item.kind.as_str() {
-                        "Movie" => root.space == Space::Movie,
-                        "Series" | "Season" | "Episode" => root.space == Space::Tv,
-                        _ => true,
+                    let space = match item.kind.as_str() {
+                        "Movie" => Space::Movie,
+                        "Series" | "Season" | "Episode" => Space::Tv,
+                        _ => root.space.clone(),
                     };
-                    Ok(relevant.then_some(item))
+                    let Some(target) = targets.iter().find(|target| target.space == space) else {
+                        return Ok(None);
+                    };
+                    item.root_id = target.id.clone();
+                    item.space = target.space.clone();
+                    Ok(Some(item))
                 });
                 let item = match result {
                     Ok(Some(item)) => Some(item),
                     Ok(None) => None,
                     Err(mut error) => {
+                        // Directory discovery and offline-root failures are not
+                        // XML parsing failures in the original scan report.
+                        if xml_attempt {
+                            scan_stats.xml_read_errors += 1;
+                            xml_errors.push(crate::diagnostics::XmlErrorRow {
+                                path: path.to_string_lossy().into_owned(),
+                                stamp: xml_stamp,
+                                error: error.message.clone(),
+                            });
+                        }
                         error.operation_id = Some(task.id.clone());
                         root_failed = true;
                         let mut item = library::empty(root, &path);
@@ -1194,7 +1455,7 @@ impl Store {
                     current.processed += 1;
                     current.errors += u32::from(item.error.is_some());
                     current.current_path = Some(item.path.clone());
-                    tx.execute("INSERT INTO items VALUES(?1,?2,?3,?4) ON CONFLICT(id) DO UPDATE SET root_id=excluded.root_id,seen_task=excluded.seen_task,body=excluded.body",params![item.id,root.id,scan_id,serde_json::to_string(&item)?])?;
+                    tx.execute("INSERT INTO items VALUES(?1,?2,?3,?4) ON CONFLICT(id) DO UPDATE SET root_id=excluded.root_id,seen_task=excluded.seen_task,body=excluded.body",params![item.id,item.root_id,scan_id,serde_json::to_string(&item)?])?;
                     tx.execute(
                         "UPDATE tasks SET body=?2 WHERE id=?1",
                         params![task.id, serde_json::to_string(&current)?],
@@ -1208,10 +1469,19 @@ impl Store {
                 return Ok(Some(self.task(&task.id)?));
             }
             if !root_failed {
-                self.db()?.execute(
-                    "DELETE FROM items WHERE root_id=?1 AND seen_task<>?2",
-                    params![root.id, scan_id],
-                )?;
+                let mut db = self.db()?;
+                let tx = db.transaction()?;
+                for target in targets {
+                    tx.execute(
+                        "DELETE FROM items WHERE root_id=?1 AND seen_task<>?2 AND EXISTS(SELECT 1 FROM tasks WHERE id=?3 AND json_extract(body,'$.state')='running' AND json_extract(body,'$.attempt')=?4)",
+                        params![target.id, scan_id, task.id, task.attempt],
+                    )?;
+                    tx.execute(
+                        "DELETE FROM ignored_nfo WHERE root_id=?1 AND seen_task<>?2 AND EXISTS(SELECT 1 FROM tasks WHERE id=?3 AND json_extract(body,'$.state')='running' AND json_extract(body,'$.attempt')=?4)",
+                        params![target.id, scan_id, task.id, task.attempt],
+                    )?;
+                }
+                tx.commit()?;
             }
         }
         // A cancel arriving after the last file must not become a completed task.
@@ -1228,6 +1498,28 @@ impl Store {
                 TaskState::Failed
             };
             result.current_path = None;
+            let now = chrono::Utc::now();
+            // Match the baseline PowerShell UTC round-trip timestamp (seven fractional digits).
+            let generated_at = format!(
+                "{}.{:07}Z",
+                now.format("%Y-%m-%dT%H:%M:%S"),
+                now.timestamp_subsec_nanos() / 100
+            );
+            let observed_paths: Vec<_> = physical_roots
+                .iter()
+                .map(|targets| targets[0].path.as_str())
+                .collect();
+            if index_summary::finish_task(
+                &tx,
+                &result,
+                &generated_at,
+                scan_stats,
+                libraries,
+                &observed_paths,
+                xml_errors,
+            )? {
+                tx.execute("INSERT INTO preferences(key,body) VALUES('catalog-generated-at',?1) ON CONFLICT(key) DO UPDATE SET body=excluded.body", [serde_json::to_string(&generated_at)?])?;
+            }
             tx.execute(
                 "UPDATE tasks SET body=?2 WHERE id=?1",
                 params![result.id, serde_json::to_string(&result)?],
@@ -1239,3 +1531,13 @@ impl Store {
         Ok(Some(result))
     }
 }
+
+mod service_history;
+
+mod diagnostics;
+
+mod incremental;
+
+mod folders;
+
+mod rebuild;

@@ -25,7 +25,7 @@ cargo run --locked -p tcm-core --example library_acceptance -- '/path/to/模拟n
 
 ## 未覆盖的事项
 
-没有把样本库等同于生产库、网络共享或跨平台验收；TV 季集树、完整筛选/状态语义、AI 实际网络及费用持久化、生产写入和全部旧功能仍以 [迁移台账](07-implementation.md) 为准。本机没有执行 TCM 旧 Windows 引擎的逐文件差分。
+没有把样本库等同于生产库、网络共享或跨平台验收；TV 季集树和完整筛选/状态语义已有当前源码回归，但仍待真实目录和目标系统验收。TCM 没有 AI 或媒体写入职责。本机没有执行 TCM 旧 Windows 引擎的逐文件差分；当前状态以 [纠偏台账](15-baseline-only-correction.md) 为准。
 
 ## 本轮发现的验证壳问题
 

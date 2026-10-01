@@ -2,10 +2,10 @@
 
 [简体中文](../../PRIVACY.md) | [繁體中文](./PRIVACY.zh-Hant.md) | [English](./PRIVACY.en.md) | **Français** | [Русский](./PRIVACY.ru.md) | [日本語](./PRIVACY.ja.md) | [Español](./PRIVACY.es.md) | [ไทย](./PRIVACY.th.md)
 
-Tech Card Manager est une application Windows portable et locale. Elle n’exploite aucun système propre de télémétrie, de suivi publicitaire ou de comptes.
+Tech Card Manager est un outil de bureau local pour macOS, Windows et Linux, sans système propre de télémétrie, de suivi publicitaire ou de comptes.
 
-- Les dossiers multimédias sélectionnés, l’index NFO en lecture seule, les réglages, journaux, sauvegardes et fichiers d’exécution restent dans le dossier de l’application portable.
-- L’application interroge GitHub sur les versions officielles uniquement lorsque vous sélectionnez **Rechercher des mises à jour**. La page Releases ne s’ouvre qu’après sélection de **Continuer vers GitHub**.
-- L’application lit les NFO locaux et les fichiers Emby Server configurés uniquement pour les opérations que vous lancez. Les NFO multimédias restent toujours en lecture seule.
+- Paramètres, index NFO dérivé en lecture seule, journaux et état d’exécution sont conservés dans le dossier utilisateur du système, avec l’identité `io.github.eric-hou1997.tcm`. Les anciens fichiers Portable restent des sources de migration ; les sauvegardes Emby sont dans un dossier de maintenance protégé par les autorisations.
+- Ouvrir les paramètres ou demander une vérification des mises à jour peut contacter GitHub pour les publications officielles, en conservant les règles de cache originales. L’installation/restauration des packs télécharge et vérifie aussi les ressources de la Release officielle liée. Le navigateur système ne s’ouvre qu’après confirmation du téléchargement ; aucune mise à jour n’est installée automatiquement.
+- L’application lit les NFO et fichiers Emby Server suivant la configuration et les opérations demandées. Les NFO des médias restent en lecture seule. La maintenance des fichiers web Emby exige confirmation et prévoit sauvegarde et restauration.
 
-Cette politique évolue avec les versions officielles. Toute date provisoire dans les sources sera remplacée pour la version correspondante.
+Cette politique concerne v5.0.0. Mise à jour : 2026-10-02.

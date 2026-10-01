@@ -2,10 +2,10 @@
 
 [简体中文](../../PRIVACY.md) | [繁體中文](./PRIVACY.zh-Hant.md) | **English** | [Français](./PRIVACY.fr.md) | [Русский](./PRIVACY.ru.md) | [日本語](./PRIVACY.ja.md) | [Español](./PRIVACY.es.md) | [ไทย](./PRIVACY.th.md)
 
-Tech Card Manager is a local Windows portable application. It does not operate its own telemetry, advertising-tracking, or account system.
+Tech Card Manager is a local macOS, Windows and Linux desktop tool. It does not operate its own telemetry, advertising tracking or account system.
 
-- Media folders you select, the read-only NFO index, settings, logs, backups, and runtime files are stored in the current portable application folder.
-- The application connects to GitHub to query official release information only when you select **Check for Updates**. It opens the Releases page only after you select **Continue to GitHub**.
-- The application reads local NFO files and configured Emby Server files only for operations you initiate. Media NFO files are always read-only and are never written by this application.
+- Settings, the derived read-only NFO index, logs and runtime state are stored in the system user-data directory, using application identity `io.github.eric-hou1997.tcm`. Old Portable files remain migration sources; Emby maintenance backups are stored in a permission-protected maintenance directory.
+- Opening Settings or requesting an update check may connect to GitHub for official release information, retaining the original cache rules. Language pack installation/restoration also downloads and verifies assets from the bound official Release. The system browser opens only after download confirmation; the app does not automatically install updates.
+- The app reads media NFO and Emby Server files according to configuration and requested operations. Media NFO files are always read-only. Emby web-file maintenance requires confirmation and provides backup and recovery paths.
 
-This policy is updated with official releases. Any placeholder release date in the source will be replaced for the corresponding official release.
+This policy applies to v5.0.0. Updated: 2026-10-02.

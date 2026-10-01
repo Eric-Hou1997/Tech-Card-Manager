@@ -18,7 +18,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             "usage: emby_acceptance WEB_ROOT PRIVATE_ROOT MOVIE_ROOT EMBY_DATA_ROOT".into(),
         );
     }
-    let discovered = tcm_core::emby_libraries::discover(Path::new(&args[3]), "4.9.5.0", &[])?;
+    let discovered = tcm_core::emby_libraries::discover(Path::new(&args[3]), &[])?;
     let movie = Path::new(&args[2]).canonicalize()?;
     if !discovered.iter().any(|root| {
         root.spaces.contains(&Space::Movie)

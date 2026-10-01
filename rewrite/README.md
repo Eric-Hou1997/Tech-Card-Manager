@@ -1,41 +1,54 @@
-# TCM 桌面技术验证工程
+# TCM v5.0.0 功能与界面迁移工程
 
-已包含 Rust 媒体读取核心、持久化扫描任务及 Vue 读取工作台；第 5–8 步仍在迁移中。独立应用 ID、独立测试数据，不连接正式 OTA。版本 4.1.0 是基线元数据，不可作为正式交付。
+目标是 Rust + Tauri 2 + TypeScript + Vue 3/Vite 运行原产品；以 `windows/web/index.html` 为界面和行为基线，原文件位于仓库根目录下。保留只读 NFO 索引、Emby 卡片、媒体目录、维护/诊断、语言及原手动更新；没有 AI 或应用内自动安装器。 复用已有实现，不重新搭建验证工作台。完整 UI、业务与平台验收仍未完成。
 
-## 开发
+独立应用 ID 和数据目录继续用于开发隔离；v5.0.0 是当前换栈版本，v4.1.0 是功能、界面和操作基线。当前执行约束和状态见 [重写规划入口](../docs/rewrite/README.md)，旧 12 步与旧验收记录只作查证。
 
-安装 Rust 1.98.1、Node 24 和平台依赖后，在此目录执行：
+## 开发与验证
 
-```sh
-npm ci
-npm run build
-npm run tauri dev
-```
-
-## 本机验证包
+使用仓库锁定的工具链和依赖。依赖已安装时直接复用；需要恢复 Node 依赖时运行 `npm ci`。原生开发入口：
 
 ```sh
-npm run tauri build -- --target aarch64-apple-darwin --bundles dmg
+npm run tauri dev -- --no-watch
 ```
 
-Windows target 分别为 x86_64-pc-windows-msvc、aarch64-pc-windows-msvc，bundle 为 nsis；Linux target 分别为 x86_64-unknown-linux-gnu、aarch64-unknown-linux-gnu，bundles 为 appimage,deb,rpm。应用默认不生成更新签名，不带更新公钥或 endpoints；更新演练属于待完成项，不能通过生成临时密钥绕过现有密钥要求。
+仅 `npm run dev` 的浏览器页面没有 Tauri IPC，只可检查布局。原生开发必须验证窗口可操作、实际 IPC、对应原用户流程及退出清理；进程启动或探针成功不等于界面已显示。使用隔离数据，避免触碰生产媒体和正式应用。
 
-在支持图形桌面的实际系统中启动后，检查 IPC、目录读取、隔离文件读写、原生凭据、固定 URL 请求、菜单/托盘、二次启动和退出。网络返回 200 也不等于 IMDb 内容可解析或 Emby 卡片正常。
-
-可用环境变量 `REWRITE_PROBE_REPORT` 指定本地 JSONL 证据路径，`REWRITE_PROBE_AUTOCLOSE=1` 在前端 mounted 并完成 IPC 后退出；它们不证明屏幕真实渲染。不要指向有价值的已有文件。
-
-完整范围与待验收项见 [重写文档](../docs/rewrite/README.md)。
-
-## 业务核心验证
+按修改范围选择检查。例如移除废弃 IPC 包装层时，可以检查桌面命令编译和保留的数据兼容测试：
 
 ```sh
 cd src-tauri
-cargo test --locked -p tcm-core
-cargo run --locked -q -p tcm-core --example export_types -- --check ../src/contracts.ts
-cargo fmt --all --check
-cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo check --locked -p tcm-validation --bin tcm-validation
+cargo test --locked -p tcm-core --test migration --test history --test startup_migration
 ```
 
-读取工作台的根目录、索引、历史位于此验证应用独立数据目录的 `workspace.sqlite`。Movie/TV 分别选择扫描范围；不会自动导入旧设置或默认处理全库。停止应用后再次打开可恢复历史，中断任务需明确恢复。
+前端修改运行相关前端回归与类型检查；核心修改运行对应行为和安全回归。不要把每个小改动自动升级为无关全量构建。受影响的平台和 ARM64 检查随开发推进，缺少实际环境时明确记录，不用交叉编译代替实机。
 
-完整行为迁移状态见 [第 5–8 步记录](../docs/rewrite/07-implementation.md)。
+`REWRITE_PROBE_REPORT` / `REWRITE_PROBE_AUTOCLOSE` 是现有隔离验收工具；保留必要验证用途，不进入正常产品 UI，也不据此声称像素或业务通过。探针输出不得覆盖有价值的文件。
+
+## 交付边界
+
+每产品 5 目标、9 包：macOS ARM64 DMG，Windows x64/ARM64 NSIS，Linux x64/ARM64 AppImage/DEB/RPM；无 macOS Intel。当前禁止提交、制包（含隔离验证应用包）、发布、标签、GitHub 同步、云端任务和子代理，最终制包另等授权。已有配方、有效测试、编译缓存、旧源码和用户数据保持。
+
+数据兼容后端按原版正常入口接线；不要恢复已移除的通用数据导入、独立历史浏览面板或其 Tauri 命令。底层迁移/历史读取和有效回归继续保留；它们的存在不等于完整旧数据迁移已通过。
+
+## v5.0.0 发行准备
+
+开发仍默认使用隔离的 validation 身份。维护者已授权正式制包及 GitHub Actions；真实 Emby、完整原生界面/操作与 Windows/Linux 运行验收仍暂缓，未记为通过。
+
+正式构建同时设置 `TCM_RELEASE_BUILD=1` 并合并 `src-tauri/tauri.release.conf.json`。身份为 `io.github.eric-hou1997.tcm`，包内程序为 `Tech-Card-Manager`；维护辅助程序使用同一发行标记验证父程序及维护目录。macOS 使用临时签名，未做 Apple 公证。
+
+```sh
+cd rewrite
+TCM_RELEASE_BUILD=1 npm run tauri build -- --config src-tauri/tauri.release.conf.json --target aarch64-apple-darwin --bundles dmg -- --locked
+```
+
+`src-tauri/core/assets/release-packages.json` 是五目标九包和手动更新包名的共同来源。`tools/release.py` 检查主程序与辅助程序架构并收集规范包名；不会安装、打标签或发布。可以设置绝对路径 `CARGO_TARGET_DIR` 将可再生成缓存放在项目外。
+
+外部语言包使用 `rewrite/language_catalog.json`，嵌入目录为 `src-tauri/core/assets/language_catalog.json`；旧版目录与 r1 翻译保持不变。
+
+```sh
+python3 tools/build-language-packs.py --catalog rewrite/language_catalog.json --embedded-catalog rewrite/src-tauri/core/assets/language_catalog.json --additional-web rewrite/src/assets/baseline-languages.json --require-complete --app-version v5.0.0
+```
+
+上一条语言检查从仓库根目录执行。发行说明输入为 `packaging/v5.0.0/CHANGELOG.zh-CN.txt` 与 `CHANGELOG.en-US.txt`。当前版本的实际包检查与发布状态以 `docs/rewrite/15-baseline-only-correction.md` 为准。

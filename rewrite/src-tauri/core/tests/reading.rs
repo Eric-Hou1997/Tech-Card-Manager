@@ -1,7 +1,7 @@
 use std::{fs, path::Path};
 use tcm_core::{store::Store, *};
 fn fixture() -> (&'static str, &'static str) {
-    ("电影.nfo","\u{feff}<movie>\r\n<title>电影 &amp; 测试</title><year>1967</year><uniqueid type=\"imdb\">tt0064757</uniqueid><tag>External</tag><tag>1.43 : 1 (scene)</tag><technicalspecs source=\"IMDb\"><section name=\"Camera\"><item>ARRI</item><item>ARRI</item></section><generatedtags owner=\"IMDb Tech Manager\" engine=\"local\"><tag>1.43:1</tag></generatedtags></technicalspecs></movie>")
+    ("电影.nfo","\u{feff}<movie>\r\n<title>电影 &amp; 测试</title><year>1967</year><uniqueid type=\"imdb\"> </uniqueid><uniqueid type=\" imdb \" >tt0064757</uniqueid><tag>External</tag><tag>1.43 : 1 (scene)</tag><tag>Manual</tag><technicalspecs source=\"IMDb\"><section name=\"Camera\"><item>ARRI</item><item>ARRI</item></section><manualtags owner=\" IMDb Tech Manager \" engine=\"must-be-ignored\"><tag>Manual</tag></manualtags><generatedtags owner=\" IMDb Tech Manager \" engine=\" LOCAL \" ><tag>1.43:1</tag></generatedtags></technicalspecs></movie>")
 }
 fn setup() -> (tempfile::TempDir, Store, Configuration) {
     let temp = tempfile::tempdir().unwrap();
@@ -67,11 +67,238 @@ fn readonly_nfo_identity_scope_and_ownership() {
     assert_eq!(page.items[0].imdb, "tt0064757");
     assert_eq!(page.items[0].tags[0].ownership, Ownership::External);
     assert_eq!(page.items[0].tags[1].ownership, Ownership::Generated);
+    assert_eq!(page.items[0].tags[1].engine, "local");
+    assert_eq!(page.items[0].tags[2].ownership, Ownership::Manual);
+    assert_eq!(page.items[0].tags[2].engine, "");
     assert_eq!(page.items[0].specs["Camera"], vec!["ARRI"]);
     assert_eq!(page.items[0].title, "电影 & 测试");
     assert_eq!(store.query(query(Space::Tv)).unwrap().total, 0);
     assert_eq!(fs::read(&path).unwrap(), raw.as_bytes());
     assert_eq!(fs::metadata(&path).unwrap().modified().unwrap(), before);
+}
+#[test]
+fn unicode_xml_files_keep_original_bytes_and_are_indexed_without_utf8_conversion() {
+    let (_temp, store, config) = setup();
+    let root = Path::new(&config.roots[0].path);
+    let title = "电影 Café 🎬";
+    let mut originals = Vec::new();
+    for width in [16, 32] {
+        for little in [true, false] {
+            for bom in [true, false] {
+                let source = format!("<?xml version=\"1.0\" encoding=\"UTF-{width}\"?><movie><title>{title}</title><uniqueid type=\"imdb\">tt0061452</uniqueid><technicalspecs source=\"IMDb\"><section name=\"Camera\"><item>ARRI</item></section></technicalspecs></movie>");
+                let mut bytes = Vec::new();
+                if width == 16 {
+                    for word in bom
+                        .then_some(0xfeff)
+                        .into_iter()
+                        .chain(source.encode_utf16())
+                    {
+                        bytes.extend(if little {
+                            word.to_le_bytes()
+                        } else {
+                            word.to_be_bytes()
+                        });
+                    }
+                } else {
+                    for word in bom
+                        .then_some(0xfeff)
+                        .into_iter()
+                        .chain(source.chars().map(u32::from))
+                    {
+                        bytes.extend(if little {
+                            word.to_le_bytes()
+                        } else {
+                            word.to_be_bytes()
+                        });
+                    }
+                }
+                let path = root.join(format!("utf{width}-{little}-{bom}.nfo"));
+                fs::write(&path, &bytes).unwrap();
+                let modified = fs::metadata(&path).unwrap().modified().unwrap();
+                originals.push((path, bytes, modified));
+            }
+        }
+    }
+    store.submit(request("unicode-xml")).unwrap();
+    let task = store.run_next(|| false, |_| {}).unwrap().unwrap();
+    assert_eq!(task.errors, 0);
+    let page = store.query(query(Space::Movie)).unwrap();
+    assert_eq!(page.total, 8);
+    for item in page.items {
+        assert_eq!(item.title, title);
+        assert_eq!(item.imdb, "tt0061452");
+        assert_eq!(item.specs["Camera"], vec!["ARRI"]);
+        let (_, bytes, _) = originals
+            .iter()
+            .find(|(path, _, _)| path.to_str() == Some(&item.path))
+            .unwrap();
+        assert_eq!(item.source_hash, hash(bytes));
+    }
+    for (path, bytes, modified) in originals {
+        assert_eq!(fs::read(&path).unwrap(), bytes);
+        assert_eq!(fs::metadata(&path).unwrap().modified().unwrap(), modified);
+    }
+}
+#[test]
+fn malformed_unicode_xml_is_rejected_without_replacement_or_file_changes() {
+    let (_temp, _store, config) = setup();
+    let root = &config.roots[0];
+    let path = Path::new(&root.path).join("malformed-unicode.nfo");
+    for raw in [
+        vec![0xff, 0xfe, 0x3c],
+        vec![0xff, 0xfe, 0x00, 0xd8, 0, 0],
+        vec![0xff, 0xfe, 0, 0, 0xff, 0xff, 0x11, 0],
+        vec![0, 0, 0xfe, 0xff, 0, 0, 0xd8, 0],
+    ] {
+        fs::write(&path, &raw).unwrap();
+        let modified = fs::metadata(&path).unwrap().modified().unwrap();
+        let error = library::read(root, &path).unwrap_err();
+        assert_eq!(error.code, "invalid-encoding");
+        assert_eq!(error.path.as_deref(), path.to_str());
+        assert_eq!(fs::read(&path).unwrap(), raw);
+        assert_eq!(fs::metadata(&path).unwrap().modified().unwrap(), modified);
+    }
+    fs::write(&path, fixture().1).unwrap();
+    assert_eq!(library::read(root, &path).unwrap().imdb, "tt0064757");
+    for declared in ["UTF-8", "UTF-16BE", "not-a-real-encoding"] {
+        let source = format!("<?xml version=\"1.0\" encoding=\"{declared}\"?><movie/>");
+        let bytes = std::iter::once(0xfeff)
+            .chain(source.encode_utf16())
+            .flat_map(u16::to_le_bytes)
+            .collect::<Vec<_>>();
+        fs::write(&path, &bytes).unwrap();
+        assert_eq!(
+            library::read(root, &path).unwrap_err().code,
+            "invalid-encoding"
+        );
+        assert_eq!(fs::read(&path).unwrap(), bytes);
+    }
+}
+#[test]
+fn html_entity_tag_comparison_retains_original_manifest_ownership() {
+    let (_temp, _store, config) = setup();
+    let path = Path::new(&config.roots[0].path).join("html-ownership.nfo");
+    let pairs = [
+        ("A&amp;B", "A&B"),
+        ("1.43&nbsp; : 1 (scene)", "1.43:1"),
+        ("Caf&eacute;", "Café"),
+        ("&#x1F3AC;", "🎬"),
+        ("&# +65;", "A"),
+        ("&amp;amp;", "&amp;"),
+        ("&apos;", "'"),
+        ("&NoBreak;", "\u{2060}"),
+    ];
+    let escape = |s: &str| {
+        s.replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+    };
+    let tags = pairs
+        .iter()
+        .map(|(value, _)| format!("<tag>{}</tag>", escape(value)))
+        .collect::<String>();
+    let owned = pairs
+        .iter()
+        .map(|(_, value)| format!("<tag>{}</tag>", escape(value)))
+        .collect::<String>();
+    let source = format!("<movie><title>Entity ownership</title>{tags}<technicalspecs source=\"IMDb\"><generatedtags owner=\"IMDb Tech Manager\" engine=\"local\">{owned}</generatedtags></technicalspecs></movie>");
+    fs::write(&path, &source).unwrap();
+    let modified = fs::metadata(&path).unwrap().modified().unwrap();
+    let item = library::read(&config.roots[0], &path).unwrap();
+    for (i, tag) in item.tags.iter().enumerate() {
+        assert_eq!(tag.value, pairs[i].0);
+        // HTML 5-only names remain literal in the original .NET comparator.
+        assert_eq!(
+            tag.ownership,
+            if i == 5 || i == pairs.len() - 1 {
+                Ownership::External
+            } else {
+                Ownership::Generated
+            }
+        );
+    }
+    assert_eq!(fs::read(&path).unwrap(), source.as_bytes());
+    assert_eq!(fs::metadata(&path).unwrap().modified().unwrap(), modified);
+    for value in ["&unknown;", "&#xD800;", "&#1114112;", "&NoBreak;", "&AMP;"] {
+        assert_eq!(library::canonical_tag(value), value.to_lowercase());
+    }
+    assert_eq!(library::canonical_tag("&amp;amp;"), "&amp;");
+    assert_eq!(library::canonical_tag("&amp;"), "&");
+}
+#[test]
+fn xml_declaration_encodings_are_read_without_rewriting_legacy_nfo_bytes() {
+    let (_temp, _store, config) = setup();
+    let root = &config.roots[0];
+    for (encoding, title, expected) in [
+        ("GB2312", b"\xb5\xe7\xd3\xb0".as_slice(), "电影"),
+        ("windows-1252", b"Caf\xe9 \x80".as_slice(), "Café €"),
+        ("ISO-8859-1", b"Caf\xe9 A\x85B".as_slice(), "Café A\u{85}B"),
+        ("Shift_JIS", b"\x93\xfa\x96\x7b".as_slice(), "日本"),
+    ] {
+        let mut raw =
+            format!("<?xml\tversion=\"1.0\" encoding='{encoding}'?><movie><title>").into_bytes();
+        raw.extend_from_slice(title);
+        raw.extend_from_slice(b"</title><uniqueid type=\"imdb\">tt0061452</uniqueid><technicalspecs source=\"IMDb\"><section name=\"Camera\"><item>ARRI</item></section></technicalspecs></movie>");
+        let path = Path::new(&root.path).join(format!("{encoding}.nfo"));
+        fs::write(&path, &raw).unwrap();
+        let modified = fs::metadata(&path).unwrap().modified().unwrap();
+        let item = library::read(root, &path).unwrap();
+        assert_eq!(item.title, expected);
+        assert_eq!(item.source_hash, hash(&raw));
+        assert_eq!(item.imdb, "tt0061452");
+        assert_eq!(item.specs["Camera"], vec!["ARRI"]);
+        assert_eq!(fs::read(&path).unwrap(), raw);
+        assert_eq!(fs::metadata(&path).unwrap().modified().unwrap(), modified);
+    }
+    let path = Path::new(&root.path).join("unknown-encoding.nfo");
+    let raw = b"<?xml version=\"1.0\" encoding=\"not-a-real-encoding\"?><movie/>";
+    fs::write(&path, raw).unwrap();
+    assert_eq!(
+        library::read(root, &path).unwrap_err().code,
+        "invalid-encoding"
+    );
+    assert_eq!(fs::read(&path).unwrap(), raw);
+}
+#[test]
+fn valid_unrelated_nfo_is_ignored_and_removes_an_older_cached_item() {
+    let (temp, store, config) = setup();
+    let path = Path::new(&config.roots[0].path).join("changed.nfo");
+    fs::write(&path, fixture().1).unwrap();
+    store.submit(request("supported")).unwrap();
+    store.run_next(|| false, |_| {}).unwrap();
+    assert_eq!(store.query(query(Space::Movie)).unwrap().total, 1);
+
+    let unrelated = b"<musicvideo><title>Unrelated</title></musicvideo>";
+    fs::write(&path, unrelated).unwrap();
+    store.submit(request("unrelated")).unwrap();
+    let task = store.run_next(|| false, |_| {}).unwrap().unwrap();
+    assert_eq!(task.state, TaskState::Completed);
+    assert_eq!(task.errors, 0);
+    assert_eq!(store.query(query(Space::Movie)).unwrap().total, 0);
+    let stats = store.index_summary().unwrap().unwrap().scan_stats.unwrap();
+    assert_eq!(stats.nfo_seen, 1);
+    assert_eq!(stats.nfo_reparsed, 1);
+    assert_eq!(stats.xml_read_errors, 0);
+    assert_eq!(fs::read(&path).unwrap(), unrelated);
+
+    drop(store);
+    let store = Store::open(&temp.path().join("state.sqlite")).unwrap();
+    store.submit(request("unchanged-unrelated")).unwrap();
+    store.run_next(|| false, |_| {}).unwrap();
+    let stats = store.index_summary().unwrap().unwrap().scan_stats.unwrap();
+    assert_eq!(stats.nfo_seen, 1);
+    assert_eq!(stats.nfo_reparsed, 0);
+    assert_eq!(store.query(query(Space::Movie)).unwrap().total, 0);
+
+    fs::remove_file(&path).unwrap();
+    store.submit(request("removed-unrelated")).unwrap();
+    store.run_next(|| false, |_| {}).unwrap();
+    fs::write(&path, unrelated).unwrap();
+    store.submit(request("restored-unrelated")).unwrap();
+    store.run_next(|| false, |_| {}).unwrap();
+    let stats = store.index_summary().unwrap().unwrap().scan_stats.unwrap();
+    assert_eq!(stats.nfo_seen, 1);
+    assert_eq!(stats.nfo_reparsed, 1);
 }
 #[test]
 fn operation_replay_and_changed_input_conflict() {
@@ -447,4 +674,34 @@ fn one_physical_root_keeps_movie_tv_scopes_and_errors_independent() {
     store.run_next(|| false, |_| {}).unwrap();
     assert_eq!(store.query(query(Space::Movie)).unwrap().total, 1);
     assert_eq!(store.query(query(Space::Tv)).unwrap().total, 2);
+}
+
+#[test]
+fn index_update_time_survives_restart_and_cancel_does_not_claim_a_new_index() {
+    let (temp, store, config) = setup();
+    let path = Path::new(&config.roots[0].path).join("movie.nfo");
+    fs::write(&path, fixture().1).unwrap();
+    let original = fs::read(&path).unwrap();
+    let modified = fs::metadata(&path).unwrap().modified().unwrap();
+    assert!(store.catalog_summary().unwrap().generated_at.is_none());
+    assert!(store.catalog_summary().unwrap().roots_configured);
+    store.submit(request("dated-scan")).unwrap();
+    store.run_next(|| false, |_| {}).unwrap();
+    let at = store.catalog_summary().unwrap().generated_at.unwrap();
+    chrono::DateTime::parse_from_rfc3339(&at).unwrap();
+    assert_eq!(at.split_once('.').unwrap().1.len(), 8);
+    drop(store);
+    let store = Store::open(&temp.path().join("state.sqlite")).unwrap();
+    assert_eq!(
+        store.catalog_summary().unwrap().generated_at.as_deref(),
+        Some(at.as_str())
+    );
+    store.submit(request("cancelled-scan")).unwrap();
+    store.run_next(|| true, |_| {}).unwrap();
+    assert_eq!(
+        store.catalog_summary().unwrap().generated_at.as_deref(),
+        Some(at.as_str())
+    );
+    assert_eq!(fs::read(&path).unwrap(), original);
+    assert_eq!(fs::metadata(&path).unwrap().modified().unwrap(), modified);
 }

@@ -1,0 +1,14 @@
+{
+  "version": "5.0.0",
+  "packages": {
+    "tcm-darwin-aarch64-app": {"triple": "aarch64-apple-darwin", "kind": "dmg", "pattern": "TCM-v{version}-MacOS-AArch64.dmg"},
+    "tcm-windows-x86_64-nsis": {"triple": "x86_64-pc-windows-msvc", "kind": "nsis", "pattern": "TCM-v{version}-Windows-x64-Setup.exe"},
+    "tcm-windows-aarch64-nsis": {"triple": "aarch64-pc-windows-msvc", "kind": "nsis", "pattern": "TCM-v{version}-Windows-AArch64-Setup.exe"},
+    "tcm-linux-x86_64-appimage": {"triple": "x86_64-unknown-linux-gnu", "kind": "appimage", "pattern": "TCM-v{version}-Linux-x64.AppImage"},
+    "tcm-linux-x86_64-deb": {"triple": "x86_64-unknown-linux-gnu", "kind": "deb", "pattern": "TCM-v{version}-Linux-x64.deb"},
+    "tcm-linux-x86_64-rpm": {"triple": "x86_64-unknown-linux-gnu", "kind": "rpm", "pattern": "TCM-v{version}-Linux-x64.rpm"},
+    "tcm-linux-aarch64-appimage": {"triple": "aarch64-unknown-linux-gnu", "kind": "appimage", "pattern": "TCM-v{version}-Linux-AArch64.AppImage"},
+    "tcm-linux-aarch64-deb": {"triple": "aarch64-unknown-linux-gnu", "kind": "deb", "pattern": "TCM-v{version}-Linux-AArch64.deb"},
+    "tcm-linux-aarch64-rpm": {"triple": "aarch64-unknown-linux-gnu", "kind": "rpm", "pattern": "TCM-v{version}-Linux-AArch64.rpm"}
+  }
+}

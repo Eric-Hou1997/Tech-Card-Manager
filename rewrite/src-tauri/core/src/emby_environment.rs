@@ -2,7 +2,9 @@
 use crate::{paths, AppError, Result};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+use ts_rs::TS;
+#[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
+#[ts(rename = "EmbyEnvironment")]
 pub struct Environment {
     pub web: String,
     pub data: Option<String>,

@@ -23,6 +23,8 @@ Indexation NFO en lecture seule et gestion des cartes Technical Specifications p
 
 ---
 
+v5.0.0 modifie uniquement la pile technique et l’intégration aux systèmes, avec l’objectif de conserver les fonctions, l’interface et le fonctionnement de v4.1.0. TCM lit toujours les NFO, gère les cartes Emby et se met à jour manuellement, sans IA. La validation avec Emby réel, de toute l’interface native et des opérations, ainsi que de l’exécution Windows/Linux reste incomplète ; les contrôles du code et les paquets ne la prouvent pas. Les captures existantes servent de référence à l’interface originale.
+
 ## 🎬 À propos
 
 **Tech Card Manager (TCM)** intègre les **Technical Specifications** déjà présentes dans les fichiers NFO au véritable parcours de navigation d’Emby.
@@ -107,7 +109,7 @@ La maintenance de la carte Web et les données NFO multimédias relèvent de deu
 
 TCM peut entretenir les fichiers d’intégration Web d’Emby, mais **ne modifie pas les fichiers NFO multimédias dans le cadre de cette opération**.
 
-Le Gestionnaire peut passer instantanément du chinois simplifié au chinois traditionnel et à l’anglais (États-Unis), sans recharger ni effacer l’état actuel de l’interface. Le français, le russe, le japonais, l’espagnol et le thaï sont fournis séparément avec la Release GitHub `v4.1.0` et ne sont chargés qu’après téléchargement et vérification. La carte Web Emby dispose de son propre registre de langues ; une langue Emby non installée ou non prise en charge revient au chinois simplifié. Les clés Technical Specs telles que `Camera` et `Sound mix`, ainsi que la structure de données sous-jacente, ne changent jamais avec la langue d’affichage.
+Le Gestionnaire peut passer instantanément du chinois simplifié au chinois traditionnel et à l’anglais (États-Unis), sans recharger ni effacer l’état actuel de l’interface. Le français, le russe, le japonais, l’espagnol et le thaï sont fournis séparément avec la Release GitHub `v5.0.0` et ne sont chargés qu’après téléchargement et vérification. La carte Web Emby dispose de son propre registre de langues ; une langue Emby non installée ou non prise en charge revient au chinois simplifié. Les clés Technical Specs telles que `Camera` et `Sound mix`, ainsi que la structure de données sous-jacente, ne changent jamais avec la langue d’affichage.
 
 ---
 
@@ -167,7 +169,7 @@ En cas d’erreur, TCM conserve autant d’informations de diagnostic utiles que
 
 L’implémentation officielle actuelle cible :
 
-**Windows x64**
+**macOS ARM64 / Windows x64, ARM64 / Linux x64, ARM64**
 
 Au démarrage de Tech Card Manager, le Gestionnaire et le service local s’exécutent ensemble.
 
@@ -491,58 +493,23 @@ Si TCM ne peut pas déterminer de façon fiable le propriétaire d’un ancien c
 
 ## 🧩 Architecture actuelle
 
-L’implémentation Windows actuelle est principalement composée de :
+v5 utilise Rust + Tauri 2 et TypeScript + Vue 3/Vite. Le code Windows v4 et les sources de publication restent dans `windows/` et `packaging/` ; le code v5 se trouve dans `rewrite/`. Le dépôt reste organisé par produit.
 
 ```text
-Interface Windows / Intégration native
+Tauri 2 / Native Integration
           +
-        Cœur Go
+       Rust Core
           +
-      Web UI locale
-          +
-   Moteur PowerShell
-          +
-Zone de notification / Intégration navigateur
+TypeScript / Vue 3 / Vite
           ↓
-     Carte Web Emby
+     Emby Web Card
 ```
-
-Le dépôt est organisé par **produit**, et non de façon permanente par système d’exploitation.
-
-Windows x64 est actuellement pris en charge, et des implémentations pour d’autres systèmes sont prévues.
 
 ---
 
 ## 💻 Environnement d’exécution actuel
 
-La plateforme actuellement maintenue est :
-
-**Windows x64**
-
-Le produit et le flux de Release actuels ciblent notamment :
-
-* Windows x64
-* Windows PowerShell 5.1
-* Windows UAC
-* Zone de notification Windows
-* Chargement par navigateur
-* Interface Web Emby Server
-
-Important :
-
-**La réussite de la compilation du code source ne prouve pas le comportement sur la plateforme réelle.**
-
-Les capacités suivantes doivent encore être validées dans de véritables environnements Windows / Emby :
-
-* UAC
-* Cycle de vie de la zone de notification
-* Démarrage à l’ouverture de session
-* Chargement dans le navigateur
-* Comportement du DOM Emby
-* Installation de la carte Web
-* Suppression de la carte Web
-* Récupération de la carte Web
-* Libération des ressources après la fermeture de l’application
+Les paquets v5 couvrent macOS ARM64, Windows x64/ARM64 et Linux x64/ARM64 : cinq cibles et neuf paquets, sans macOS Intel. macOS exige au minimum 12.0. Windows utilise WebView2 ; NSIS inclut son installateur hors ligne. Linux utilise WebKitGTK 4.1, GTK 3, les bibliothèques de notification et pkexec si une élévation est nécessaire. Aucune nouvelle dépendance d’exécution PowerShell n’est ajoutée. La validation sur systèmes réels et Emby reste à effectuer : autorisations, zone de notification, démarrage à la connexion, chargement client, installation/retrait/restauration des cartes et nettoyage à la fermeture. Les paquets macOS portent une signature ad hoc, sans notarisation Apple ; les paquets Windows ne sont pas signés par un certificat de distribution.
 
 ---
 
@@ -550,31 +517,25 @@ Les capacités suivantes doivent encore être validées dans de véritables envi
 
 ### 1. Télécharger
 
-Accédez à :
+Téléchargez depuis [GitHub Releases](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases) le paquet correspondant au système et à l’architecture de l’application. Les noms v5.0.0 figurent ci-dessous. Setup.exe est un installateur ; AppImage est un fichier exécutable.
 
-[**GitHub Releases →**](https://github.com/Eric-Hou1997/Tech-Card-Manager/releases)
-
-Le projet ne publie pas de fichier `.exe` nu et autonome dans les ressources d’une Release.
-
-Le paquet officiel actuel est :
-
-```text
-TCM-v4.1.0-Windows-x64-EXE.zip
-```
+| Système | Architecture | Paquet |
+| --- | --- | --- |
+| macOS | ARM64 | `TCM-v5.0.0-MacOS-AArch64.dmg` |
+| Windows | x64 | `TCM-v5.0.0-Windows-x64-Setup.exe` |
+| Windows | ARM64 | `TCM-v5.0.0-Windows-AArch64-Setup.exe` |
+| Linux | x64 | `TCM-v5.0.0-Linux-x64.AppImage` |
+| Linux | x64 | `TCM-v5.0.0-Linux-x64.deb` |
+| Linux | x64 | `TCM-v5.0.0-Linux-x64.rpm` |
+| Linux | ARM64 | `TCM-v5.0.0-Linux-AArch64.AppImage` |
+| Linux | ARM64 | `TCM-v5.0.0-Linux-AArch64.deb` |
+| Linux | ARM64 | `TCM-v5.0.0-Linux-AArch64.rpm` |
 
 ---
 
-### 2. Extraire entièrement le ZIP
+### 2. Installer l’application
 
-Commencez par extraire la totalité du ZIP dans un dossier fixe.
-
-Exécutez ensuite :
-
-```text
-Tech-Card-Manager.exe
-```
-
-N’exécutez pas directement l’application depuis l’archive compressée.
+macOS : ouvrez le DMG et placez Tech Card Manager.app dans Applications. Windows : lancez NSIS Setup.exe pour votre architecture. Linux : installez DEB/RPM avec le gestionnaire de paquets de la distribution, ou accordez le droit d’exécution à AppImage puis lancez-le. Quittez complètement depuis la barre des menus ou la zone de notification avant une mise à niveau. Les données sont dans le dossier utilisateur du système. Conservez les anciens dossiers Portable `data`, `logs`, `backup`, `runtime`, `updates` et tous les fichiers originaux ; ne supprimez pas l’ancien dossier. Confirmez la migration avec la liste de l’application ; les NFO ne sont pas réécrits.
 
 ---
 
@@ -619,7 +580,7 @@ Le processus ne réécrit pas les données de l’index dans les fichiers NFO.
 
 Suivez l’état et les instructions affichés dans le Gestionnaire pour installer ou entretenir la carte Web Emby.
 
-Windows peut demander les privilèges administrateur lorsqu’il faut modifier les fichiers Web Emby.
+La maintenance des fichiers Web Emby utilise UAC sous Windows, l’autorisation administrateur du système sous macOS et pkexec sous Linux. Vérifiez la liste avant de confirmer. Refuser l’autorisation ne réécrit pas les NFO des médias.
 
 ---
 
@@ -635,39 +596,7 @@ Le Gestionnaire peut être réduit dans la zone de notification et n’a pas bes
 
 ## 🔄 Mise à jour
 
-TCM peut consulter les Releases GitHub officielles depuis la page des paramètres.
-
-La version Portable actuelle **ne remplace pas automatiquement l’EXE en cours d’exécution**.
-
-Flux de mise à jour recommandé :
-
-```text
-Rechercher une nouvelle version
-    ↓
-Ouvrir la Release GitHub
-    ↓
-Télécharger le nouveau ZIP
-    ↓
-Fermer complètement TCM depuis la zone de notification
-    ↓
-Extraire la nouvelle version
-    ↓
-Remplacer les fichiers du programme
-    ↓
-Conserver le dossier de données / la configuration existants
-    ↓
-Redémarrer
-    ↓
-Vérifier l’état d’exécution
-```
-
-La Release fournit également :
-
-```text
-TCM-v4.1.0-Windows-x64-EXE-SHA256SUMS.txt
-```
-
-pour vérifier l’intégrité du paquet.
+Les paramètres conservent le processus manuel original : vérifier les mises à jour, confirmer le téléchargement intégré et ouvrir le navigateur système. L’application choisit DMG, NSIS, AppImage, DEB ou RPM selon le canal installé et ne s’installe ni ne se remplace automatiquement. Télécharger le paquet adapté → quitter complètement → installer ou remplacer → conserver données et sauvegardes → redémarrer → vérifier l’état. Mettez DEB/RPM à jour avec le gestionnaire système. Les ressources incluent `TCM-v5.0.0-SHA256SUMS.txt` ; vérifiez d’abord le condensat du fichier téléchargé.
 
 ---
 
@@ -756,7 +685,7 @@ main
 
 * Code source public complet
 * Interface Portable Windows x64
-* Release v4.1.0
+* Release v5.0.0
 * Fichier de somme de contrôle SHA-256
 * Indexation NFO en lecture seule
 * Carte Web Emby Technical Specifications
@@ -800,23 +729,13 @@ main
 
 ### En cours
 
-* [ ] Améliorer la présentation de la carte Emby Technical Specifications
-* [ ] Améliorer la compatibilité entre types de médias
-* [ ] Améliorer la compatibilité entre différentes structures de pages Emby
-* [ ] Améliorer la compatibilité entre versions de l’interface Web / du DOM Emby
-* [ ] Améliorer la localisation des erreurs d’index
-* [ ] Améliorer la récupération après erreur
-* [ ] Améliorer la migration des anciens composants
-* [ ] Améliorer le retour arrière des anciens composants
-* [ ] Ajouter davantage de tests de régression réels sous Windows / Emby
-* [ ] Améliorer la visualisation des états du Gestionnaire
-* [ ] Améliorer l’expérience des paramètres
-* [ ] Améliorer l’expérience de mise à jour Portable
-* [ ] Continuer à améliorer `AGENTS.md`
-* [ ] Continuer à améliorer le contexte Coding Agent
-* [ ] Étudier la prise en charge d’autres systèmes d’exploitation tout en conservant la limite de produit en lecture seule de TCM
+Le périmètre actuel de v5 se limite aux fonctions existantes et à la migration des plateformes.
 
-La feuille de route continuera d’évoluer selon le développement du projet et les retours d’utilisation réelle.
+* [ ] Valider installation, affichage, retrait et récupération après échec des cartes avec Emby réel
+* [ ] Comparer interface native, dialogues, opérations et pixels avec l’original
+* [ ] Valider exécution réelle et installation/mise à niveau/désinstallation sur les cinq cibles
+
+Une compilation réussie ne valide pas ces contrôles. v5 n’autorise pas de nouvelles fonctions.
 
 ---
 
