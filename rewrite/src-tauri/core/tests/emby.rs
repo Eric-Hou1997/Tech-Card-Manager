@@ -952,7 +952,10 @@ fn modified_review_journal_is_rejected_and_previous_format_receipts_remain_usabl
 
 #[test]
 fn live_web_repair_preserves_index_bytes_runtime_identity_and_renewal() {
-    use std::{sync::Arc, time::Duration};
+    use std::{
+        sync::Arc,
+        time::{Duration, Instant},
+    };
     use tcm_core::card_service::CardService;
     let (_temp, web, backup) = setup();
     let integration = Arc::new(Integration::open(&web, &backup).unwrap());
@@ -994,8 +997,18 @@ fn live_web_repair_preserves_index_bytes_runtime_identity_and_renewal() {
         fs::read(web.join("technical-specs-card.js")).unwrap(),
         b"window.card='new'"
     );
-    std::thread::sleep(Duration::from_millis(2200));
-    let after = service.status().unwrap();
+    // Wait for the actual renewal; loaded CI runners may schedule the
+    // two-second worker later than a fixed 2.2-second sleep.
+    let deadline = Instant::now() + Duration::from_secs(15);
+    let after = loop {
+        let observed = service.status().unwrap();
+        assert_eq!(observed.phase, "running", "{observed:?}");
+        if observed.lease.as_ref().unwrap().sequence > before.lease.as_ref().unwrap().sequence {
+            break observed;
+        }
+        assert!(Instant::now() < deadline, "lease renewal timed out");
+        std::thread::sleep(Duration::from_millis(20));
+    };
     assert_eq!(after.phase, "running");
     assert_eq!(after.last_started_at, before.last_started_at);
     let before = before.lease.unwrap();

@@ -28,7 +28,7 @@ cargo test --locked -p tcm-core --test migration --test history --test startup_m
 
 ## 交付边界
 
-每产品 5 目标、9 包：macOS ARM64 DMG，Windows x64/ARM64 NSIS，Linux x64/ARM64 AppImage/DEB/RPM；无 macOS Intel。当前禁止提交、制包（含隔离验证应用包）、发布、标签、GitHub 同步、云端任务和子代理，最终制包另等授权。已有配方、有效测试、编译缓存、旧源码和用户数据保持。
+每产品 5 目标、9 包：macOS ARM64 DMG，Windows x64/ARM64 NSIS，Linux x64/ARM64 AppImage/DEB/RPM；无 macOS Intel。维护者于 2026-10-02 授权 TCM 正式制包、GitHub 源码同步/Actions 与 v5.0.0 发布，接受临时签名且未做 Apple 公证的 macOS DMG。九包与发行输入实际核对后才执行最终标签/发布，不覆盖旧版本。不使用子代理、不改 ITM；旧源码、用户数据、密钥、有效测试和发行输入保留。真实 Emby、完整原生界面/操作与 Windows/Linux 运行验收暂缓，不计通过。
 
 数据兼容后端按原版正常入口接线；不要恢复已移除的通用数据导入、独立历史浏览面板或其 Tauri 命令。底层迁移/历史读取和有效回归继续保留；它们的存在不等于完整旧数据迁移已通过。
 

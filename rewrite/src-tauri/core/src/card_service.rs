@@ -431,8 +431,16 @@ mod tests {
             signal.store(true, std::sync::atomic::Ordering::SeqCst);
             result
         });
-        std::thread::sleep(Duration::from_millis(2200));
-        let during = service.status().unwrap();
+        let deadline = Instant::now() + Duration::from_secs(15);
+        let during = loop {
+            let observed = service.status().unwrap();
+            assert_eq!(observed.phase, "running", "{observed:?}");
+            if observed.lease.as_ref().unwrap().sequence > before.lease.as_ref().unwrap().sequence {
+                break observed;
+            }
+            assert!(Instant::now() < deadline, "lease renewal timed out");
+            std::thread::sleep(Duration::from_millis(20));
+        };
         assert_eq!(during.phase, "running");
         assert_eq!(during.last_started_at, before.last_started_at);
         assert!(during.lease.unwrap().sequence > before.lease.unwrap().sequence);

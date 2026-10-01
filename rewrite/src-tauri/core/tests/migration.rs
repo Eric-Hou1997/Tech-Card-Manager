@@ -55,6 +55,16 @@ fn changed_late_file_rolls_back_entire_database_import() {
     let (_t, old, store) = setup();
     fs::write(old.join("config.json"), b"{}").unwrap();
     fs::write(old.join("z-history.json"), b"[]").unwrap();
+    let original_time = std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_600_000_000);
+    let restore_time = || {
+        fs::OpenOptions::new()
+            .write(true)
+            .open(old.join("z-history.json"))
+            .unwrap()
+            .set_times(fs::FileTimes::new().set_modified(original_time))
+            .unwrap();
+    };
+    restore_time();
     let plan = store
         .prepare_migration("import", &old, "itm-engine")
         .unwrap();
@@ -63,7 +73,11 @@ fn changed_late_file_rolls_back_entire_database_import() {
     assert_eq!(store.configuration().unwrap().revision, 0);
     assert!(store.legacy_artifact("import", "config.json").is_err());
     fs::write(old.join("z-history.json"), b"[]").unwrap();
-    assert!(store.apply_migration("import", &plan.fingerprint).is_ok());
+    // Matching bytes alone do not restore the bound source snapshot.
+    assert!(store.apply_migration("import", &plan.fingerprint).is_err());
+    assert_eq!(store.configuration().unwrap().revision, 0);
+    restore_time();
+    store.apply_migration("import", &plan.fingerprint).unwrap();
 }
 #[test]
 fn migration_id_cannot_be_reused_for_other_operations() {
