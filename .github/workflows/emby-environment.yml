@@ -1,12 +1,5 @@
 name: Emby integration and real card rendering
 on:
-  push:
-    branches: [v5.0.0-rewrite]
-    paths:
-      - '.github/workflows/emby-environment.yml'
-      - 'tools/rewrite/emby_cloud_smoke.py'
-      - 'tools/rewrite/emby_card_acceptance.mjs'
-      - 'rewrite/**'
   workflow_dispatch:
 permissions:
   contents: read
