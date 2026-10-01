@@ -271,8 +271,18 @@ fn first_offline_selection_survives_restart_and_indexes_when_it_returns() {
 fn offline_paths_still_reject_parent_traversal_files_disk_roots_and_excess_rows() {
     let (temp, store, settings) = setup();
     let root = temp.path().canonicalize().unwrap();
+    // Joining onto a Windows verbatim path normalizes `..` before the API
+    // receives it. Construct the raw input so this still tests traversal.
+    let separator = std::path::MAIN_SEPARATOR;
+    let parent = std::path::PathBuf::from(format!(
+        "{}{separator}missing{separator}..{separator}other",
+        root.display()
+    ));
+    assert!(parent
+        .components()
+        .any(|part| matches!(part, std::path::Component::ParentDir)));
     for (id, path) in [
-        ("parent", root.join("missing/../other")),
+        ("parent", parent),
         ("file", root.join("media/movie.nfo/child")),
         ("disk", root.ancestors().last().unwrap().to_path_buf()),
     ] {

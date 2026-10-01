@@ -326,10 +326,17 @@ fn original_online_snapshot_requires_a_local_path_and_keeps_mixed_classification
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().canonicalize().unwrap();
     fs::create_dir(root.join("custom-tech-specs")).unwrap();
-    let media = root.join("media");
+    // A server snapshot uses an ordinary host path, not Windows' canonical
+    // verbatim prefix. An opposite-platform path needs an explicit mapping.
+    let media = temp.path().join("media");
     fs::create_dir(&media).unwrap();
+    let foreign_path = if cfg!(windows) {
+        "/Unavailable"
+    } else {
+        "Z:\\Unavailable"
+    };
     let snapshot = serde_json::json!({"libraries":[
-        {"Id":1,"Path":"Z:\\Unavailable","Kind":"Movies","Included":true,"Online":true},
+        {"Id":1,"Path":foreign_path,"Kind":"Movies","Included":true,"Online":true},
         {"Id":2,"Path":media,"Kind":"Mixed Movie/TV","Included":true,"Online":true}
     ]});
     fs::write(

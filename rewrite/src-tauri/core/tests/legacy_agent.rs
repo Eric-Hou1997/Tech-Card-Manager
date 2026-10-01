@@ -67,7 +67,17 @@ fn backup_survives_restart_and_corruption_never_overwrites_saved_evidence() {
 #[test]
 fn ambiguous_paths_hardlinks_and_oversized_state_are_rejected() {
     let (_temp, file) = fixture();
-    assert!(agent::snapshot(&file.parent().unwrap().join("../data/agent.pid")).is_err());
+    // Preserve traversal in the input; Windows verbatim Path::join would
+    // otherwise resolve it before snapshot gets a chance to reject it.
+    let separator = std::path::MAIN_SEPARATOR;
+    let parent = PathBuf::from(format!(
+        "{}{separator}..{separator}data{separator}agent.pid",
+        file.parent().unwrap().display()
+    ));
+    assert!(parent
+        .components()
+        .any(|part| matches!(part, std::path::Component::ParentDir)));
+    assert!(agent::snapshot(&parent).is_err());
     assert!(agent::snapshot(&file.with_file_name("config.json")).is_err());
     let other = file.with_extension("linked");
     fs::hard_link(&file, &other).unwrap();

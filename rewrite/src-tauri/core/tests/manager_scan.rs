@@ -97,7 +97,10 @@ fn space_refresh_reads_only_explicitly_classified_saved_roots() {
         .unwrap();
     assert_eq!(tasks.len(), 1);
     assert_eq!(tasks[0].roots.len(), 1);
-    assert!(tasks[0].roots[0].path.ends_with("/movies"));
+    assert_eq!(
+        std::path::Path::new(&tasks[0].roots[0].path),
+        temp.path().canonicalize().unwrap().join("movies")
+    );
     assert!(tasks[0].id.starts_with("scan-space-"));
     assert!(!tasks[0].force_parse);
     wait(|| store.task(&tasks[0].id).unwrap().state == TaskState::Completed);
@@ -112,7 +115,9 @@ fn space_refresh_reads_only_explicitly_classified_saved_roots() {
     assert!(items
         .iter()
         .filter(|i| i.title.starts_with("Changed"))
-        .all(|i| i.space == Space::Movie && i.path.contains("/movies/")));
+        .all(|i| i.space == Space::Movie
+            && std::path::Path::new(&i.path).parent()
+                == Some(temp.path().canonicalize().unwrap().join("movies").as_path())));
     worker.stop().unwrap();
     for (path, bytes, mtime) in before {
         assert_eq!(fs::read(&path).unwrap(), bytes);
@@ -146,7 +151,8 @@ fn a_mixed_folder_is_one_atomic_service_owned_request_and_stop_cancels_queued_wo
     assert!(tasks.iter().all(|t| t.id.starts_with("scan-root-")
         && t.service_session.as_deref() == Some("manager")
         && t.roots.len() == 1
-        && t.roots[0].path.ends_with("/mixed")));
+        && std::path::Path::new(&t.roots[0].path)
+            == temp.path().canonicalize().unwrap().join("mixed")));
     match store.run_next(|| false, |_| {}) {
         Ok(None) => {}
         Err(error) if error.code == "worker-busy" => {}
@@ -226,7 +232,10 @@ fn completed_receipt_replays_without_rescanning_and_new_schema_preserves_v5_data
         .filter(|i| i.title.starts_with("Changed"))
         .collect();
     assert_eq!(changed.len(), 2);
-    assert!(changed.iter().all(|i| i.path.contains("/auto/")));
+    assert!(changed
+        .iter()
+        .all(|i| std::path::Path::new(&i.path).parent()
+            == Some(temp.path().canonicalize().unwrap().join("auto").as_path())));
     let replay = worker
         .request_manager_scan("replay", 1, ManagerScanScope::Folder("auto".into()))
         .unwrap();

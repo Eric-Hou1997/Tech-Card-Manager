@@ -269,7 +269,15 @@ fn legacy_start_gate_preserves_web_files_and_never_creates_a_lease_when_blocked(
                 (
                     path.file_name().unwrap().to_owned(),
                     (
-                        fs::read(&path).unwrap(),
+                        // Windows locks deny byte reads even in the owner process.
+                        // Keep the lock's metadata in the snapshot; compare every
+                        // product/web asset byte-for-byte on all platforms.
+                        if path.file_name().unwrap() == ".tcm-web.lock" {
+                            None
+                        } else {
+                            Some(fs::read(&path).unwrap())
+                        },
+                        fs::metadata(&path).unwrap().len(),
                         fs::metadata(&path).unwrap().modified().unwrap(),
                     ),
                 )
