@@ -11,3 +11,5 @@ Simplified Chinese, Traditional Chinese and English are built in. Five external 
 Installation and upgrade: download the matching package, verify TCM-v5.0.0-SHA256SUMS.txt, fully exit through the menu bar or tray, then install or replace. Preserve system user data, Emby maintenance backups and all original Portable files. Install or upgrade DEB/RPM with the system package manager.
 
 Distribution and acceptance limits: macOS uses ad hoc signing without Apple notarization; Windows has no distribution certificate signature. Real Emby, complete native UI/operation and Windows/Linux runtime acceptance remain incomplete. Source regressions, architecture and package checks do not prove these real acceptance items. The target list is not a claim of real-machine certification.
+
+When upgrading from v4.1.0, the old app matches only its Portable ZIP and cannot directly recognize the new v5 installation channels. Download the matching v5 package directly from official Releases. Do not replace the old Portable executable with the NSIS installer; preserve the original folder and confirm data migration using the new app checklist.

@@ -541,6 +541,8 @@ v5 制包覆盖 macOS ARM64、Windows x64/ARM64、Linux x64/ARM64，共五个目
 
 macOS：打开 DMG，将 Tech Card Manager.app 放入 Applications。Windows：运行对应架构的 NSIS Setup.exe。Linux：使用发行版包管理器安装 DEB/RPM，或给 AppImage 执行权限后运行。升级前从菜单栏或托盘完全退出应用。应用数据保存于系统用户数据目录；保留旧 Portable 的 `data`、`logs`、`backup`、`runtime`、`updates` 及其他原文件，不删除原目录。旧数据迁移按应用内清单确认，不改写 NFO。
 
+从 v4.1.0 升级时，旧程序只匹配旧 Portable ZIP，不能直接识别 v5 的新安装渠道；请直接前往官方 Releases 下载匹配的 v5 包。不要把 NSIS 安装器当成旧 Portable 的主程序替换，保留原目录并按新版内的迁移清单确认数据。
+
 ---
 
 ### 3. 配置媒体库

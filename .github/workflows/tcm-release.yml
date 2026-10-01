@@ -62,7 +62,7 @@ jobs:
         working-directory: rewrite/src-tauri
         run: |
           cargo fmt --all --check
-          cargo test --locked -p tcm-core --target ${{ matrix.target }}
+          cargo test --locked --no-fail-fast -p tcm-core --target ${{ matrix.target }}
           cargo run --locked -q -p tcm-core --example export_types -- --check ../src/contracts.ts
       - name: Frontend dependencies
         working-directory: rewrite

@@ -18,7 +18,7 @@ pub fn manager_catalog(mut items: Vec<MediaItem>) -> Vec<ManagerRow> {
         .filter(|item| item.kind == "Series")
         .map(|item| {
             (
-                (item.root_id.clone(), item.path.clone()),
+                (item.root_id.clone(), Path::new(&item.path).to_path_buf()),
                 item.title.trim().to_owned(),
             )
         })
@@ -36,10 +36,7 @@ pub fn manager_catalog(mut items: Vec<MediaItem>) -> Vec<ManagerRow> {
                     .into_iter()
                     .flat_map(Path::ancestors)
                     .find_map(|directory| {
-                        shows.get(&(
-                            item.root_id.clone(),
-                            directory.join("tvshow.nfo").to_string_lossy().into_owned(),
-                        ))
+                        shows.get(&(item.root_id.clone(), directory.join("tvshow.nfo")))
                     })
                     .cloned()
                     .unwrap_or_default()

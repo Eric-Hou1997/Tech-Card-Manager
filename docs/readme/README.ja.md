@@ -537,6 +537,8 @@ v5 のパッケージ対象は macOS ARM64、Windows x64/ARM64、Linux x64/ARM64
 
 macOS：DMG を開き、Tech Card Manager.app を Applications に移動します。Windows：対象アーキテクチャの NSIS Setup.exe を実行します。Linux：ディストリビューションのパッケージ管理で DEB/RPM をインストールするか、AppImage に実行権限を付けて起動します。更新前にメニューバーまたはトレイから完全に終了してください。アプリデータはシステムのユーザーデータ領域に保存します。旧 Portable の `data`、`logs`、`backup`、`runtime`、`updates` とすべての元ファイルを保持し、元フォルダーを削除しないでください。旧データ移行はアプリ内一覧で確認し、NFO は書き換えません。
 
+v4.1.0 から更新する場合、旧アプリは元の Portable ZIP のみを認識し、v5 の新しいインストール方式を直接認識できません。公式 Releases から該当する v5 パッケージを直接取得してください。旧 Portable の実行ファイルを NSIS インストーラーで置き換えず、元のフォルダーを保持し、新アプリの一覧でデータ移行を確認してください。
+
 ---
 
 ### 3. メディアライブラリを設定

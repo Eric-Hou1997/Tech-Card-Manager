@@ -539,6 +539,8 @@ Download a package matching your OS and application architecture from [GitHub Re
 
 macOS: open the DMG and move Tech Card Manager.app into Applications. Windows: run the NSIS Setup.exe for your architecture. Linux: install DEB/RPM through your distribution package manager, or grant the AppImage execute permission and run it. Fully exit through the menu bar or tray before upgrading. Application data is stored in the system user-data directory. Preserve the old Portable `data`, `logs`, `backup`, `runtime`, `updates` and all other original files; do not delete the old directory. Confirm legacy-data migration using the application checklist; NFO files are not rewritten.
 
+When upgrading from v4.1.0, the old app matches only its Portable ZIP and cannot directly recognize the new v5 installation channels. Download the matching v5 package directly from official Releases. Do not replace the old Portable executable with the NSIS installer; preserve the original folder and confirm data migration using the new app checklist.
+
 ---
 
 ### 3. Configure Media Libraries

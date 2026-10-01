@@ -537,6 +537,8 @@ Descarga de [GitHub Releases](https://github.com/Eric-Hou1997/Tech-Card-Manager/
 
 macOS: abre el DMG y mueve Tech Card Manager.app a Applications. Windows: ejecuta NSIS Setup.exe para tu arquitectura. Linux: instala DEB/RPM con el gestor de paquetes de la distribución, o concede permiso de ejecución a AppImage y ejecútalo. Sal completamente desde la barra de menús o la bandeja antes de actualizar. Los datos están en el directorio de usuario del sistema. Conserva los antiguos `data`, `logs`, `backup`, `runtime`, `updates` de Portable y todos los archivos originales; no elimines el directorio antiguo. Confirma la migración con la lista de la aplicación; los NFO no se reescriben.
 
+Al actualizar desde v4.1.0, la aplicación antigua solo reconoce su ZIP Portable, no los canales nuevos de v5. Descarga el paquete v5 adecuado directamente de Releases oficiales. No sustituyas el ejecutable Portable por el instalador NSIS; conserva la carpeta original y confirma la migración con la lista de la aplicación nueva.
+
 ---
 
 ### 3. Configurar las bibliotecas multimedia
