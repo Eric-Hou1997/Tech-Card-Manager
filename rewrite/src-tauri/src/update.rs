@@ -1,5 +1,7 @@
 #[cfg(target_os = "linux")]
 use product_core::AppError;
+#[cfg(target_os = "linux")]
+use tauri::Manager;
 use product_core::{update::InstallationIdentity, Result};
 #[cfg(target_os = "linux")]
 fn error(code: &str, e: impl ToString) -> AppError {

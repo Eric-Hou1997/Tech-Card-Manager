@@ -1,5 +1,8 @@
 {
   "identifier": "io.github.eric-hou1997.tcm",
   "mainBinaryName": "Tech-Card-Manager",
-  "bundle": {"macOS": {"signingIdentity": "-"}}
+  "bundle": {
+    "macOS": {"signingIdentity": "-"},
+    "linux": {"rpm": {"depends": ["webkit2gtk4.1", "gtk3", "libayatana-appindicator-gtk3", "dbus-libs", "/usr/bin/pkexec"]}}
+  }
 }
